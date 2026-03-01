@@ -1,8 +1,6 @@
 // lib/ui/CleaningsCalendar/CleanerDailyCalendar.tsx
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { acceptCleaning } from "@/app/cleaner/actions";
 import { formatCleaningStatus } from "@/lib/cleaning-ui";
 import ListContainer from "@/lib/ui/ListContainer";
@@ -48,17 +46,6 @@ export default function CleanerDailyCalendar({
   myThumbUrls,
   availableThumbUrls,
 }: CleanerDailyCalendarProps) {
-  const router = useRouter();
-
-  // En móvil, onPointerDown es más fiable que click para toques; evita que el tap se pierda o active otro elemento
-  const handleTouchNavigation = (e: React.PointerEvent, href: string) => {
-    if (e.pointerType === "touch") {
-      e.preventDefault();
-      e.stopPropagation();
-      router.push(href);
-    }
-  };
-
   // Parsear dateParam (YYYY-MM-DD) en zona local para evitar desfase servidor/cliente
   const [y, m, d] = (dateParam || "").split("-").map(Number);
   const localRefDate =
@@ -134,13 +121,11 @@ export default function CleanerDailyCalendar({
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
 
               return (
-                <Link
+                <a
                   key={cleaning.id}
                   href={detailsHref}
-                  prefetch={false}
-                  onPointerDown={(e) => handleTouchNavigation(e, detailsHref)}
                   aria-label={`Ver detalles de limpieza ${propertyName}`}
-                  className={`${linkBaseClass} min-h-[44px] ${!isLast ? "border-b border-neutral-200" : ""}`}
+                  className={`${linkBaseClass} min-h-[44px] block text-inherit no-underline ${!isLast ? "border-b border-neutral-200" : ""}`}
                 >
                   <ListThumb src={myThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
@@ -161,7 +146,7 @@ export default function CleanerDailyCalendar({
                       </p>
                     )}
                   </div>
-                </Link>
+                </a>
               );
             })}
           </ListContainer>
@@ -189,12 +174,10 @@ export default function CleanerDailyCalendar({
                   key={cleaning.id}
                   className={`relative ${!isLast ? "border-b border-neutral-200" : ""}`}
                 >
-                  <Link
+                  <a
                     href={detailsHref}
-                    prefetch={false}
-                    onPointerDown={(e) => handleTouchNavigation(e, detailsHref)}
                     aria-label={`Ver detalles de limpieza ${propertyName}`}
-                    className={`${linkBaseClass} pr-24 min-h-[44px]`}
+                    className={`${linkBaseClass} pr-24 min-h-[44px] block text-inherit no-underline`}
                   >
                     <ListThumb src={availableThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                     <div className="min-w-0 flex-1">
@@ -209,11 +192,11 @@ export default function CleanerDailyCalendar({
                       </p>
                       {cleaning.notes && (
                         <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
-                          {cleaning.notes}
-                        </p>
-                      )}
+                        {cleaning.notes}
+                      </p>
+                    )}
                     </div>
-                  </Link>
+                  </a>
                   <div
                     className="absolute right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
                   >
@@ -254,13 +237,11 @@ export default function CleanerDailyCalendar({
               )}&returnTo=${encodeURIComponent(returnTo)}`;
 
               return (
-                <Link
+                <a
                   key={cleaning.id}
                   href={detailsHref}
-                  prefetch={false}
-                  onPointerDown={(e) => handleTouchNavigation(e, detailsHref)}
                   aria-label={`Ver detalles de limpieza ${propertyName}`}
-                  className={`${linkBaseClass} min-h-[44px] ${!isLast ? "border-b border-neutral-200" : ""}`}
+                  className={`${linkBaseClass} min-h-[44px] block text-inherit no-underline ${!isLast ? "border-b border-neutral-200" : ""}`}
                 >
                   <ListThumb src={availableThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
@@ -286,7 +267,7 @@ export default function CleanerDailyCalendar({
                       </p>
                     )}
                   </div>
-                </Link>
+                </a>
               );
             })}
           </ListContainer>
@@ -306,13 +287,11 @@ export default function CleanerDailyCalendar({
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
 
               return (
-                <Link
+                <a
                   key={cleaning.id}
                   href={detailsHref}
-                  prefetch={false}
-                  onPointerDown={(e) => handleTouchNavigation(e, detailsHref)}
                   aria-label={`Ver detalles de limpieza ${propertyName}`}
-                  className={`${linkBaseClass} min-h-[44px] ${!isLast ? "border-b border-neutral-200" : ""}`}
+                  className={`${linkBaseClass} min-h-[44px] block text-inherit no-underline ${!isLast ? "border-b border-neutral-200" : ""}`}
                 >
                   <ListThumb src={myThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
@@ -338,7 +317,7 @@ export default function CleanerDailyCalendar({
                       </p>
                     )}
                   </div>
-                </Link>
+                </a>
               );
             })}
           </ListContainer>
