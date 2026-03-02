@@ -11,6 +11,7 @@ import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 
 interface InventoryLine {
   id: string;
+  area?: string;
   item: { id: string; name: string };
 }
 
