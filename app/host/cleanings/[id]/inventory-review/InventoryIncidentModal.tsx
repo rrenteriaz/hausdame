@@ -193,15 +193,15 @@ export default function InventoryIncidentModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         onClick={onClose}
       >
         <div
-          className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+          className="relative bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] flex flex-col min-h-0"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-neutral-200 sticky top-0 bg-white">
+          {/* Header - fijo arriba */}
+          <div className="flex-shrink-0 px-6 py-4 border-b border-neutral-200 bg-white">
             <h2 className="text-lg font-semibold text-neutral-900">
               {existingChange || existingReport ? "Ver / Editar incidencia" : "Reportar incidencia"}
             </h2>
@@ -213,8 +213,8 @@ export default function InventoryIncidentModal({
             )}
           </div>
 
-          {/* Content */}
-          <div className="px-6 py-4 space-y-6">
+          {/* Content - área con scroll, footer siempre visible */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-6">
             {/* Sección: Cambio de cantidad */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-neutral-700">Cantidad verificada</h3>
@@ -365,8 +365,8 @@ export default function InventoryIncidentModal({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
+          {/* Footer - fijo abajo, siempre visible */}
+          <div className="flex-shrink-0 px-6 py-4 border-t border-neutral-200 bg-white flex items-center justify-between">
             <div>
               {existingReport && onDeleteReport && (
                 <button
