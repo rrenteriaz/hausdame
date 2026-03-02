@@ -350,6 +350,7 @@ export async function startCleaning(formData: FormData) {
       if (!existingReview) {
         // Crear nueva revisión en DRAFT
         const reviewFormData = new FormData();
+        reviewFormData.set("callerContext", "cleaner");
         reviewFormData.set("cleaningId", cleaningId);
         await createOrUpdateInventoryReview(reviewFormData);
         if (DEBUG_LOGS) console.log("[startCleaning] InventoryReview creado en DRAFT");

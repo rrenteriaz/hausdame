@@ -2,7 +2,8 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { requireHostUser } from "@/lib/auth/requireUser";
+import { requireHostUser, requireUser } from "@/lib/auth/requireUser";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
   InventoryReviewStatus,
@@ -12,20 +13,83 @@ import {
   InventoryReportSeverity,
   InventoryReportStatus,
 } from "@prisma/client";
+import { checkCleaningPropertyAccess } from "@/lib/cleaner/checkCleaningPropertyAccess";
+
+const HOST_ROLES = ["OWNER", "ADMIN", "MANAGER", "AUXILIAR"];
+
+/** Obtiene tenantId para contexto cleaner: valida acceso y retorna tenantId. */
+async function getTenantIdForCleaner(
+  formData: FormData,
+  options?: { reviewId?: string; cleaningId?: string; reportId?: string }
+): Promise<{ tenantId: string; cleaningId: string }> {
+  const user = await requireUser();
+  if (HOST_ROLES.includes(user.role)) redirect("/host");
+
+  let cleaningId =
+    formData.get("cleaningId")?.toString() ||
+    options?.cleaningId ||
+    null;
+  const reviewId = formData.get("reviewId")?.toString() || options?.reviewId;
+  const reportId = options?.reportId;
+
+  if (!cleaningId && reviewId) {
+    const review = await prisma.inventoryReview.findFirst({
+      where: { id: reviewId },
+      select: { cleaningId: true },
+    });
+    cleaningId = review?.cleaningId ?? null;
+  }
+  if (!cleaningId && reportId) {
+    const report = await prisma.inventoryReport.findFirst({
+      where: { id: reportId },
+      select: { cleaningId: true, reviewId: true },
+    });
+    cleaningId = report?.cleaningId ?? null;
+    if (!cleaningId && report?.reviewId) {
+      const review = await prisma.inventoryReview.findFirst({
+        where: { id: report.reviewId },
+        select: { cleaningId: true },
+      });
+      cleaningId = review?.cleaningId ?? null;
+    }
+  }
+
+  if (!cleaningId) throw new Error("No se encontró la limpieza");
+
+  const access = await checkCleaningPropertyAccess(cleaningId);
+  if (!access.isAssigned) {
+    throw new Error("No tienes acceso a esta limpieza");
+  }
+
+  const cleaning = await prisma.cleaning.findUnique({
+    where: { id: cleaningId },
+    select: { tenantId: true },
+  });
+  if (!cleaning) throw new Error("Limpieza no encontrada");
+  return { tenantId: cleaning.tenantId, cleaningId };
+}
 
 /**
  * Crea o actualiza una revisión de inventario (DRAFT).
  * Si ya existe, la actualiza. Si no, la crea.
  */
 export async function createOrUpdateInventoryReview(formData: FormData) {
-  const user = await requireHostUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+  const isCleaner = formData.get("callerContext") === "cleaner";
+  let tenantId: string;
+  let cleaningId = formData.get("cleaningId")?.toString();
 
-  const cleaningId = formData.get("cleaningId")?.toString();
-  if (!cleaningId) {
-    throw new Error("No se encontró la limpieza");
+  if (isCleaner) {
+    const ctx = await getTenantIdForCleaner(formData);
+    tenantId = ctx.tenantId;
+    cleaningId = ctx.cleaningId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+    if (!tenantId) throw new Error("Usuario sin tenant asociado");
+    if (!cleaningId) throw new Error("No se encontró la limpieza");
   }
+
+  if (!cleaningId) throw new Error("No se encontró la limpieza");
 
   // Verificar que la limpieza existe y obtener propertyId
   const cleaning = await prisma.cleaning.findFirst({
@@ -66,6 +130,10 @@ export async function createOrUpdateInventoryReview(formData: FormData) {
     });
 
     revalidatePath(`/host/cleanings/${cleaningId}`);
+    if (isCleaner) {
+      revalidatePath(`/cleaner/cleanings/${cleaningId}`);
+      revalidatePath(`/cleaner/cleanings/${cleaningId}/inventory-review`);
+    }
     return { id: updated.id, status: updated.status };
   } else {
     // Crear nueva revisión
@@ -74,6 +142,10 @@ export async function createOrUpdateInventoryReview(formData: FormData) {
     });
 
     revalidatePath(`/host/cleanings/${cleaningId}`);
+    if (isCleaner) {
+      revalidatePath(`/cleaner/cleanings/${cleaningId}`);
+      revalidatePath(`/cleaner/cleanings/${cleaningId}/inventory-review`);
+    }
     return { id: created.id, status: created.status };
   }
 }
@@ -83,8 +155,16 @@ export async function createOrUpdateInventoryReview(formData: FormData) {
  * Valida que todos los cambios de cantidad tengan razón.
  */
 export async function submitInventoryReview(formData: FormData) {
-  const user = await requireHostUser();
-  const tenantId = user.tenantId;
+  const isCleaner = formData.get("callerContext") === "cleaner";
+  let tenantId: string;
+
+  if (isCleaner) {
+    const ctx = await getTenantIdForCleaner(formData);
+    tenantId = ctx.tenantId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+  }
   if (!tenantId) throw new Error("Usuario sin tenant asociado");
 
   const reviewId = formData.get("reviewId")?.toString();
@@ -135,6 +215,10 @@ export async function submitInventoryReview(formData: FormData) {
   // Revalidar tanto la página de detalle como la de inventory-review
   revalidatePath(`/host/cleanings/${review.cleaningId}`);
   revalidatePath(`/host/cleanings/${review.cleaningId}/inventory-review`);
+  if (isCleaner) {
+    revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+    revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+  }
   return { id: updated.id, status: updated.status };
 }
 
@@ -142,8 +226,16 @@ export async function submitInventoryReview(formData: FormData) {
  * Crea o actualiza un cambio de cantidad en una revisión.
  */
 export async function createOrUpdateInventoryChange(formData: FormData) {
-  const user = await requireHostUser();
-  const tenantId = user.tenantId;
+  const isCleaner = formData.get("callerContext") === "cleaner";
+  let tenantId: string;
+
+  if (isCleaner) {
+    const ctx = await getTenantIdForCleaner(formData);
+    tenantId = ctx.tenantId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+  }
   if (!tenantId) throw new Error("Usuario sin tenant asociado");
 
   const reviewId = formData.get("reviewId")?.toString();
@@ -198,6 +290,10 @@ export async function createOrUpdateInventoryChange(formData: FormData) {
     });
 
     revalidatePath(`/host/cleanings/${review.cleaningId}`);
+    if (isCleaner) {
+      revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+      revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+    }
     return { deleted: true };
   }
 
@@ -245,6 +341,10 @@ export async function createOrUpdateInventoryChange(formData: FormData) {
     });
 
     revalidatePath(`/host/cleanings/${review.cleaningId}`);
+    if (isCleaner) {
+      revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+      revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+    }
     return { id: updated.id, quantityBefore: updated.quantityBefore, quantityAfter: updated.quantityAfter };
   } else {
     // Crear nuevo cambio
@@ -253,6 +353,10 @@ export async function createOrUpdateInventoryChange(formData: FormData) {
     });
 
     revalidatePath(`/host/cleanings/${review.cleaningId}`);
+    if (isCleaner) {
+      revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+      revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+    }
     return { id: created.id, quantityBefore: created.quantityBefore, quantityAfter: created.quantityAfter };
   }
 }
@@ -261,8 +365,16 @@ export async function createOrUpdateInventoryChange(formData: FormData) {
  * Crea un reporte de incidencia.
  */
 export async function createInventoryReport(formData: FormData) {
-  const user = await requireHostUser();
-  const tenantId = user.tenantId;
+  const isCleaner = formData.get("callerContext") === "cleaner";
+  let tenantId: string;
+
+  if (isCleaner) {
+    const ctx = await getTenantIdForCleaner(formData);
+    tenantId = ctx.tenantId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+  }
   if (!tenantId) throw new Error("Usuario sin tenant asociado");
 
   const reviewId = formData.get("reviewId")?.toString() || null;
@@ -299,11 +411,16 @@ export async function createInventoryReport(formData: FormData) {
   }
 
   // Obtener el usuario que crea el reporte
-  // Prioridad: 1) reviewedByUserId de la revisión, 2) assignedToId de la limpieza, 3) cualquier Cleaner del tenant
+  // Cleaner: siempre el usuario actual. Host: prioridad reviewedByUserId, assignedToId, o fallback
   let createdByUserId: string | null = null;
 
-  // 1. Intentar obtener el usuario de la revisión
-  if (reviewId) {
+  if (isCleaner) {
+    const user = await requireUser();
+    createdByUserId = user.id;
+  }
+
+  // 1. Intentar obtener el usuario de la revisión (solo host)
+  if (!createdByUserId && reviewId) {
     const review = await prisma.inventoryReview.findFirst({
       where: { id: reviewId, tenantId },
       select: { id: true, reviewedByUserId: true },
@@ -318,7 +435,7 @@ export async function createInventoryReport(formData: FormData) {
     }
   }
 
-  // 2. Si no hay usuario de la revisión, intentar obtenerlo de la limpieza
+  // 2. Si no hay usuario, intentar obtenerlo de la limpieza
   if (!createdByUserId && cleaningId) {
     const cleaning = await prisma.cleaning.findFirst({
       where: { id: cleaningId, tenantId },
@@ -414,6 +531,10 @@ export async function createInventoryReport(formData: FormData) {
 
     if (review) {
       revalidatePath(`/host/cleanings/${review.cleaningId}`);
+      if (isCleaner) {
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+      }
     }
   }
 
@@ -423,9 +544,20 @@ export async function createInventoryReport(formData: FormData) {
 /**
  * Elimina un reporte de inventario (solo si está en estado PENDING).
  */
-export async function deleteInventoryReport(reportId: string) {
-  const user = await requireHostUser();
-  const tenantId = user.tenantId;
+export async function deleteInventoryReport(
+  reportId: string,
+  options?: { callerContext?: "host" | "cleaner" }
+) {
+  const isCleaner = options?.callerContext === "cleaner";
+  let tenantId: string;
+
+  if (isCleaner) {
+    const ctx = await getTenantIdForCleaner(new FormData(), { reportId });
+    tenantId = ctx.tenantId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+  }
   if (!tenantId) throw new Error("Usuario sin tenant asociado");
 
   const report = await prisma.inventoryReport.findFirst({
@@ -457,6 +589,10 @@ export async function deleteInventoryReport(reportId: string) {
 
     if (review) {
       revalidatePath(`/host/cleanings/${review.cleaningId}`);
+      if (isCleaner) {
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+      }
     }
   }
 
