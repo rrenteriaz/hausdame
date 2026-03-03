@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   InventoryChangeReason,
@@ -247,15 +248,21 @@ export default function InventoryIncidentModal({
     onSubmit(payload, imageFiles);
   };
 
-  return (
+  const modalContent = (
     <>
       <div
         className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-24 sm:pb-4"
         onClick={onClose}
       >
-        <div
+        <form
+          id="incident-modal-form"
           className="relative bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[calc(100dvh-8rem)] sm:max-h-[90vh] flex flex-col min-h-0"
           onClick={(e) => e.stopPropagation()}
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSubmit(e as unknown as React.MouseEvent);
+          }}
         >
           {/* Header - fijo arriba */}
           <div className="flex-shrink-0 px-6 py-4 border-b border-neutral-200 bg-white">
@@ -520,12 +527,7 @@ export default function InventoryIncidentModal({
                 Cancelar
               </button>
               <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleSubmit(e);
-                }}
+                type="submit"
                 disabled={!canSubmit || isSubmitting}
                 className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation min-w-[100px]"
               >
@@ -533,7 +535,7 @@ export default function InventoryIncidentModal({
               </button>
             </div>
           </div>
-        </div>
+        </form>
       </div>
 
       <ConfirmDeleteReportModal
@@ -606,4 +608,8 @@ export default function InventoryIncidentModal({
       )}
     </>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : null;
 }

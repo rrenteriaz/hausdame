@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   createOrUpdateInventoryReview,
@@ -132,7 +132,7 @@ export default function InventoryReviewPanel({
     }
   }, [review, inventoryLines]);
 
-  const handleIncidentSubmit = async (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => {
+  const handleIncidentSubmit = useCallback(async (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => {
     if (!selectedLineForIncident) return;
     setError(null);
     setIsIncidentSubmitting(true);
@@ -241,9 +241,18 @@ export default function InventoryReviewPanel({
     } finally {
       setIsIncidentSubmitting(false);
     }
-  };
+  }, [
+    selectedLineForIncident,
+    review,
+    reports,
+    quantities,
+    changes,
+    cleaningId,
+    mode,
+    router,
+  ]);
 
-  const handleDeleteReport = async (reportId: string, lineId: string) => {
+  const handleDeleteReport = useCallback(async (reportId: string, lineId: string) => {
     setError(null);
     setIsIncidentSubmitting(true);
     try {
@@ -260,7 +269,7 @@ export default function InventoryReviewPanel({
     } finally {
       setIsIncidentSubmitting(false);
     }
-  };
+  }, [reports]);
 
   const handleSubmitReview = async () => {
     setError(null);
