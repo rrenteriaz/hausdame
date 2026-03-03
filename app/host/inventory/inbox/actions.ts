@@ -326,6 +326,33 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
   // Ordenar por fecha (más recientes primero)
   items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+  // Fallback: si area es null (p. ej. legacy sin inventoryLineId), buscar en InventoryLine por itemId+propertyId
+  const needArea = items.filter((i) => !i.area && i.propertyId);
+  if (needArea.length > 0) {
+    const uniquePairs = Array.from(
+      new Map(needArea.map((i) => [`${i.itemId}-${i.propertyId}`, { itemId: i.itemId, propertyId: i.propertyId! }])).values()
+    );
+    const fallbackLines = await prisma.inventoryLine.findMany({
+      where: {
+        tenantId,
+        isActive: true,
+        OR: uniquePairs.map((p) => ({ itemId: p.itemId, propertyId: p.propertyId })),
+      },
+      select: { itemId: true, propertyId: true, area: true },
+      orderBy: { area: "asc" },
+    });
+    const areaByKey = new Map<string, string>();
+    for (const line of fallbackLines) {
+      const key = `${line.itemId}-${line.propertyId}`;
+      if (!areaByKey.has(key)) areaByKey.set(key, line.area);
+    }
+    for (const item of items) {
+      if (!item.area && item.propertyId) {
+        item.area = areaByKey.get(`${item.itemId}-${item.propertyId}`) || null;
+      }
+    }
+  }
+
   return items;
 }
 
