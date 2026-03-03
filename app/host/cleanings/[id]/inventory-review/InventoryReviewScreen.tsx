@@ -449,6 +449,8 @@ export default function InventoryReviewScreen({
               ? () => handleDeleteReport(reports.get(selectedLineForIncident.id!)!.id!, selectedLineForIncident.id)
               : undefined
           }
+          isSubmitting={isPending}
+          submitError={error}
         />
       )}
 

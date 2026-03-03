@@ -58,6 +58,10 @@ interface InventoryIncidentModalProps {
   /** Segundo parámetro opcional: archivos de imagen para el reporte */
   onSubmit: (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => void;
   onDeleteReport?: () => void;
+  /** Muestra "Enviando..." y deshabilita el botón durante el submit */
+  isSubmitting?: boolean;
+  /** Error del último submit; se muestra dentro del modal */
+  submitError?: string | null;
 }
 
 const REASON_OPTIONS: { value: InventoryChangeReason; label: string }[] = [
@@ -94,6 +98,8 @@ export default function InventoryIncidentModal({
   onClose,
   onSubmit,
   onDeleteReport,
+  isSubmitting = false,
+  submitError = null,
 }: InventoryIncidentModalProps) {
   const [quantityAfter, setQuantityAfter] = useState(quantityBefore);
   const [selectedReason, setSelectedReason] = useState<InventoryChangeReason | null>(
@@ -484,10 +490,17 @@ export default function InventoryIncidentModal({
             </div>
           </div>
 
+          {/* Error del submit - visible dentro del modal */}
+          {submitError && (
+            <div className="flex-shrink-0 px-6 py-3 bg-red-50 border-t border-red-100">
+              <p className="text-sm text-red-700">{submitError}</p>
+            </div>
+          )}
+
           {/* Footer - fijo abajo, siempre visible */}
           <div className="flex-shrink-0 px-6 py-4 border-t border-neutral-200 bg-white flex items-center justify-between">
             <div>
-              {existingReport && onDeleteReport && (
+              {existingReport && onDeleteReport && !isSubmitting && (
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
@@ -501,17 +514,22 @@ export default function InventoryIncidentModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
+                disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={(e) => handleSubmit(e)}
-                disabled={!canSubmit}
-                className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSubmit(e);
+                }}
+                disabled={!canSubmit || isSubmitting}
+                className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation min-w-[100px]"
               >
-                {existingChange || existingReport ? "Guardar cambios" : "Enviar"}
+                {isSubmitting ? "Enviando..." : (existingChange || existingReport ? "Guardar cambios" : "Enviar")}
               </button>
             </div>
           </div>

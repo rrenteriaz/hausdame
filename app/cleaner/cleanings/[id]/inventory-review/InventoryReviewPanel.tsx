@@ -514,6 +514,7 @@ export default function InventoryReviewPanel({
                             report={report}
                             onReportClick={() => {
                               if (isSubmitted) return;
+                              setError(null);
                               setSelectedLineForIncident(line);
                               setShowIncidentModal(true);
                             }}
@@ -561,6 +562,8 @@ export default function InventoryReviewPanel({
                   handleDeleteReport(reports.get(selectedLineForIncident!.id)!.id, selectedLineForIncident.id)
               : undefined
           }
+          isSubmitting={isPending}
+          submitError={error}
         />
       )}
 
@@ -599,6 +602,7 @@ export default function InventoryReviewPanel({
             }}
             onReportClick={() => {
               setShowItemDetailModal(false);
+              setError(null);
               setSelectedLineForIncident(selectedLineForDetail);
               setShowIncidentModal(true);
               setSelectedLineForDetail(null);
