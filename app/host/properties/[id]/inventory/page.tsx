@@ -136,17 +136,19 @@ export default async function InventoryPage({
         },
         include: {
           createdBy: { select: { name: true, email: true } },
+          evidence: { include: { asset: { select: { publicUrl: true } } } },
         },
         orderBy: { createdAt: "desc" },
       })
     : [];
   const reportsByLineId = new Map<
     string,
-    { id: string; type: string; severity: string; description: string | null; status: string; createdAt: Date; createdBy: { name: string | null; email: string } | null }
+    { id: string; type: string; severity: string; description: string | null; status: string; createdAt: Date; createdBy: { name: string | null; email: string } | null; evidenceUrls: string[] }
   >();
   for (const r of reports) {
     const lineId = (r as any).inventoryLineId;
     if (lineId && !reportsByLineId.has(lineId)) {
+      const evidenceUrls = ((r as any).evidence ?? []).map((e: any) => e.asset?.publicUrl).filter(Boolean);
       reportsByLineId.set(lineId, {
         id: r.id,
         type: r.type,
@@ -155,6 +157,7 @@ export default async function InventoryPage({
         status: r.status,
         createdAt: r.createdAt,
         createdBy: r.createdBy,
+        evidenceUrls,
       });
     }
   }

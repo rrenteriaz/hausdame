@@ -8,6 +8,7 @@ import {
   createOrUpdateInventoryChange,
   createInventoryReport,
   deleteInventoryReport,
+  uploadInventoryReportEvidence,
 } from "@/app/host/inventory-review/actions";
 import { InventoryReviewStatus, InventoryChangeReason, InventoryReportType, InventoryReportSeverity } from "@prisma/client";
 import InventoryReviewItemRow from "./InventoryReviewItemRow";
@@ -124,7 +125,7 @@ export default function InventoryReviewScreen({
     }
   }, [review, inventoryLines]);
 
-  const handleIncidentSubmit = async (payload: InventoryIncidentPayload) => {
+  const handleIncidentSubmit = async (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => {
     if (!selectedLineForIncident) return;
     setError(null);
     const lineId = selectedLineForIncident.id;
@@ -199,6 +200,14 @@ export default function InventoryReviewScreen({
           const existingReport = reports.get(lineId);
           if (existingReport?.id) fd.set("reportId", existingReport.id);
           const reportResult = await createInventoryReport(fd);
+          if (reportImageFiles?.length) {
+            for (const file of reportImageFiles) {
+              const evFd = new FormData();
+              evFd.set("reportId", reportResult.id);
+              evFd.set("file", file);
+              await uploadInventoryReportEvidence(evFd);
+            }
+          }
           const newReports = new Map(reports);
           newReports.set(lineId, {
             id: reportResult.id,

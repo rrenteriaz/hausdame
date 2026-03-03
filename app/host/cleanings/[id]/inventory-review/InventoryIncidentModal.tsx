@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   InventoryChangeReason,
   InventoryReportType,
   InventoryReportSeverity,
 } from "@prisma/client";
 import { changeReasonLabel, reportTypeLabel, reportSeverityLabel } from "@/lib/inventory-i18n";
+import ImagePicker from "@/components/media/ImagePicker";
 import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 
 interface InventoryLine {
@@ -54,7 +56,8 @@ interface InventoryIncidentModalProps {
   existingChange?: InventoryReviewItemChange | null;
   existingReport?: InventoryReport | null;
   onClose: () => void;
-  onSubmit: (payload: InventoryIncidentPayload) => void;
+  /** Segundo parámetro opcional: archivos de imagen para el reporte */
+  onSubmit: (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => void;
   onDeleteReport?: () => void;
 }
 
@@ -107,6 +110,25 @@ export default function InventoryIncidentModal({
   );
   const [description, setDescription] = useState(existingReport?.description || "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [reportImages, setReportImages] = useState<Array<{ file: File; previewUrl: string }>>([]);
+
+  const MAX_REPORT_IMAGES = 5;
+
+  const addReportImage = useCallback((file: File, previewUrl: string) => {
+    setReportImages((prev) => {
+      if (prev.length >= MAX_REPORT_IMAGES) return prev;
+      return [...prev, { file, previewUrl }];
+    });
+  }, []);
+
+  const removeReportImage = useCallback((index: number) => {
+    setReportImages((prev) => {
+      const next = [...prev];
+      const removed = next.splice(index, 1)[0];
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -117,6 +139,7 @@ export default function InventoryIncidentModal({
       setSelectedType(existingReport?.type || null);
       setSelectedSeverity(existingReport?.severity || "INFO");
       setDescription(existingReport?.description || "");
+      setReportImages([]);
     }
   }, [isOpen, existingChange, existingReport, quantityBefore]);
 
@@ -187,7 +210,11 @@ export default function InventoryIncidentModal({
     }
     if (wantsToDeleteReport) payload.deleteReport = true;
 
-    onSubmit(payload);
+    const imageFiles = hasReport && reportImages.length > 0
+      ? reportImages.map(({ file }) => file)
+      : undefined;
+
+    onSubmit(payload, imageFiles);
   };
 
   return (
@@ -348,6 +375,55 @@ export default function InventoryIncidentModal({
                       ))}
                     </div>
                   </div>
+
+                  {/* Foto: destacada, antes de la descripción, indispensable para el Host */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Foto o imagen {reportImages.length > 0 && `(${reportImages.length}/${MAX_REPORT_IMAGES})`}
+                    </label>
+                    <div className="flex flex-wrap gap-3 items-start">
+                      {reportImages.map(({ previewUrl }, idx) => (
+                        <div
+                          key={idx}
+                          className="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50 flex-shrink-0"
+                        >
+                          <Image
+                            src={previewUrl}
+                            alt={`Evidencia ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeReportImage(idx)}
+                            className="absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black/80"
+                            aria-label="Quitar foto"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      {reportImages.length < MAX_REPORT_IMAGES && (
+                        <ImagePicker
+                          onSelect={(file, previewUrl) => addReportImage(file, previewUrl)}
+                          capture="environment"
+                          className="flex-1 min-w-[140px] sm:min-w-0 sm:w-16 sm:flex-initial w-full sm:h-16 h-24 rounded-lg border-2 border-dashed border-neutral-300 flex flex-col sm:flex-row items-center justify-center gap-2 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 transition-colors cursor-pointer py-4 sm:py-0"
+                        >
+                          <svg className="w-8 h-8 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 13v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7" />
+                          </svg>
+                          <span className="text-sm font-medium">Tomar foto o subir imagen</span>
+                        </ImagePicker>
+                      )}
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Indispensable para que el Host pueda evaluar el problema. Máx. {MAX_REPORT_IMAGES} imágenes.
+                    </p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Descripción (opcional)

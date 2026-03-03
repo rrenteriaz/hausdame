@@ -11,6 +11,7 @@ interface ReportForModal {
   status: string;
   createdAt: Date;
   createdBy: { name: string | null; email: string } | null;
+  evidenceUrls?: string[];
 }
 
 interface ViewInventoryReportModalProps {
@@ -73,6 +74,29 @@ export default function ViewInventoryReportModal({
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Descripción</p>
                   <p className="text-sm text-neutral-700">{report.description}</p>
+                </div>
+              )}
+              {report.evidenceUrls && report.evidenceUrls.length > 0 && (
+                <div>
+                  <p className="text-xs text-neutral-500 mb-2">Fotos de evidencia</p>
+                  <div className="flex flex-wrap gap-2">
+                    {report.evidenceUrls.map((url, idx) => (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-20 h-20 rounded-lg overflow-hidden border border-neutral-200 hover:opacity-90"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Evidencia ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
               <div>

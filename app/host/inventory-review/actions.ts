@@ -5,6 +5,8 @@ import prisma from "@/lib/prisma";
 import { requireHostUser, requireUser } from "@/lib/auth/requireUser";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { createId } from "@paralleldrive/cuid2";
+import storageProvider from "@/lib/storage";
 import {
   InventoryReviewStatus,
   InventoryChangeReason,
@@ -646,6 +648,112 @@ export async function deleteInventoryReport(
   }
 
   return { success: true };
+}
+
+const MAX_EVIDENCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_EVIDENCE_MIME = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic"];
+
+/**
+ * Sube una imagen como evidencia de un reporte de inventario.
+ * Crea Asset + InventoryEvidence. Soporta contexto cleaner y host.
+ */
+export async function uploadInventoryReportEvidence(formData: FormData) {
+  const isCleaner = formData.get("callerContext") === "cleaner";
+  let tenantId: string;
+  let createdByUserId: string | null = null;
+
+  if (isCleaner) {
+    const user = await requireUser();
+    createdByUserId = user.id;
+    const ctx = await getTenantIdForCleaner(formData, {
+      reportId: formData.get("reportId")?.toString() ?? undefined,
+    });
+    tenantId = ctx.tenantId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+    createdByUserId = user.id;
+  }
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  const reportId = formData.get("reportId")?.toString();
+  const file = formData.get("file") as File | null;
+  if (!reportId || !file) {
+    throw new Error("reportId y file son requeridos");
+  }
+
+  if (!ALLOWED_EVIDENCE_MIME.includes(file.type)) {
+    throw new Error("Tipo de archivo no permitido. Use JPG, PNG, WebP o HEIC.");
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  if (buffer.length > MAX_EVIDENCE_FILE_SIZE) {
+    throw new Error("El archivo es demasiado grande. Máximo 10MB.");
+  }
+
+  const report = await prisma.inventoryReport.findFirst({
+    where: { id: reportId, tenantId },
+    select: { id: true, reviewId: true },
+  });
+  if (!report) throw new Error("Reporte no encontrado");
+
+  const assetId = createId();
+  const ext = file.name.split(".").pop() || "jpg";
+  const now = new Date();
+  const storageKey = `tenants/${tenantId}/assets/${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${assetId}.${ext}`;
+  const bucket = "assets";
+
+  const { publicUrl } = await storageProvider.putPublicObject({
+    bucket,
+    key: storageKey,
+    contentType: file.type,
+    buffer,
+  });
+
+  await prisma.$transaction([
+    prisma.asset.create({
+      data: {
+        id: assetId,
+        tenantId,
+        type: "IMAGE",
+        provider: "SUPABASE",
+        variant: "ORIGINAL",
+        bucket,
+        key: storageKey,
+        publicUrl,
+        mimeType: file.type,
+        sizeBytes: buffer.length,
+        width: null,
+        height: null,
+        groupId: assetId,
+        uploadedAt: new Date(),
+        createdByUserId,
+      },
+    }),
+    prisma.inventoryEvidence.create({
+      data: {
+        tenantId,
+        reportId,
+        assetId,
+      },
+    }),
+  ]);
+
+  if (report.reviewId) {
+    const review = await prisma.inventoryReview.findFirst({
+      where: { id: report.reviewId, tenantId },
+      select: { cleaningId: true },
+    });
+    if (review) {
+      revalidatePath(`/host/cleanings/${review.cleaningId}`);
+      if (isCleaner) {
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+      }
+    }
+  }
+
+  return { assetId, url: publicUrl };
 }
 
 /**

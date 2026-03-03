@@ -25,6 +25,7 @@ export type ReportForLine = {
   status: string;
   createdAt: Date;
   createdBy: { name: string | null; email: string } | null;
+  evidenceUrls?: string[];
 };
 
 interface InventoryListProps {

@@ -81,20 +81,30 @@ export default function InventoryInboxItemCard({
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex items-start gap-4">
-        {/* Thumbnail */}
-        <div className="w-16 h-16 rounded-lg bg-neutral-100 flex-shrink-0 overflow-hidden">
-          {item.itemThumbnail ? (
-            <Image
-              src={item.itemThumbnail}
-              alt={item.itemName}
-              width={64}
-              height={64}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
-              Sin foto
-            </div>
+        {/* Móvil: Columna izquierda = thumbnail + Ver limpieza */}
+        <div className="flex flex-col items-center gap-2 flex-shrink-0 sm:gap-0 sm:items-stretch">
+          <div className="w-16 h-16 rounded-lg bg-neutral-100 flex-shrink-0 overflow-hidden">
+            {item.itemThumbnail ? (
+              <Image
+                src={item.itemThumbnail}
+                alt={item.itemName}
+                width={64}
+                height={64}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
+                Sin foto
+              </div>
+            )}
+          </div>
+          {item.cleaningId && (
+            <Link
+              href={`/host/cleanings/${item.cleaningId}?returnTo=${encodeURIComponent(inboxReturnUrl)}`}
+              className="sm:hidden text-xs font-medium text-neutral-700 hover:underline whitespace-nowrap py-1 -mx-1 px-1 rounded active:bg-neutral-100"
+            >
+              Ver limpieza
+            </Link>
           )}
         </div>
 
@@ -105,18 +115,21 @@ export default function InventoryInboxItemCard({
               <h3 className="font-medium text-neutral-900 truncate">
                 {item.itemName}
               </h3>
-              <p className="text-xs text-neutral-500 mt-0.5 space-x-1">
+              {/* Área + propiedad; "Ver limpieza" en desktop va aquí, en móvil va bajo la imagen */}
+              <p className="text-xs text-neutral-500 mt-0.5">
                 {item.area && (
-                  <span className="font-medium">Área: {item.area}</span>
+                  <>
+                    <span className="font-medium">Área: {item.area}</span>
+                    <span> · </span>
+                  </>
                 )}
-                {item.area && <span>·</span>}
                 <span>{item.property}</span>
                 {item.cleaningId && (
                   <>
-                    <span>·</span>
+                    <span className="hidden sm:inline"> · </span>
                     <Link
                       href={`/host/cleanings/${item.cleaningId}?returnTo=${encodeURIComponent(inboxReturnUrl)}`}
-                      className="text-neutral-700 font-medium hover:underline"
+                      className="hidden sm:inline text-neutral-700 font-medium hover:underline"
                     >
                       Ver limpieza
                     </Link>
@@ -124,8 +137,9 @@ export default function InventoryInboxItemCard({
                 )}
               </p>
             </div>
+            {/* Badge Cambio/Reporte: oculto en móvil, visible en sm+ */}
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              className={`hidden sm:inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
                 item.type === "REPORT" && item.severity === "URGENT"
                   ? "bg-red-100 text-red-700"
                   : "bg-neutral-100 text-neutral-700"
@@ -157,8 +171,9 @@ export default function InventoryInboxItemCard({
             </div>
           ) : (
             <div className="space-y-1 mb-3">
+              {/* Móvil: omitir Tipo (Otro). Solo severidad + descripción destacada */}
               {item.reportType && (
-                <p className="text-sm text-neutral-700">
+                <p className="hidden sm:block text-sm text-neutral-700">
                   <span className="font-medium">Tipo:</span>{" "}
                   {reportTypeLabel(item.reportType as InventoryReportType)}
                 </p>
@@ -172,8 +187,9 @@ export default function InventoryInboxItemCard({
                   {reportSeverityLabel(item.severity)}
                 </span>
               )}
+              {/* Descripción/daño: destacada en móvil */}
               {item.description && (
-                <p className="text-xs text-neutral-600 mt-1">{item.description}</p>
+                <p className="text-sm sm:text-xs font-semibold sm:font-normal text-neutral-900 sm:text-neutral-600 mt-1 sm:mt-1">{item.description}</p>
               )}
             </div>
           )}
