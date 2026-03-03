@@ -84,6 +84,7 @@ export default function InventoryReviewScreen({
   const [selectedLineForIncident, setSelectedLineForIncident] = useState<InventoryLine | null>(null);
   const [selectedLineForDetail, setSelectedLineForDetail] = useState<InventoryLine | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isIncidentSubmitting, setIsIncidentSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyChanges, setShowOnlyChanges] = useState(false);
 
@@ -128,124 +129,126 @@ export default function InventoryReviewScreen({
   const handleIncidentSubmit = async (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => {
     if (!selectedLineForIncident) return;
     setError(null);
+    setIsIncidentSubmitting(true);
     const lineId = selectedLineForIncident.id;
     const itemId = selectedLineForIncident.item.id;
 
-    startTransition(async () => {
-      try {
-        let effectiveReviewId = review?.id ?? "";
-        if (!review) {
-          const fd = new FormData();
-          fd.set("cleaningId", cleaningId);
-          const result = await createOrUpdateInventoryReview(fd);
-          effectiveReviewId = result.id;
-          setReview({ id: result.id, status: result.status as InventoryReviewStatus, itemChanges: [], reports: [] });
-        }
+    try {
+      let effectiveReviewId = review?.id ?? "";
+      if (!review) {
+        const fd = new FormData();
+        fd.set("cleaningId", cleaningId);
+        const result = await createOrUpdateInventoryReview(fd);
+        effectiveReviewId = result.id;
+        setReview({ id: result.id, status: result.status as InventoryReviewStatus, itemChanges: [], reports: [] });
+      }
 
-        if (payload.deleteReport) {
-          const existingReport = reports.get(lineId);
-          if (existingReport?.id) {
-            await deleteInventoryReport(existingReport.id);
-            const newReports = new Map(reports);
-            newReports.delete(lineId);
-            setReports(newReports);
-          }
-        }
-
-        if (payload.quantityChange) {
-          const { quantityAfter, reason, reasonOtherText, note } = payload.quantityChange;
-          const fd = new FormData();
-          fd.set("reviewId", effectiveReviewId);
-          fd.set("itemId", itemId);
-          fd.set("inventoryLineId", lineId);
-          fd.set("quantityAfter", quantityAfter.toString());
-          fd.set("reason", reason);
-          if (reasonOtherText) fd.set("reasonOtherText", reasonOtherText);
-          if (note) fd.set("note", note);
-          const changeResult = await createOrUpdateInventoryChange(fd);
-          const newQuantities = new Map(quantities);
-          newQuantities.set(lineId, quantityAfter);
-          setQuantities(newQuantities);
-          if ("deleted" in changeResult && changeResult.deleted) {
-            const newChanges = new Map(changes);
-            newChanges.delete(lineId);
-            setChanges(newChanges);
-          } else if ("id" in changeResult && changeResult.id) {
-            const newChanges = new Map(changes);
-            newChanges.set(lineId, {
-              id: changeResult.id,
-              itemId,
-              inventoryLineId: lineId,
-              quantityBefore: changeResult.quantityBefore,
-              quantityAfter: changeResult.quantityAfter,
-              reason: payload.quantityChange.reason,
-              reasonOtherText: payload.quantityChange.reasonOtherText,
-              note: payload.quantityChange.note,
-              status: "PENDING",
-            });
-            setChanges(newChanges);
-          }
-        }
-
-        if (payload.report) {
-          const { type, severity, description } = payload.report;
-          const fd = new FormData();
-          fd.set("reviewId", effectiveReviewId);
-          fd.set("cleaningId", cleaningId);
-          fd.set("itemId", itemId);
-          fd.set("inventoryLineId", lineId);
-          fd.set("type", type);
-          fd.set("severity", severity);
-          if (description) fd.set("description", description);
-          const existingReport = reports.get(lineId);
-          if (existingReport?.id) fd.set("reportId", existingReport.id);
-          const reportResult = await createInventoryReport(fd);
-          if (reportImageFiles?.length) {
-            for (const file of reportImageFiles) {
-              const evFd = new FormData();
-              evFd.set("reportId", reportResult.id);
-              evFd.set("file", file);
-              await uploadInventoryReportEvidence(evFd);
-            }
-          }
+      if (payload.deleteReport) {
+        const existingReport = reports.get(lineId);
+        if (existingReport?.id) {
+          await deleteInventoryReport(existingReport.id);
           const newReports = new Map(reports);
-          newReports.set(lineId, {
-            id: reportResult.id,
-            itemId,
-            inventoryLineId: lineId,
-            type,
-            severity,
-            description: payload.report.description,
-            status: reportResult.status,
-          });
+          newReports.delete(lineId);
           setReports(newReports);
         }
-
-        setShowIncidentModal(false);
-        setSelectedLineForIncident(null);
-      } catch (err: any) {
-        setError(err.message || "Error al guardar");
-        console.error("[InventoryReview] Error:", err);
       }
-    });
+
+      if (payload.quantityChange) {
+        const { quantityAfter, reason, reasonOtherText, note } = payload.quantityChange;
+        const fd = new FormData();
+        fd.set("reviewId", effectiveReviewId);
+        fd.set("itemId", itemId);
+        fd.set("inventoryLineId", lineId);
+        fd.set("quantityAfter", quantityAfter.toString());
+        fd.set("reason", reason);
+        if (reasonOtherText) fd.set("reasonOtherText", reasonOtherText);
+        if (note) fd.set("note", note);
+        const changeResult = await createOrUpdateInventoryChange(fd);
+        const newQuantities = new Map(quantities);
+        newQuantities.set(lineId, quantityAfter);
+        setQuantities(newQuantities);
+        if ("deleted" in changeResult && changeResult.deleted) {
+          const newChanges = new Map(changes);
+          newChanges.delete(lineId);
+          setChanges(newChanges);
+        } else if ("id" in changeResult && changeResult.id) {
+          const newChanges = new Map(changes);
+          newChanges.set(lineId, {
+            id: changeResult.id,
+            itemId,
+            inventoryLineId: lineId,
+            quantityBefore: changeResult.quantityBefore,
+            quantityAfter: changeResult.quantityAfter,
+            reason: payload.quantityChange.reason,
+            reasonOtherText: payload.quantityChange.reasonOtherText,
+            note: payload.quantityChange.note,
+            status: "PENDING",
+          });
+          setChanges(newChanges);
+        }
+      }
+
+      if (payload.report) {
+        const { type, severity, description } = payload.report;
+        const fd = new FormData();
+        fd.set("reviewId", effectiveReviewId);
+        fd.set("cleaningId", cleaningId);
+        fd.set("itemId", itemId);
+        fd.set("inventoryLineId", lineId);
+        fd.set("type", type);
+        fd.set("severity", severity);
+        if (description) fd.set("description", description);
+        const existingReport = reports.get(lineId);
+        if (existingReport?.id) fd.set("reportId", existingReport.id);
+        const reportResult = await createInventoryReport(fd);
+        if (reportImageFiles?.length) {
+          for (const file of reportImageFiles) {
+            const evFd = new FormData();
+            evFd.set("reportId", reportResult.id);
+            evFd.set("file", file);
+            await uploadInventoryReportEvidence(evFd);
+          }
+        }
+        const newReports = new Map(reports);
+        newReports.set(lineId, {
+          id: reportResult.id,
+          itemId,
+          inventoryLineId: lineId,
+          type,
+          severity,
+          description: payload.report.description,
+          status: reportResult.status,
+        });
+        setReports(newReports);
+      }
+
+      setShowIncidentModal(false);
+      setSelectedLineForIncident(null);
+    } catch (err: any) {
+      setError(err.message || "Error al guardar");
+      console.error("[InventoryReview] Error:", err);
+    } finally {
+      setIsIncidentSubmitting(false);
+    }
   };
 
   const handleDeleteReport = async (reportId: string, lineId: string) => {
     setError(null);
-    startTransition(async () => {
-      try {
-        await deleteInventoryReport(reportId);
+    setIsIncidentSubmitting(true);
+    try {
+      await deleteInventoryReport(reportId);
 
-        const newReports = new Map(reports);
-        newReports.delete(lineId);
-        setReports(newReports);
+      const newReports = new Map(reports);
+      newReports.delete(lineId);
+      setReports(newReports);
 
-        setShowIncidentModal(false);
-        setSelectedLineForIncident(null);
-      } catch (err: any) {
-        setError(err.message || "Error al eliminar el reporte");
-      }
-    });
+      setShowIncidentModal(false);
+      setSelectedLineForIncident(null);
+    } catch (err: any) {
+      setError(err.message || "Error al eliminar el reporte");
+    } finally {
+      setIsIncidentSubmitting(false);
+    }
   };
 
   const handleSubmitReview = async () => {
@@ -449,7 +452,7 @@ export default function InventoryReviewScreen({
               ? () => handleDeleteReport(reports.get(selectedLineForIncident.id!)!.id!, selectedLineForIncident.id)
               : undefined
           }
-          isSubmitting={isPending}
+          isSubmitting={isIncidentSubmitting}
           submitError={error}
         />
       )}
