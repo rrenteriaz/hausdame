@@ -128,6 +128,27 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
                         shortName: true,
                       },
                     },
+                    TeamMembership: {
+                      select: { User: { select: { name: true, email: true } } },
+                    },
+                    assignedMember: {
+                      select: {
+                        name: true,
+                        user: { select: { name: true, email: true } },
+                      },
+                    },
+                    assignedTo: { select: { name: true, email: true } },
+                    assignees: {
+                      take: 1,
+                      include: {
+                        member: {
+                          select: {
+                            name: true,
+                            user: { select: { name: true, email: true } },
+                          },
+                        },
+                      },
+                    },
                   },
                 },
                 reviewedBy: {
@@ -149,6 +170,9 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
                   take: 1,
                 },
               },
+            },
+            inventoryLine: {
+              select: { area: true },
             },
           },
           orderBy: { createdAt: "desc" },
@@ -216,6 +240,9 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
                 },
               },
             },
+            inventoryLine: {
+              select: { area: true },
+            },
             createdBy: {
               select: {
                 id: true,
@@ -242,13 +269,30 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
         "N/A",
       propertyId: change.review?.cleaning?.propertyId || null,
       cleaningId: change.review?.cleaningId || null,
+      area: change.inventoryLine?.area || null,
       quantityBefore: change.quantityBefore,
       quantityAfter: change.quantityAfter,
       reason: change.reason,
       reasonOtherText: change.reasonOtherText,
       note: change.note,
       status: change.status,
-      createdBy: change.review?.reviewedBy?.name || "Cleaner",
+      createdBy: (() => {
+        if (change.review?.reviewedBy?.name) return change.review.reviewedBy!.name!;
+        if (change.review?.reviewedBy?.email) return change.review.reviewedBy!.email!;
+        const c = change.review?.cleaning;
+        if (c?.TeamMembership?.User?.name) return c.TeamMembership.User.name;
+        if (c?.TeamMembership?.User?.email) return c.TeamMembership.User.email;
+        if (c?.assignedMember?.user?.name) return c.assignedMember.user.name;
+        if (c?.assignedMember?.user?.email) return c.assignedMember.user.email;
+        if (c?.assignedMember?.name) return c.assignedMember.name;
+        if (c?.assignedTo?.name) return c.assignedTo.name;
+        if (c?.assignedTo?.email) return c.assignedTo.email;
+        const assignee = c?.assignees?.[0]?.member;
+        if (assignee?.user?.name) return assignee.user.name;
+        if (assignee?.user?.email) return assignee.user.email;
+        if (assignee?.name) return assignee.name;
+        return "Cleaner";
+      })(),
       createdAt: change.createdAt,
     })),
     ...reports.map((report) => ({
@@ -266,12 +310,14 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
       propertyId:
         report.review?.propertyId || report.cleaning?.propertyId || null,
       cleaningId: report.cleaningId || report.review?.cleaningId || null,
+      area: report.inventoryLine?.area || null,
       reportType: report.type,
       severity: report.severity,
       description: report.description,
       status: report.status,
       managerResolution: report.managerResolution,
-      createdBy: report.createdBy?.name || "Cleaner",
+      createdBy:
+        report.createdBy?.name || report.createdBy?.email || "Cleaner",
       createdAt: report.createdAt,
       resolvedAt: report.resolvedAt,
     })),

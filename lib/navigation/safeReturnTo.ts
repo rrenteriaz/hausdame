@@ -34,6 +34,7 @@ export function safeReturnTo(
     "/host/workgroups",
     "/host/cleanings",
     "/host/reservations",
+    "/host/inventory",
   ];
 
   // Validar que la ruta pertenece a un prefijo permitido

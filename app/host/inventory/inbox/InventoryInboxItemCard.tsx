@@ -19,6 +19,7 @@ interface InboxItem {
   property: string;
   propertyId: string | null;
   cleaningId: string | null;
+  area: string | null;
   createdAt: Date;
   createdBy: string;
   // Para cambios
@@ -38,6 +39,7 @@ interface InboxItem {
 
 interface InventoryInboxItemCardProps {
   item: InboxItem;
+  inboxReturnUrl: string;
   onApplyChange: (changeId: string) => void;
   onRejectChange: (changeId: string) => void;
   onResolveReport: (report: InboxItem) => void;
@@ -46,6 +48,7 @@ interface InventoryInboxItemCardProps {
 
 export default function InventoryInboxItemCard({
   item,
+  inboxReturnUrl,
   onApplyChange,
   onRejectChange,
   onResolveReport,
@@ -102,14 +105,18 @@ export default function InventoryInboxItemCard({
               <h3 className="font-medium text-neutral-900 truncate">
                 {item.itemName}
               </h3>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                {item.property}
+              <p className="text-xs text-neutral-500 mt-0.5 space-x-1">
+                {item.area && (
+                  <span className="font-medium">Área: {item.area}</span>
+                )}
+                {item.area && <span>·</span>}
+                <span>{item.property}</span>
                 {item.cleaningId && (
                   <>
-                    {" · "}
+                    <span>·</span>
                     <Link
-                      href={`/host/cleanings/${item.cleaningId}`}
-                      className="hover:underline"
+                      href={`/host/cleanings/${item.cleaningId}?returnTo=${encodeURIComponent(inboxReturnUrl)}`}
+                      className="text-neutral-700 font-medium hover:underline"
                     >
                       Ver limpieza
                     </Link>

@@ -13,19 +13,32 @@ import { getCategoryLabel, getVariantLabel } from "@/lib/inventory-suggestions";
 import EditInventoryItemButton from "./EditInventoryItemButton";
 import DeleteInventoryItemButton from "./DeleteInventoryItemButton";
 import ViewInventoryItemModal from "./ViewInventoryItemModal";
+import ViewInventoryReportModal from "./ViewInventoryReportModal";
 import AddInventoryItemModal from "./AddInventoryItemModal";
 import AddItemPhotosModal from "./AddItemPhotosModal";
+
+export type ReportForLine = {
+  id: string;
+  type: string;
+  severity: string;
+  description: string | null;
+  status: string;
+  createdAt: Date;
+  createdBy: { name: string | null; email: string } | null;
+};
 
 interface InventoryListProps {
   lines: InventoryLineWithItem[];
   propertyId: string;
   itemThumbsMap: Map<string, Array<string | null>>;
+  reportsByLineId?: Map<string, ReportForLine>;
 }
 
 export default function InventoryList({
   lines,
   propertyId,
   itemThumbsMap,
+  reportsByLineId = new Map(),
 }: InventoryListProps) {
   const [selectedLine, setSelectedLine] = useState<InventoryLineWithItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,6 +48,9 @@ export default function InventoryList({
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
   const [photosItemId, setPhotosItemId] = useState<string | null>(null);
   const [photosItemName, setPhotosItemName] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<ReportForLine | null>(null);
+  const [selectedReportItemName, setSelectedReportItemName] = useState<string>("");
 
   const handleLineClick = (line: InventoryLineWithItem, e: React.MouseEvent) => {
     // Si el click viene de un botón (editar/eliminar/fotos), no abrir el modal
@@ -110,7 +126,7 @@ export default function InventoryList({
                     </svg>
                   </button>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <p className="text-xs text-neutral-500">
                     Cantidad: {line.expectedQty}
                   </p>
@@ -118,6 +134,23 @@ export default function InventoryList({
                   <p className="text-xs text-neutral-500">
                     {getCategoryLabel(line.item.category)}
                   </p>
+                  {reportsByLineId.has(line.id) && (
+                    <>
+                      <span className="text-xs text-neutral-400">·</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedReport(reportsByLineId.get(line.id)!);
+                          setSelectedReportItemName(line.item.name);
+                          setReportModalOpen(true);
+                        }}
+                        className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium hover:bg-amber-200 transition"
+                      >
+                        Incidencia reportada
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -196,6 +229,17 @@ export default function InventoryList({
           }}
         />
       )}
+
+      <ViewInventoryReportModal
+        isOpen={reportModalOpen}
+        onClose={() => {
+          setReportModalOpen(false);
+          setSelectedReport(null);
+          setSelectedReportItemName("");
+        }}
+        report={selectedReport}
+        itemName={selectedReportItemName}
+      />
     </>
   );
 }

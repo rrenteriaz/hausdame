@@ -1,6 +1,7 @@
 // app/host/inventory/inbox/page.tsx
 import { notFound } from "next/navigation";
 import { requireHostUser } from "@/lib/auth/requireUser";
+import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import {
   getInventoryInboxItems,
   getInventoryInboxSummary,
@@ -18,6 +19,7 @@ export default async function InventoryInboxPage({
     type?: string;
     severity?: string;
     dateRange?: string;
+    returnTo?: string;
   }>;
 }) {
   const user = await requireHostUser();
@@ -38,6 +40,18 @@ export default async function InventoryInboxPage({
     | "30d"
     | "all"
     | undefined;
+  const returnToInput = resolvedSearchParams.returnTo;
+  const returnTo = returnToInput ? safeReturnTo(returnToInput) : null;
+
+  // URL de retorno para enlaces a detalle de limpieza (preservar filtros y returnTo)
+  const inboxParams = new URLSearchParams();
+  if (tab && tab !== "pending") inboxParams.set("tab", tab);
+  if (propertyId) inboxParams.set("propertyId", propertyId);
+  if (type) inboxParams.set("type", type);
+  if (severity) inboxParams.set("severity", severity);
+  if (dateRange && dateRange !== "all") inboxParams.set("dateRange", dateRange);
+  if (returnToInput) inboxParams.set("returnTo", returnToInput);
+  const inboxReturnUrl = `/host/inventory/inbox${inboxParams.toString() ? `?${inboxParams.toString()}` : ""}`;
 
   const [summary, items, properties] = await Promise.all([
     getInventoryInboxSummary(),
@@ -63,12 +77,15 @@ export default async function InventoryInboxPage({
     <Page
       title="Inbox de inventario"
       subtitle="Revisa y resuelve cambios y reportes de inventario"
+      showBack={!!returnTo}
+      backHref={returnTo || "/host/hoy"}
     >
       <InventoryInboxClient
         initialItems={items}
         summary={summary}
         properties={properties}
         initialTab={tab}
+        inboxReturnUrl={inboxReturnUrl}
         initialFilters={{
           propertyId,
           type,

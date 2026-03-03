@@ -27,6 +27,7 @@ export interface InboxItem {
   property: string;
   propertyId: string | null;
   cleaningId: string | null;
+  area: string | null;
   createdAt: Date;
   createdBy: string;
   // Para cambios
@@ -49,6 +50,7 @@ interface InventoryInboxClientProps {
   summary: { totalPendings: number; urgentReports: number; totalResolved: number };
   properties: Array<{ id: string; name: string; shortName: string | null }>;
   initialTab: string;
+  inboxReturnUrl: string;
   initialFilters: {
     propertyId?: string;
     type?: "CHANGE" | "REPORT";
@@ -62,6 +64,7 @@ export default function InventoryInboxClient({
   summary,
   properties,
   initialTab,
+  inboxReturnUrl,
   initialFilters,
 }: InventoryInboxClientProps) {
   const router = useRouter();
@@ -458,6 +461,7 @@ export default function InventoryInboxClient({
             <InventoryInboxItemCard
               key={`${item.type}-${item.id}`}
               item={item}
+              inboxReturnUrl={inboxReturnUrl}
               onApplyChange={handleApplyChange}
               onRejectChange={handleRejectChange}
               onResolveReport={(report) => {

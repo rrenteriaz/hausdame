@@ -123,6 +123,42 @@ export default async function InventoryPage({
   const itemIds = [...new Set(inventoryLines.map((line) => line.item.id))];
   const itemThumbsMap = await getInventoryItemImageThumbsBatch(itemIds);
 
+  // Obtener reportes de daño/falla para las líneas mostradas (para etiqueta en inventario)
+  const lineIds = inventoryLines.map((l) => l.id);
+  const reports = lineIds.length > 0
+    ? await (prisma as any).inventoryReport.findMany({
+        where: {
+          tenantId,
+          inventoryLineId: { in: lineIds },
+          type: {
+            in: ["DAMAGED_WORKS", "DAMAGED_NOT_WORKING", "MISSING_PHYSICAL", "REPLACED_DIFFERENT", "DETAILS_MISMATCH", "OTHER"],
+          },
+        },
+        include: {
+          createdBy: { select: { name: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+  const reportsByLineId = new Map<
+    string,
+    { id: string; type: string; severity: string; description: string | null; status: string; createdAt: Date; createdBy: { name: string | null; email: string } | null }
+  >();
+  for (const r of reports) {
+    const lineId = (r as any).inventoryLineId;
+    if (lineId && !reportsByLineId.has(lineId)) {
+      reportsByLineId.set(lineId, {
+        id: r.id,
+        type: r.type,
+        severity: r.severity,
+        description: r.description,
+        status: r.status,
+        createdAt: r.createdAt,
+        createdBy: r.createdBy,
+      });
+    }
+  }
+
   // Validar returnTo y usar fallback seguro
   // MUST: Fallback siempre a /host/properties (lista), nunca a la misma URL del detalle
   const returnTo = safeReturnTo(
@@ -286,6 +322,7 @@ export default async function InventoryPage({
                       lines={groupedByArea[area]}
                       propertyId={property.id}
                       itemThumbsMap={itemThumbsMap}
+                      reportsByLineId={reportsByLineId}
                     />
                   </CollapsibleSection>
                 ))}
