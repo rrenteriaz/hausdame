@@ -407,7 +407,6 @@ export default function InventoryIncidentModal({
                       {reportImages.length < MAX_REPORT_IMAGES && (
                         <ImagePicker
                           onSelect={(file, previewUrl) => addReportImage(file, previewUrl)}
-                          capture="environment"
                           className="flex-1 min-w-[140px] sm:min-w-0 sm:w-16 sm:flex-initial w-full sm:h-16 h-24 rounded-lg border-2 border-dashed border-neutral-300 flex flex-col sm:flex-row items-center justify-center gap-2 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 transition-colors cursor-pointer py-4 sm:py-0"
                         >
                           <svg className="w-8 h-8 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
