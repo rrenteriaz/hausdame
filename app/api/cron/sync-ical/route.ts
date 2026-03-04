@@ -56,13 +56,25 @@ export async function GET(req: NextRequest) {
   let acquired = false;
   acquired = await tryAcquireAdvisoryLock();
   if (!acquired) {
-    console.log("[cron][ical] Skipped: lock already held by another run");
+    console.log("[cron][ical] skipped", {
+      ts: new Date().toISOString(),
+      reason: "lock_held",
+    });
     return NextResponse.json({
       ok: true,
       skipped: true,
       reason: "lock_held",
     });
   }
+
+  const startAt = Date.now();
+  console.log("[cron][ical] ----------------");
+  console.log("[cron][ical] start", {
+    ts: new Date().toISOString(),
+    batchSize: BATCH_SIZE,
+    lockId: LOCK_ID,
+    env: process.env.NODE_ENV ?? "development",
+  });
 
   try {
     const propertiesWithIcal = await prisma.property.findMany({
@@ -76,6 +88,16 @@ export async function GET(req: NextRequest) {
     const tenantIds = propertiesWithIcal.map((p) => p.tenantId);
 
     if (tenantIds.length === 0) {
+      const durationMs = Date.now() - startAt;
+      console.log("[cron][ical] done", {
+        tenantsProcessed: 0,
+        propertiesSynced: 0,
+        skippedLocked: 0,
+        skippedNotStale: 0,
+        errors: 0,
+        durationMs,
+      });
+      console.log("[cron][ical] ----------------");
       return NextResponse.json({
         ok: true,
         tenantsProcessed: 0,
@@ -109,6 +131,16 @@ export async function GET(req: NextRequest) {
       errors += result.errors;
     }
 
+    const durationMs = Date.now() - startAt;
+    console.log("[cron][ical] done", {
+      tenantsProcessed: tenants.length,
+      propertiesSynced,
+      skippedLocked,
+      skippedNotStale,
+      errors,
+      durationMs,
+    });
+    console.log("[cron][ical] ----------------");
     return NextResponse.json({
       ok: true,
       tenantsProcessed: tenants.length,
