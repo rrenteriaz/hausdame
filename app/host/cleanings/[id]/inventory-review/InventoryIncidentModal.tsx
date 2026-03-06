@@ -62,8 +62,8 @@ interface InventoryIncidentModalProps {
   existingChange?: InventoryReviewItemChange | null;
   existingReport?: InventoryReport | null;
   onClose: () => void;
-  /** Segundo parámetro opcional: archivos de imagen para el reporte */
-  onSubmit: (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => void;
+  /** Segundo parámetro opcional: archivos de imagen para el reporte. Tercero: IDs de evidencia persistida a eliminar. */
+  onSubmit: (payload: InventoryIncidentPayload, reportImageFiles?: File[], removedEvidenceIds?: string[]) => void;
   onDeleteReport?: () => void;
   /** Muestra "Enviando..." y deshabilita el botón durante el submit */
   isSubmitting?: boolean;
@@ -124,6 +124,7 @@ export default function InventoryIncidentModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPhotoChoiceModal, setShowPhotoChoiceModal] = useState(false);
   const [reportImages, setReportImages] = useState<Array<{ file: File; previewUrl: string }>>([]);
+  const [removedExistingImageIds, setRemovedExistingImageIds] = useState<string[]>([]);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,7 +135,8 @@ export default function InventoryIncidentModal({
       id: e.id,
       url: e.asset!.publicUrl!,
     })) ?? [];
-  const maxNewImages = Math.max(0, MAX_REPORT_IMAGES - existingImages.length);
+  const visibleExistingImages = existingImages.filter((e) => !removedExistingImageIds.includes(e.id));
+  const maxNewImages = Math.max(0, MAX_REPORT_IMAGES - visibleExistingImages.length);
 
   const addReportImage = useCallback((file: File, previewUrl: string) => {
     setReportImages((prev) => {
@@ -150,6 +152,10 @@ export default function InventoryIncidentModal({
       if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
       return next;
     });
+  }, []);
+
+  const removeExistingImage = useCallback((evidenceId: string) => {
+    setRemovedExistingImageIds((prev) => (prev.includes(evidenceId) ? prev : [...prev, evidenceId]));
   }, []);
 
   const handlePhotoFileSelect = useCallback(
@@ -183,6 +189,7 @@ export default function InventoryIncidentModal({
       setSelectedSeverity(existingReport?.severity || "INFO");
       setDescription(existingReport?.description || "");
       setReportImages([]);
+      setRemovedExistingImageIds([]);
       setShowPhotoChoiceModal(false);
     }
   }, [isOpen, existingChange, existingReport, quantityBefore]);
@@ -257,8 +264,9 @@ export default function InventoryIncidentModal({
     const imageFiles = hasReport && reportImages.length > 0
       ? reportImages.map(({ file }) => file)
       : undefined;
+    const removedIds = hasReport && removedExistingImageIds.length > 0 ? removedExistingImageIds : undefined;
 
-    onSubmit(payload, imageFiles);
+    onSubmit(payload, imageFiles, removedIds);
   };
 
   const modalContent = (
@@ -429,15 +437,15 @@ export default function InventoryIncidentModal({
                   {/* Foto: destacada, antes de la descripción, indispensable para el Host */}
                   <div>
                     {(() => {
-                      const totalImages = existingImages.length + reportImages.length;
+                      const totalImages = visibleExistingImages.length + reportImages.length;
                       return (
                         <>
                           <label className="block text-sm font-medium text-neutral-700 mb-2">
                             Foto o imagen {totalImages > 0 && `(${totalImages}/${MAX_REPORT_IMAGES})`}
                           </label>
                           <div className="flex flex-wrap gap-3 items-start">
-                            {/* Imágenes ya guardadas (solo visualización) */}
-                            {existingImages.map(({ id, url }) => (
+                            {/* Imágenes ya guardadas (con botón eliminar) */}
+                            {visibleExistingImages.map(({ id, url }) => (
                               <div
                                 key={id}
                                 className="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50 flex-shrink-0"
@@ -448,6 +456,14 @@ export default function InventoryIncidentModal({
                                   alt="Evidencia guardada"
                                   className="w-full h-full object-cover"
                                 />
+                                <button
+                                  type="button"
+                                  onClick={() => removeExistingImage(id)}
+                                  className="absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black/80"
+                                  aria-label="Quitar foto"
+                                >
+                                  ×
+                                </button>
                               </div>
                             ))}
                             {/* Imágenes nuevas locales (con botón quitar) */}

@@ -22,7 +22,7 @@ const HOST_ROLES = ["OWNER", "ADMIN", "MANAGER", "AUXILIAR"];
 /** Obtiene tenantId para contexto cleaner: valida acceso y retorna tenantId. */
 async function getTenantIdForCleaner(
   formData: FormData,
-  options?: { reviewId?: string; cleaningId?: string; reportId?: string }
+  options?: { reviewId?: string; cleaningId?: string; reportId?: string; evidenceId?: string }
 ): Promise<{ tenantId: string; cleaningId: string }> {
   const user = await requireUser();
   if (HOST_ROLES.includes(user.role)) redirect("/host");
@@ -33,7 +33,22 @@ async function getTenantIdForCleaner(
     null;
   const reviewId = formData.get("reviewId")?.toString() || options?.reviewId;
   const reportId = options?.reportId;
+  const evidenceId = options?.evidenceId;
 
+  if (!cleaningId && evidenceId) {
+    const evidence = await prisma.inventoryEvidence.findFirst({
+      where: { id: evidenceId, reportId: { not: null } },
+      include: { report: { select: { cleaningId: true, reviewId: true } } },
+    });
+    cleaningId = evidence?.report?.cleaningId ?? null;
+    if (!cleaningId && evidence?.report?.reviewId) {
+      const review = await prisma.inventoryReview.findFirst({
+        where: { id: evidence.report.reviewId },
+        select: { cleaningId: true },
+      });
+      cleaningId = review?.cleaningId ?? null;
+    }
+  }
   if (!cleaningId && reviewId) {
     const review = await prisma.inventoryReview.findFirst({
       where: { id: reviewId },
@@ -757,6 +772,70 @@ export async function uploadInventoryReportEvidence(formData: FormData) {
   }
 
   return { assetId, url: publicUrl };
+}
+
+/**
+ * Elimina una evidencia (imagen) persistida de un reporte de inventario.
+ * Borra InventoryEvidence, Asset asociado y archivo en Storage (si existe).
+ * Soporta contexto cleaner y host.
+ */
+export async function deleteInventoryReportEvidence(evidenceId: string, options?: { callerContext?: "host" | "cleaner" }) {
+  const isCleaner = options?.callerContext === "cleaner";
+  let tenantId: string;
+
+  if (isCleaner) {
+    const ctx = await getTenantIdForCleaner(new FormData(), { evidenceId });
+    tenantId = ctx.tenantId;
+  } else {
+    const user = await requireHostUser();
+    tenantId = user.tenantId ?? "";
+  }
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  const evidence = await prisma.inventoryEvidence.findFirst({
+    where: { id: evidenceId, tenantId, reportId: { not: null } },
+    include: {
+      asset: { select: { id: true, bucket: true, key: true } },
+      report: { select: { id: true, reviewId: true } },
+    },
+  });
+
+  if (!evidence || !evidence.reportId) {
+    throw new Error("Evidencia no encontrada o no pertenece a un reporte");
+  }
+
+  const assetId = evidence.assetId;
+  const bucket = evidence.asset?.bucket;
+  const key = evidence.asset?.key;
+
+  await prisma.$transaction([
+    prisma.inventoryEvidence.delete({ where: { id: evidenceId, tenantId } }),
+    prisma.asset.delete({ where: { id: assetId, tenantId } }),
+  ]);
+
+  if (bucket && key) {
+    try {
+      await storageProvider.deleteObject({ bucket, key });
+    } catch (err) {
+      console.warn("[deleteInventoryReportEvidence] No se pudo borrar archivo en Storage:", err);
+    }
+  }
+
+  if (evidence.report?.reviewId) {
+    const review = await prisma.inventoryReview.findFirst({
+      where: { id: evidence.report.reviewId, tenantId },
+      select: { cleaningId: true },
+    });
+    if (review) {
+      revalidatePath(`/host/cleanings/${review.cleaningId}`);
+      if (isCleaner) {
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}`);
+        revalidatePath(`/cleaner/cleanings/${review.cleaningId}/inventory-review`);
+      }
+    }
+  }
+
+  return { success: true };
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   createOrUpdateInventoryChange,
   createInventoryReport,
   deleteInventoryReport,
+  deleteInventoryReportEvidence,
   uploadInventoryReportEvidence,
 } from "@/app/host/inventory-review/actions";
 import { InventoryReviewStatus, InventoryChangeReason, InventoryReportType, InventoryReportSeverity } from "@prisma/client";
@@ -132,7 +133,7 @@ export default function InventoryReviewPanel({
     }
   }, [review, inventoryLines]);
 
-  const handleIncidentSubmit = useCallback(async (payload: InventoryIncidentPayload, reportImageFiles?: File[]) => {
+  const handleIncidentSubmit = useCallback(async (payload: InventoryIncidentPayload, reportImageFiles?: File[], removedEvidenceIds?: string[]) => {
     if (!selectedLineForIncident) return;
     setError(null);
     setIsIncidentSubmitting(true);
@@ -140,6 +141,13 @@ export default function InventoryReviewPanel({
     const itemId = selectedLineForIncident.item.id;
 
     try {
+      // Eliminar evidencias marcadas para borrar (antes de crear/actualizar reporte)
+      if (removedEvidenceIds?.length) {
+        for (const evidenceId of removedEvidenceIds) {
+          await deleteInventoryReportEvidence(evidenceId, { callerContext: "cleaner" });
+        }
+      }
+
       let effectiveReviewId = review?.id ?? "";
       if (!review) {
         const fd = new FormData();
