@@ -128,6 +128,26 @@ export default function ResolveReportModal({
               <p className="text-sm text-neutral-600">{report.description}</p>
             </div>
           )}
+          
+          {report.evidence && report.evidence.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-neutral-700 mb-2">
+                Evidencia ({report.evidence.length})
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x scrollbar-hide">
+                {report.evidence.map((ev) => (
+                  <div key={ev.id} className="relative w-32 h-32 flex-shrink-0 snap-start">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ev.url}
+                      alt="Evidencia"
+                      className="w-full h-full object-cover rounded-lg border border-neutral-200 shadow-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <p className="text-sm font-medium text-neutral-700 mb-3">

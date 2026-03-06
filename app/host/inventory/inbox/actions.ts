@@ -250,6 +250,18 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
                 email: true,
               },
             },
+            evidence: {
+              select: {
+                id: true,
+                asset: {
+                  select: {
+                    id: true,
+                    publicUrl: true,
+                    variant: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: { createdAt: "desc" },
         })
@@ -300,7 +312,10 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
       id: report.id,
       itemId: report.itemId,
       itemName: report.item.name,
-      itemThumbnail: report.item.inventoryItemAssets[0]?.asset?.publicUrl || null,
+      itemThumbnail: 
+        report.evidence[0]?.asset?.publicUrl || 
+        report.item.inventoryItemAssets[0]?.asset?.publicUrl || 
+        null,
       property:
         report.review?.property?.shortName ||
         report.review?.property?.name ||
@@ -320,6 +335,11 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
         report.createdBy?.name || report.createdBy?.email || "Cleaner",
       createdAt: report.createdAt,
       resolvedAt: report.resolvedAt,
+      evidence: report.evidence.map((ev) => ({
+        id: ev.id,
+        url: ev.asset.publicUrl,
+        variant: ev.asset.variant,
+      })),
     })),
   ];
 

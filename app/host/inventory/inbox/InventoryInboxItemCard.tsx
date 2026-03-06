@@ -35,6 +35,11 @@ interface InboxItem {
   description?: string | null;
   managerResolution?: any;
   resolvedAt?: Date | null;
+  evidence?: Array<{
+    id: string;
+    url: string;
+    variant?: string | null;
+  }>;
 }
 
 interface InventoryInboxItemCardProps {

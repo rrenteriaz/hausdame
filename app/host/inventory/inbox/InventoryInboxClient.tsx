@@ -43,6 +43,11 @@ export interface InboxItem {
   description?: string | null;
   managerResolution?: InventoryReportResolution | null;
   resolvedAt?: Date | null;
+  evidence?: Array<{
+    id: string;
+    url: string;
+    variant?: string | null;
+  }>;
 }
 
 interface InventoryInboxClientProps {
