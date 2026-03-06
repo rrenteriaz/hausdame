@@ -90,7 +90,7 @@ export default function InventoryReviewItemRow({
         >
           {/* Fila 1: Título + área (móvil) | solo título (desktop, área va en columna derecha) */}
           <div className="flex items-center justify-between gap-2 mb-0.5 sm:mb-1">
-            <h3 className="text-base sm:text-lg font-semibold text-neutral-900 line-clamp-1 flex-1 min-w-0">{line.item.name}</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-neutral-900 line-clamp-1 flex-1 min-w-0">{line.item?.name || "Item no encontrado"}</h3>
             <span className="text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded shrink-0 sm:hidden">
               {line.area}
             </span>

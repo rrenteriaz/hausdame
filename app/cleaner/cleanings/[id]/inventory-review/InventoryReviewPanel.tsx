@@ -66,6 +66,11 @@ export default function InventoryReviewPanel({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [review, setReview] = useState<InventoryReview | null>(initialReview);
+
+  // Sincronizar estado local cuando las props iniciales cambian tras revalidatePath
+  useEffect(() => {
+    setReview(initialReview);
+  }, [initialReview]);
   const [changes, setChanges] = useState<Map<string, InventoryReviewItemChange>>(new Map());
   const [reports, setReports] = useState<Map<string, InventoryReport>>(new Map());
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
@@ -93,7 +98,7 @@ export default function InventoryReviewPanel({
         const lineId =
           change.inventoryLineId && inventoryLines.some((l) => l.id === change.inventoryLineId)
             ? change.inventoryLineId
-            : inventoryLines.find((l) => l.item.id === change.itemId)?.id;
+            : inventoryLines.find((l) => l.item?.id === change.itemId)?.id;
         if (lineId) {
           changesMap.set(lineId, change);
           initialQuantities.set(lineId, change.quantityAfter);
@@ -106,7 +111,7 @@ export default function InventoryReviewPanel({
         const lineId =
           report.inventoryLineId && inventoryLines.some((l) => l.id === report.inventoryLineId)
             ? report.inventoryLineId
-            : inventoryLines.find((l) => l.item.id === report.itemId)?.id;
+            : inventoryLines.find((l) => l.item?.id === report.itemId)?.id;
         if (lineId) {
           reportsMap.set(lineId, {
             id: report.id,
@@ -130,7 +135,7 @@ export default function InventoryReviewPanel({
     setError(null);
     setIsIncidentSubmitting(true);
     const lineId = selectedLineForIncident.id;
-    const itemId = selectedLineForIncident.item.id;
+    const itemId = selectedLineForIncident.item?.id || "";
 
     try {
       // Eliminar evidencias marcadas para borrar (antes de crear/actualizar reporte)

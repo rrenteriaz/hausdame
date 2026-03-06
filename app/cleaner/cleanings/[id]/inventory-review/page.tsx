@@ -52,9 +52,9 @@ export default async function CleanerInventoryReviewPage({
         variantKey: line.variantKey,
         variantValue: line.variantValue,
         item: {
-          id: line.item.id,
-          name: line.item.name,
-          category: line.item.category,
+          id: line.item?.id || "",
+          name: line.item?.name || "Item no encontrado",
+          category: line.item?.category || "UNSPECIFIED",
         },
         allLines: line.allLines || [],
       }))}

@@ -158,10 +158,9 @@ export default function InventoryItemDetailModal({
         <div className="p-4 space-y-4">
           {/* Nombre y categoría */}
           <div>
-            <h3 className="text-xl font-semibold text-neutral-900 mb-1">
-              {line.item.name}
+              {line.item?.name || "Item no encontrado"}
             </h3>
-            <p className="text-sm text-neutral-500">{itemCategoryLabel(line.item.category)}</p>
+            <p className="text-sm text-neutral-500">{itemCategoryLabel(line.item?.category || "UNSPECIFIED")}</p>
           </div>
 
           {/* Variante */}

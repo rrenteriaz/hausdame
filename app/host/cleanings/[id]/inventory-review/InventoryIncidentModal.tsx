@@ -279,7 +279,7 @@ export default function InventoryIncidentModal({
             <h2 className="text-lg font-semibold text-neutral-900">
               {existingChange || existingReport ? "Ver / Editar incidencia" : "Reportar incidencia"}
             </h2>
-            <p className="text-sm text-neutral-600 mt-1">{line.item.name}</p>
+            <p className="text-sm text-neutral-600 mt-1">{line.item?.name || "Item no encontrado"}</p>
             {(existingChange || existingReport) && (
               <p className="text-xs text-neutral-500 mt-1">
                 {line.area && `Área: ${line.area}`}
@@ -580,7 +580,7 @@ export default function InventoryIncidentModal({
 
       <ConfirmDeleteReportModal
         isOpen={showDeleteConfirm}
-        itemName={line.item.name}
+        itemName={line.item?.name || "item"}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={() => {
           if (onDeleteReport) onDeleteReport();

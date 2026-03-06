@@ -12,6 +12,7 @@ import prisma from "@/lib/prisma";
 export async function fetchActiveInventoryLines(propertyId: string, tenantId: string) {
   if (!tenantId) return [];
 
+  console.log(`[fetchActiveInventoryLines] Starting query for property ${propertyId}`);
   const lines = await prisma.inventoryLine.findMany({
     where: {
       tenantId,
@@ -130,5 +131,6 @@ export async function fetchInventoryReview(cleaningId: string, tenantId: string)
     return null;
   }
 
+  console.log(`[fetchInventoryReview] Loaded review for ${cleaningId}, reports: ${review.reports.length}, itemChanges: ${review.itemChanges.length}`);
   return review;
 }

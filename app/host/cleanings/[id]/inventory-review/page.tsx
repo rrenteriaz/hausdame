@@ -27,11 +27,21 @@ export default async function InventoryReviewPage({
     notFound();
   }
 
+  console.log(`[InventoryReviewPage] Fetching data for cleaning ${cleaningId}, property ${cleaning.propertyId}`);
   // Obtener la revisión existente (si existe) y las líneas de inventario activas
   const [review, inventoryLines] = await Promise.all([
     getInventoryReview(cleaningId),
     getActiveInventoryLines(cleaning.propertyId),
   ]);
+  console.log(`[InventoryReviewPage] Review found: ${!!review}, Lines count: ${inventoryLines?.length}`);
+
+  if (inventoryLines) {
+    inventoryLines.forEach((l: any, idx: number) => {
+      if (!l.item) {
+        console.error(`[InventoryReviewPage] ERROR: Line at index ${idx} has NO ITEM:`, JSON.stringify(l));
+      }
+    });
+  }
 
   // Permitir crear revisión incluso si no hay items (para limpiezas previas al inventario)
   // El Cleaner puede presionar "Todo en orden" para crear una revisión vacía
@@ -47,9 +57,9 @@ export default async function InventoryReviewPage({
         variantKey: line.variantKey,
         variantValue: line.variantValue,
         item: {
-          id: line.item.id,
-          name: line.item.name,
-          category: line.item.category,
+          id: line.item?.id || "",
+          name: line.item?.name || "Item no encontrado",
+          category: line.item?.category || "UNSPECIFIED",
         },
         allLines: line.allLines || [],
       }))}

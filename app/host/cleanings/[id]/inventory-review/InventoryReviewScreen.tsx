@@ -70,8 +70,12 @@ export default function InventoryReviewScreen({
   const [isIncidentSubmitting, setIsIncidentSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyChanges, setShowOnlyChanges] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Inicializar cantidades desde inventoryLines
+  // Sincronizar estado local cuando las props iniciales cambian tras revalidatePath
+  useEffect(() => {
+    setReview(initialReview);
+  }, [initialReview]);
   // Usar line.id como clave única (no item.id) porque cada línea es independiente
   useEffect(() => {
     const initialQuantities = new Map<string, number>();
@@ -100,7 +104,7 @@ export default function InventoryReviewScreen({
         const lineId =
           report.inventoryLineId && inventoryLines.some((l) => l.id === report.inventoryLineId)
             ? report.inventoryLineId
-            : inventoryLines.find((l) => l.item.id === report.itemId)?.id;
+            : inventoryLines.find((l) => l.item?.id === report.itemId)?.id;
         if (lineId) {
           reportsMap.set(lineId, {
             id: report.id,
@@ -124,7 +128,7 @@ export default function InventoryReviewScreen({
     setError(null);
     setIsIncidentSubmitting(true);
     const lineId = selectedLineForIncident.id;
-    const itemId = selectedLineForIncident.item.id;
+    const itemId = selectedLineForIncident.item?.id || "";
 
     try {
       // Eliminar evidencias marcadas para borrar (antes de crear/actualizar reporte)
