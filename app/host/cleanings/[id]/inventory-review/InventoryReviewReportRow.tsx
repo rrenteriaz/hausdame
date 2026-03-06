@@ -1,5 +1,10 @@
 "use client";
 
+import { 
+  InventoryReviewItemChange, 
+  InventoryReport 
+} from "@/types/inventory";
+
 interface InventoryLine {
   id: string;
   area: string;
@@ -12,24 +17,6 @@ interface InventoryLine {
     category: string;
   };
   allLines?: any[];
-}
-
-interface InventoryReviewItemChange {
-  id: string;
-  itemId: string;
-  quantityBefore: number;
-  quantityAfter: number;
-  reason: string;
-  reasonOtherText: string | null;
-  note: string | null;
-}
-
-interface InventoryReport {
-  id: string;
-  itemId: string;
-  type: string;
-  severity: string;
-  description: string | null;
 }
 
 interface InventoryReviewReportRowProps {

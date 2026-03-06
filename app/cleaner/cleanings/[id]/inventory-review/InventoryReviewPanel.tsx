@@ -11,7 +11,18 @@ import {
   deleteInventoryReportEvidence,
   uploadInventoryReportEvidence,
 } from "@/app/host/inventory-review/actions";
-import { InventoryReviewStatus, InventoryChangeReason, InventoryReportType, InventoryReportSeverity } from "@prisma/client";
+import { 
+  InventoryReviewStatus, 
+  InventoryChangeReason, 
+  InventoryReportType, 
+  InventoryReportSeverity 
+} from "@prisma/client";
+import { 
+  InventoryReview, 
+  InventoryReport, 
+  InventoryReviewItemChange,
+  InventoryReportEvidence
+} from "@/types/inventory";
 import InventoryReviewItemRow from "@/app/host/cleanings/[id]/inventory-review/InventoryReviewItemRow";
 import InventoryReviewReportRow from "@/app/host/cleanings/[id]/inventory-review/InventoryReviewReportRow";
 import InventoryIncidentModal, { InventoryIncidentPayload } from "@/app/host/cleanings/[id]/inventory-review/InventoryIncidentModal";
@@ -31,41 +42,6 @@ interface InventoryLine {
     category: string;
   };
   allLines?: any[];
-}
-
-interface InventoryReviewItemChange {
-  id: string;
-  itemId: string;
-  inventoryLineId?: string | null;
-  quantityBefore: number;
-  quantityAfter: number;
-  reason: InventoryChangeReason;
-  reasonOtherText: string | null;
-  note: string | null;
-  status: string;
-}
-
-interface InventoryReportEvidence {
-  id: string;
-  asset?: { id: string; publicUrl: string | null } | null;
-}
-
-interface InventoryReport {
-  id: string;
-  itemId: string;
-  inventoryLineId?: string | null;
-  type: InventoryReportType;
-  severity: InventoryReportSeverity;
-  description: string | null;
-  status: string;
-  evidence?: InventoryReportEvidence[];
-}
-
-interface InventoryReview {
-  id: string;
-  status: InventoryReviewStatus;
-  itemChanges: InventoryReviewItemChange[];
-  reports: InventoryReport[];
 }
 
 interface InventoryReviewPanelProps {
@@ -620,10 +596,10 @@ export default function InventoryReviewPanel({
           }}
           onSubmit={handleIncidentSubmit}
           onDeleteReport={
-            reports.get(selectedLineForIncident.id)?.id
-              ? () =>
-                handleDeleteReport(reports.get(selectedLineForIncident!.id)!.id, selectedLineForIncident.id)
-              : undefined
+            (() => {
+              const rId = selectedLineForIncident?.id ? reports.get(selectedLineForIncident.id)?.id : null;
+              return rId ? () => handleDeleteReport(rId, selectedLineForIncident!.id) : undefined;
+            })()
           }
           isSubmitting={isIncidentSubmitting}
           submitError={error}

@@ -620,7 +620,7 @@ export async function createInventoryReport(formData: FormData) {
         select: {
           id: true,
           assetId: true,
-          asset: { select: { id: true, publicUrl: true } },
+          asset: { select: { id: true, publicUrl: true, variant: true } },
         },
       },
     },
@@ -857,12 +857,17 @@ export async function deleteInventoryReportEvidence(evidenceId: string, options?
     where: { id: evidenceId, tenantId, reportId: { not: null } },
     include: {
       asset: { select: { id: true, bucket: true, key: true } },
-      report: { select: { id: true, reviewId: true } },
+      report: { select: { id: true, reviewId: true, status: true } },
     },
   });
 
-  if (!evidence || !evidence.reportId) {
+  if (!evidence || !evidence.reportId || !evidence.report) {
     throw new Error("Evidencia no encontrada o no pertenece a un reporte");
+  }
+
+  // Regla de negocio: solo se puede eliminar si el Host aún no lo ha procesado (PENDING)
+  if (evidence.report.status !== InventoryReportStatus.PENDING) {
+    throw new Error("No puedes eliminar evidencias de una incidencia que ya fue procesada por el Host");
   }
 
   const assetId = evidence.assetId;

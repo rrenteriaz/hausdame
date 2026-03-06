@@ -11,32 +11,16 @@ import {
 import { changeReasonLabel, reportTypeLabel, reportSeverityLabel } from "@/lib/inventory-i18n";
 import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 
+import { 
+  InventoryReviewItemChange,
+  InventoryReport,
+  InventoryReportEvidence
+} from "@/types/inventory";
+
 interface InventoryLine {
   id: string;
   area?: string;
   item: { id: string; name: string };
-}
-
-interface InventoryReviewItemChange {
-  id: string;
-  quantityBefore: number;
-  quantityAfter: number;
-  reason: InventoryChangeReason;
-  reasonOtherText: string | null;
-  note: string | null;
-}
-
-interface InventoryReportEvidence {
-  id: string;
-  asset?: { id: string; publicUrl: string | null } | null;
-}
-
-interface InventoryReport {
-  id: string;
-  type: InventoryReportType;
-  severity: InventoryReportSeverity;
-  description: string | null;
-  evidence?: InventoryReportEvidence[];
 }
 
 export interface InventoryIncidentPayload {
@@ -205,7 +189,10 @@ export default function InventoryIncidentModal({
     !hasQuantityChange || (selectedReason && (selectedReason !== "OTHER" || reasonOtherText.trim()));
   const wantsToDeleteReport = !!existingReport && !selectedType;
   const hasPendingImageDeletions = removedExistingImageIds.length > 0;
+  const isPendingReport = !existingReport || existingReport.status === "PENDING";
+
   const canSubmit =
+    isPendingReport &&
     canSubmitQuantity && (hasQuantityChange || hasReport || wantsToDeleteReport || hasPendingImageDeletions);
 
   const handleSubmit = (e?: React.MouseEvent) => {
@@ -232,7 +219,7 @@ export default function InventoryIncidentModal({
       return;
     }
 
-    if (!hasQuantityChange && !hasReport && !wantsToDeleteReport) {
+    if (!hasQuantityChange && !hasReport && !wantsToDeleteReport && !hasPendingImageDeletions) {
       onClose();
       return;
     }
@@ -557,7 +544,10 @@ export default function InventoryIncidentModal({
           {/* Footer - fijo abajo, siempre visible */}
           <div className="flex-shrink-0 px-6 py-4 border-t border-neutral-200 bg-white flex items-center justify-between">
             <div>
-              {existingReport && onDeleteReport && !isSubmitting && (
+              {existingReport && 
+               existingReport.status === "PENDING" && 
+               onDeleteReport && 
+               !isSubmitting && (
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}

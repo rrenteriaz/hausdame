@@ -7,6 +7,10 @@ import { InventoryReportType, InventoryReportSeverity } from "@prisma/client";
 import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 import { reportTypeLabel, reportSeverityLabel, itemCategoryLabel } from "@/lib/inventory-i18n";
 
+import { 
+  InventoryReport,
+} from "@/types/inventory";
+
 interface InventoryLine {
   id: string;
   area: string;
@@ -32,15 +36,6 @@ interface InventoryLine {
     priority?: string | null;
     notes?: string | null;
   }>;
-}
-
-interface InventoryReport {
-  id: string;
-  itemId: string;
-  type: string;
-  severity: string;
-  description: string | null;
-  status: string;
 }
 
 interface InventoryItemDetailModalProps {

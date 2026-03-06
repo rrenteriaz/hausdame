@@ -17,24 +17,23 @@ interface InventoryLine {
   allLines?: any[];
 }
 
-interface InventoryReviewItemChange {
-  id: string;
-  itemId: string;
-  quantityBefore: number;
-  quantityAfter: number;
-  reason: InventoryChangeReason;
-  reasonOtherText: string | null;
-  note: string | null;
-  status: string;
-}
+import { 
+  InventoryReviewItemChange, 
+  InventoryReport 
+} from "@/types/inventory";
 
-interface InventoryReport {
+interface InventoryLine {
   id: string;
-  itemId: string;
-  type: InventoryReportType;
-  severity: InventoryReportSeverity;
-  description: string | null;
-  status: string;
+  area: string;
+  expectedQty: number;
+  variantKey: string | null;
+  variantValue: string | null;
+  item: {
+    id: string;
+    name: string;
+    category: string;
+  };
+  allLines?: any[];
 }
 
 interface InventoryReviewItemRowProps {
