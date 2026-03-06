@@ -26,11 +26,17 @@ interface InventoryReviewItemChange {
   note: string | null;
 }
 
+interface InventoryReportEvidence {
+  id: string;
+  asset?: { id: string; publicUrl: string | null } | null;
+}
+
 interface InventoryReport {
   id: string;
   type: InventoryReportType;
   severity: InventoryReportSeverity;
   description: string | null;
+  evidence?: InventoryReportEvidence[];
 }
 
 export interface InventoryIncidentPayload {
@@ -123,12 +129,19 @@ export default function InventoryIncidentModal({
 
   const MAX_REPORT_IMAGES = 5;
 
+  const existingImages =
+    existingReport?.evidence?.filter((e) => e?.asset?.publicUrl).map((e) => ({
+      id: e.id,
+      url: e.asset!.publicUrl!,
+    })) ?? [];
+  const maxNewImages = Math.max(0, MAX_REPORT_IMAGES - existingImages.length);
+
   const addReportImage = useCallback((file: File, previewUrl: string) => {
     setReportImages((prev) => {
-      if (prev.length >= MAX_REPORT_IMAGES) return prev;
+      if (prev.length >= maxNewImages) return prev;
       return [...prev, { file, previewUrl }];
     });
-  }, []);
+  }, [maxNewImages]);
 
   const removeReportImage = useCallback((index: number) => {
     setReportImages((prev) => {
@@ -415,33 +428,52 @@ export default function InventoryIncidentModal({
 
                   {/* Foto: destacada, antes de la descripción, indispensable para el Host */}
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Foto o imagen {reportImages.length > 0 && `(${reportImages.length}/${MAX_REPORT_IMAGES})`}
-                    </label>
-                    <div className="flex flex-wrap gap-3 items-start">
-                      {reportImages.map(({ previewUrl }, idx) => (
-                        <div
-                          key={idx}
-                          className="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50 flex-shrink-0"
-                        >
-                          <Image
-                            src={previewUrl}
-                            alt={`Evidencia ${idx + 1}`}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeReportImage(idx)}
-                            className="absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black/80"
-                            aria-label="Quitar foto"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      {reportImages.length < MAX_REPORT_IMAGES && (
+                    {(() => {
+                      const totalImages = existingImages.length + reportImages.length;
+                      return (
+                        <>
+                          <label className="block text-sm font-medium text-neutral-700 mb-2">
+                            Foto o imagen {totalImages > 0 && `(${totalImages}/${MAX_REPORT_IMAGES})`}
+                          </label>
+                          <div className="flex flex-wrap gap-3 items-start">
+                            {/* Imágenes ya guardadas (solo visualización) */}
+                            {existingImages.map(({ id, url }) => (
+                              <div
+                                key={id}
+                                className="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50 flex-shrink-0"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={url}
+                                  alt="Evidencia guardada"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ))}
+                            {/* Imágenes nuevas locales (con botón quitar) */}
+                            {reportImages.map(({ previewUrl }, idx) => (
+                              <div
+                                key={`new-${idx}`}
+                                className="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-50 flex-shrink-0"
+                              >
+                                <Image
+                                  src={previewUrl}
+                                  alt={`Evidencia nueva ${idx + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeReportImage(idx)}
+                                  className="absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black/80"
+                                  aria-label="Quitar foto"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                            {totalImages < MAX_REPORT_IMAGES && (
                         <>
                           <input
                             ref={cameraInputRef}
@@ -478,6 +510,9 @@ export default function InventoryIncidentModal({
                     <p className="text-xs text-neutral-500 mt-1">
                       Indispensable para que el Host pueda evaluar el problema. Máx. {MAX_REPORT_IMAGES} imágenes.
                     </p>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div>
