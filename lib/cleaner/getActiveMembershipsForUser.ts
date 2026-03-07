@@ -14,10 +14,11 @@ export interface ActiveMembershipInfo {
 }
 
 export async function getActiveMembershipsForUser(
-  userId: string
+  userId: string,
+  statuses: string[] = ["ACTIVE"]
 ): Promise<ActiveMembershipInfo> {
   const rows: any[] = await (prisma as any).teamMembership.findMany({
-    where: { userId, status: "ACTIVE" },
+    where: { userId, status: { in: statuses } },
     select: {
       id: true,
       teamId: true,

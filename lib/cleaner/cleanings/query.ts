@@ -36,7 +36,10 @@ export interface CleanerCleaningsCounts {
 /**
  * Obtiene el scope canónico del cleaner (propiedades y tenants accesibles)
  */
-export async function getCleanerScope(context?: CleanerContext): Promise<CleanerScope> {
+export async function getCleanerScope(
+  context?: CleanerContext,
+  includeRemoved: boolean = false
+): Promise<CleanerScope> {
   const ctx = context || (await resolveCleanerContext());
 
   if (ctx.mode === "membership") {
@@ -55,7 +58,10 @@ export async function getCleanerScope(context?: CleanerContext): Promise<Cleaner
     // Usar helper canónico para obtener propiedades y tenantIds
     const { propertyIds, tenantIds } = await getAccessiblePropertiesAndTenants(ctx.user.id, teamIds);
 
-    const membershipsAccess = await getActiveMembershipsForUser(ctx.user.id);
+    const membershipsAccess = await getActiveMembershipsForUser(
+      ctx.user.id,
+      includeRemoved ? ["ACTIVE", "REMOVED"] : ["ACTIVE"]
+    );
     const membershipIds = membershipsAccess.membershipIds;
 
     return {
@@ -134,10 +140,13 @@ function buildBaseWhereClause(
   scope: CleanerScope,
   params: CleanerCleaningsQueryParams
 ): any {
-  const whereClause: any = {
-    tenantId: { in: scope.tenantIds },
-    propertyId: { in: scope.propertyIds },
-  };
+  const whereClause: any = {};
+
+  // Para scopes no relacionados con historial, aplicar filtros de acceso actual (tenant/property)
+  if (params.scope !== "history") {
+    whereClause.tenantId = { in: scope.tenantIds };
+    whereClause.propertyId = { in: scope.propertyIds };
+  }
 
   // Filtro por fecha
   if (params.scheduledDateFrom || params.scheduledDateTo) {
@@ -233,7 +242,8 @@ export async function getCleanerCleaningsList(
   params: CleanerCleaningsQueryParams = {},
   context?: CleanerContext
 ): Promise<{ cleanings: any[]; scope: CleanerScope }> {
-  const scope = await getCleanerScope(context);
+  const includeRemoved = params.scope === "history" || params.scope === "all";
+  const scope = await getCleanerScope(context, includeRemoved);
 
   if (scope.propertyIds.length === 0 || scope.tenantIds.length === 0) {
     return { cleanings: [], scope };

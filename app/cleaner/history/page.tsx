@@ -1,8 +1,7 @@
 // app/cleaner/history/page.tsx
 import { getCurrentUser } from "@/lib/auth/session";
-import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";
-import { getAccessibleTeamsForUser } from "@/lib/cleaner/getAccessibleTeamsForUser";
 import { redirect } from "next/navigation";
+import { getCleanerCleaningsList } from "@/lib/cleaner/cleanings/query";
 import { formatCleaningStatus } from "@/lib/cleaning-ui";
 import Page from "@/lib/ui/Page";
 import ListContainer from "@/lib/ui/ListContainer";
@@ -30,161 +29,67 @@ export default async function CleanerHistoryPage({
       redirect("/login");
       return;
     }
-    context = await resolveCleanerContext();
-  } catch {
-    context = null;
-  }
 
-  if (!user) {
-    redirect("/login");
-    return;
-  }
-
-  if (context?.mode === "membership") {
-    const myMembershipIds = context.memberships.map((m) => m.id);
-    const removedMemberships = await prisma.teamMembership.findMany({
-      where: { userId: user.id, status: "REMOVED" },
-      select: {
-        id: true,
-        teamId: true,
-        Team: { select: { tenantId: true } },
-      },
-    });
-    const removedMembershipIds = removedMemberships.map((m) => m.id);
-    const removedTenantIds = removedMemberships
-      .map((m) => m.Team?.tenantId)
-      .filter((id): id is string => !!id);
-    if (myMembershipIds.length === 0 && removedMembershipIds.length === 0) {
-      redirect("/cleaner");
-      return;
-    }
-
-    const { allTeamIds, tenantIds } = await getAccessibleTeamsForUser(user.id);
-    if (allTeamIds.length === 0 || tenantIds.length === 0) {
-      if (removedMembershipIds.length > 0) {
-        // Sin teams activos pero con histórico personal, continuar con filtros mínimos
-      } else {
-      redirect("/cleaner");
-      return;
-      }
-    }
-
-    const propertyTeams = await (prisma as any).propertyTeam.findMany({
-      where: {
-        tenantId: { in: tenantIds },
-        teamId: { in: allTeamIds },
-      },
-      include: {
-        property: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-            isActive: true,
-          },
-        },
-      },
-    });
-
-    const allowedPropertyIds = propertyTeams
-      .filter((pt: any) => pt.property?.isActive !== false)
-      .map((pt: any) => pt.propertyId);
-
-    const whereClauses: any[] = [];
-    if (allowedPropertyIds.length > 0 && myMembershipIds.length > 0) {
-      whereClauses.push({
-        tenantId: { in: tenantIds },
-        propertyId: { in: allowedPropertyIds },
-        assignedMembershipId: { in: myMembershipIds },
-      });
-    }
-    if (removedMembershipIds.length > 0) {
-      whereClauses.push({
-        tenantId: { in: removedTenantIds },
-        assignedMembershipId: { in: removedMembershipIds },
-      });
-    }
-
-    const allCompletedCleanings =
-      whereClauses.length > 0
-        ? await (prisma as any).cleaning.findMany({
-            where: {
-              status: "COMPLETED",
-              OR: whereClauses,
-            },
-            include: {
-              property: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  coverAssetGroupId: true,
-                },
-              },
-            },
-          })
-        : [];
-
-    const propertiesFromCleanings = Array.from(
-      new Map(
-        allCompletedCleanings.map((c: any) => [c.property.id, c.property])
-      ).values()
-    );
-
-    const teamProperties = propertyTeams
-      .filter((pt: any) => pt.property?.isActive !== false)
-      .map((pt: any) => pt.property)
-      .filter((p: any) => p !== null);
-
-    const allPropertiesMap = new Map<string, any>();
-    teamProperties.forEach((p: any) => allPropertiesMap.set(p.id, p));
-    propertiesFromCleanings.forEach((p: any) => {
-      if (!allPropertiesMap.has(p.id)) {
-        allPropertiesMap.set(p.id, p);
-      }
-    });
-    const availableProperties = Array.from(allPropertiesMap.values());
-
-    let filteredCleanings = allCompletedCleanings;
-
-    if (propertyIdFilter) {
-      filteredCleanings = filteredCleanings.filter(
-        (c: any) => c.propertyId === propertyIdFilter
-      );
-    }
-
+    // Calcular rango de fechas según el filtro de período
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let scheduledDateFrom: Date | undefined;
+    let scheduledDateTo: Date | undefined;
 
     if (periodFilter === "last_7_days") {
-      const sevenDaysAgo = new Date(today);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      filteredCleanings = filteredCleanings.filter((c: any) => {
-        const completedDate = c.completedAt || c.scheduledDate;
-        return completedDate >= sevenDaysAgo;
-      });
+      scheduledDateFrom = new Date(today);
+      scheduledDateFrom.setDate(scheduledDateFrom.getDate() - 7);
     } else if (periodFilter === "last_month") {
-      const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      filteredCleanings = filteredCleanings.filter((c: any) => {
-        const completedDate = c.completedAt || c.scheduledDate;
-        return completedDate >= firstDayOfCurrentMonth;
-      });
+      scheduledDateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
     } else if (periodFilter === "previous_month") {
-      const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const firstDayOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      filteredCleanings = filteredCleanings.filter((c: any) => {
-        const completedDate = c.completedAt || c.scheduledDate;
-        return completedDate >= firstDayOfPreviousMonth && completedDate < firstDayOfCurrentMonth;
+      scheduledDateFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      scheduledDateTo = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+
+    // Usar query layer canónico con scope history (incluye REMOVED y omite property filter actual)
+    const { cleanings, scope } = await getCleanerCleaningsList(
+      {
+        scope: "history",
+        propertyId: propertyIdFilter,
+        scheduledDateFrom,
+        scheduledDateTo,
+        status: ["COMPLETED"],
+      }
+    );
+
+    if (cleanings.length === 0 && scope.membershipIds.length === 0) {
+      redirect("/cleaner");
+      return;
+    }
+
+    // Obtener propiedades únicas para el filtro
+    const propertiesMap = new Map<string, any>();
+    
+    // 1. Propiedades con historial real
+    cleanings.forEach((c: any) => {
+      if (c.property && !propertiesMap.has(c.property.id)) {
+        propertiesMap.set(c.property.id, c.property);
+      }
+    });
+
+    // 2. Propiedades con acceso actual
+    if (scope.propertyIds.length > 0) {
+      const currentProperties = await prisma.property.findMany({
+        where: { id: { in: scope.propertyIds }, isActive: true },
+        select: { id: true, name: true, shortName: true }
+      });
+      currentProperties.forEach(p => {
+        if (!propertiesMap.has(p.id)) propertiesMap.set(p.id, p);
       });
     }
 
-    filteredCleanings.sort((a: any, b: any) => {
+    const availableProperties = Array.from(propertiesMap.values());
+
+    const completedCleanings = cleanings.sort((a: any, b: any) => {
       const dateA = a.completedAt || a.scheduledDate;
       const dateB = b.completedAt || b.scheduledDate;
-      return dateB.getTime() - dateA.getTime();
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
-
-    const completedCleanings = filteredCleanings;
 
     const thumbUrls = completedCleanings.length > 0
       ? await getCoverThumbUrlsBatch(
@@ -192,7 +97,7 @@ export default async function CleanerHistoryPage({
             id: c.property.id,
             coverAssetGroupId: c.property.coverAssetGroupId || null,
           }))
-        )
+        ) 
       : new Map<string, string | null>();
 
     const buildReturnTo = () => {
@@ -237,16 +142,12 @@ export default async function CleanerHistoryPage({
                       {propertyName}
                     </h3>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.completedAt?.toLocaleString("es-MX", {
+                      {(cleaning.completedAt ? new Date(cleaning.completedAt) : new Date(cleaning.scheduledDate)).toLocaleString("es-MX", {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
-                      }) || cleaning.scheduledDate.toLocaleString("es-MX", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
                       })}
                     </p>
                     <p className="text-xs text-neutral-500 mt-1">
@@ -260,21 +161,10 @@ export default async function CleanerHistoryPage({
         )}
       </Page>
     );
-  }
-
-  // LEGACY RETIRADO: Ya no se usa getCurrentMember ni TeamMember legacy
-  // El guard del layout maneja el caso de sin TeamMembership ACTIVE
-  // Esta página solo maneja mode === "membership" (el código arriba en línea 45+)
-  
-  // Si llegamos aquí sin contexto, redirigir
-  // (el guard del layout debería haber manejado esto, pero por seguridad)
-  // LEGACY RETIRADO: Ya no existe modo legacy, siempre es "membership"
-  if (!context) {
-    redirect("/cleaner/onboarding");
+  } catch (error) {
+    console.error("Error loading cleaner history:", error);
+    redirect("/cleaner");
     return;
   }
-  
-  // El código de membership ya está arriba (línea 45+) y maneja todo el flujo
-  // Este código legacy ya no es necesario
 }
 
