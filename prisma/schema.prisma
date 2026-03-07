@@ -772,6 +772,7 @@ model PropertyChecklistItem {
   valueLabel          String?
   propertyId          String
   checklistItemAssets ChecklistItemAsset[]
+  cleaningChecklistItems CleaningChecklistItem[]
   property            Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -798,11 +799,15 @@ model CleaningChecklistItem {
   requiresValue          Boolean                 @default(false)
   valueLabel             String?
   valueNumber            Int?
+  propertyChecklistItemId String?
+  isRemovedFromTemplate  Boolean                 @default(false)
   cleaning               Cleaning                @relation(fields: [cleaningId], references: [id], onDelete: Cascade)
+  propertyChecklistItem  PropertyChecklistItem?  @relation(fields: [propertyChecklistItemId], references: [id], onDelete: SetNull)
   tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([cleaningId])
+  @@index([propertyChecklistItemId])
   @@index([cleaningId, area])
 }
 

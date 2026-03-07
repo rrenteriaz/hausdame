@@ -202,11 +202,24 @@ export default async function CleanerCleaningDetailPage({
 
   // PASO 2: La limpieza ya viene cargada desde requireCleanerAccessToCleaning
   // Pero necesitamos cargar cleaningChecklistItems y otras relaciones adicionales
+  
+  // Sincronizar checklist con la plantilla si la limpieza está activa (PENDING/IN_PROGRESS)
+  if (cleaning.status === "PENDING" || cleaning.status === "IN_PROGRESS") {
+    await (await import("@/lib/checklist-snapshot")).syncChecklistSnapshotForCleaning(
+      tenantId,
+      cleaning.property.id,
+      cleaning.id
+    );
+  }
+
   const cleaningWithChecklist = await (prisma as any).cleaning.findUnique({
     where: { id: cleaning.id },
     select: {
       id: true,
       cleaningChecklistItems: {
+        where: {
+          isRemovedFromTemplate: false, // Solo mostrar items que siguen vigentes en la plantilla
+        },
         orderBy: [
           { area: "asc" },
           { sortOrder: "asc" },
@@ -214,38 +227,6 @@ export default async function CleanerCleaningDetailPage({
       },
     },
   });
-
-  // Auto-cargar checklist si la limpieza no lo tiene pero la propiedad sí tiene template
-  if (!cleaningWithChecklist?.cleaningChecklistItems || cleaningWithChecklist.cleaningChecklistItems.length === 0) {
-    // Verificar si la propiedad tiene template de checklist
-    const propertyHasChecklist = await (prisma as any).propertyChecklistItem.count({
-      where: {
-        propertyId: cleaning.property.id,
-        tenantId: tenantId,
-        isActive: true,
-      },
-    });
-
-    if (propertyHasChecklist > 0) {
-      // Copiar el checklist del template a esta limpieza
-      await createChecklistSnapshotForCleaning(tenantId, cleaning.property.id, cleaning.id);
-      
-      // Recargar los items
-      const freshItems = await (prisma as any).cleaningChecklistItem.findMany({
-        where: {
-          cleaningId: cleaning.id,
-          tenantId: tenantId,
-        },
-        orderBy: [
-          { area: "asc" },
-          { sortOrder: "asc" },
-        ],
-      });
-      cleaningWithChecklist.cleaningChecklistItems = freshItems;
-      
-      console.log(`[CleanerCleaningDetail] Checklist cargado automáticamente para limpieza ${cleaning.id}: ${freshItems.length} items`);
-    }
-  }
 
   const cleaningChecklistItems = cleaningWithChecklist?.cleaningChecklistItems || [];
 

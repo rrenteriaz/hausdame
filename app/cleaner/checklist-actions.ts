@@ -40,11 +40,8 @@ export async function updateChecklistItemCompletion(
     },
   });
 
-  // CRÍTICO: NO usar revalidatePath aquí
-  // - El optimistic UI ya actualiza la interfaz inmediatamente
-  // - revalidatePath causa POST + re-render completo del Server Component
-  // - Solo guardamos en DB, el estado se mantiene en el cliente
-  // - Si el usuario navega/recarga, el server component se renderizará con datos frescos
+  // Revalidar para que otros componentes (como el botón de completar) se actualicen
+  revalidatePath(`/cleaner/cleanings/${cleaningId}`);
 }
 
 export async function completeCleaningWithReasons(
@@ -94,7 +91,28 @@ export async function completeCleaningWithReasons(
     throw error;
   }
 
-  // Actualizar razones de items incompletos
+  // 2. Validar que no falten items por completar (que no se enviaron razones para ellos)
+  // Obtenemos los IDs de los items que se enviaron con razones
+  const itemIdsWithReasons = new Set(incompleteItems.map(i => i.itemId));
+  
+  // Buscamos en DB si hay CUALQUIER otro item activo que no esté completado y no esté en la lista enviada
+  const missingIncompleteItems = await (prisma as any).cleaningChecklistItem.count({
+    where: {
+      cleaningId,
+      tenantId: tenant.id,
+      isCompleted: false,
+      isRemovedFromTemplate: false,
+      NOT: {
+        id: { in: Array.from(itemIdsWithReasons) }
+      }
+    }
+  });
+
+  if (missingIncompleteItems > 0) {
+    throw new Error("No se pueden completar: Hay tareas pendientes de marcar o justificar.");
+  }
+
+  // 3. Actualizar razones de items incompletos
   for (const item of incompleteItems) {
     await (prisma as any).cleaningChecklistItem.updateMany({
       where: {
