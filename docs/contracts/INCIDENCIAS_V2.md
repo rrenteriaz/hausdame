@@ -80,4 +80,4 @@
 
 **Versión:** 2.0  
 **Fecha:** Marzo 2026  
-**Mantenedor:** Equipo Hausdame
+**Mantenedor:** Equipo Antigravity (Hausdame)

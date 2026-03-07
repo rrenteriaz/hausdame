@@ -59,18 +59,30 @@ El frontend **consume**, NO deduce.
 
 ---
 
-## 4) Endpoints — Team Scope (TL/Host)
+## 4) Endpoints — General Pattern
 
-### 4.1 GET `/api/teams/:teamId/invites`
-- Retorna lista con:
-  - `inviteLink`
-  - `prefillName` (para label “Invitado: X”)
-  - `status efectivo` (lazy-expire en UI/listado)
-- Permisos:
-  - Host del mismo tenant
-  - Cleaner `TEAM_LEADER` con membership `ACTIVE`
+Todos los endpoints que listan o crean invitaciones deben retornar el campo `inviteLink`.
 
-### 4.2 POST `/api/teams/:teamId/invites`
-Payload:
-```json
-{ "prefillName": "string|null", "expiresInDays": 7 }
+### 4.1 Teams Scope (TL/Host)
+- **GET** `/api/teams/:teamId/invites`
+- **POST** `/api/teams/:teamId/invites`
+- Retornan: `inviteLink`, `prefillName`, `status`, `expiresAt`.
+
+### 4.2 Workgroup Scope (Host)
+- **POST** `/api/host-workgroups/:workGroupId/invites`
+- Retornan: `inviteLink`, `prefillName`, `token`.
+- Ruta pública: `/join/host?token=...`
+
+### 4.3 Property Scope (Host)
+- **POST** `/api/properties/:propertyId/invites`
+- Retornan: `inviteLink`.
+- Ruta pública: `/join?token=...&type=property`
+
+---
+
+## 5) Generación de Links (Source of Truth)
+
+1.  **Prioridad de URL Base**:
+    - `APP_BASE_URL` (Variable de entorno).
+    - **Request Origin**: Si la variable falta, el backend usa el origen real de la petición (`req.nextUrl.origin`).
+2.  **Responsabilidad**: El backend es el único responsable de construir el link completo. El frontend **jamás** debe reconstruir el link localmente.
