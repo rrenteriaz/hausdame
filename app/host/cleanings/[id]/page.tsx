@@ -90,28 +90,47 @@ export default async function CleaningDetailPage({
 
   if (!cleaningWithPropertyId) notFound();
 
+  const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
+
   const [cleaning, propertyTeams, viewsCount, inventoryReview, assignees] = await Promise.all([
     prisma.cleaning.findFirst({
       where: { id: resolvedParams.id, tenantId },
       include: cleaningDetailInclude,
     }),
-    // Obtener equipos asignados a la propiedad
-    (prisma as any).propertyTeam.findMany({
-      where: {
-        propertyId: cleaningWithPropertyId.propertyId,
-        tenantId,
-        team: { status: "ACTIVE" },
-      },
-      select: {
-        teamId: true,
-        team: {
-          select: {
-            id: true,
-            name: true,
+    // Obtener equipos asignados a la propiedad (flag-aware: WGE cuando WORKGROUP_READS_ENABLED=1)
+    (async () => {
+      if (useWorkGroupReads) {
+        const { getServiceTeamsForPropertyViaWorkGroups } = await import(
+          "@/lib/workgroups/resolveWorkGroupsForProperty"
+        );
+        const teamIds = await getServiceTeamsForPropertyViaWorkGroups(
+          tenantId,
+          cleaningWithPropertyId.propertyId
+        );
+        if (teamIds.length === 0) return [];
+        const teams = await prisma.team.findMany({
+          where: { id: { in: teamIds }, status: "ACTIVE" },
+          select: { id: true, name: true },
+        });
+        return teams.map((t) => ({ teamId: t.id, team: { id: t.id, name: t.name } }));
+      }
+      return (prisma as any).propertyTeam.findMany({
+        where: {
+          propertyId: cleaningWithPropertyId.propertyId,
+          tenantId,
+          team: { status: "ACTIVE" },
+        },
+        select: {
+          teamId: true,
+          team: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    }),
+      });
+    })(),
     (prisma as any).cleaningView.count({
       where: {
         cleaningId: resolvedParams.id,

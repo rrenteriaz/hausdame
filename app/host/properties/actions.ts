@@ -227,20 +227,45 @@ export async function assignTeamToProperty(formData: FormData) {
     return;
   }
 
-  await (prisma as any).propertyTeam.upsert({
-    where: {
-      propertyId_teamId: {
+  const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
+
+  if (useWorkGroupReads) {
+    // Ruta WGE: añadir property al workGroup canónico del team
+    const executor = await prisma.workGroupExecutor.findFirst({
+      where: { hostTenantId: tenantId, teamId, status: "ACTIVE" },
+      select: { workGroupId: true },
+      orderBy: { createdAt: "asc" },
+    });
+    if (!executor) {
+      console.error("[assignTeamToProperty] No WGE executor found for team:", teamId);
+      redirectBack(formData);
+      return;
+    }
+    const existingLink = await prisma.hostWorkGroupProperty.findFirst({
+      where: { tenantId, workGroupId: executor.workGroupId, propertyId: property.id },
+      select: { id: true },
+    });
+    if (!existingLink) {
+      await prisma.hostWorkGroupProperty.create({
+        data: { tenantId, workGroupId: executor.workGroupId, propertyId: property.id },
+      });
+    }
+  } else {
+    await (prisma as any).propertyTeam.upsert({
+      where: {
+        propertyId_teamId: {
+          propertyId: property.id,
+          teamId,
+        },
+      },
+      create: {
+        tenantId,
         propertyId: property.id,
         teamId,
       },
-    },
-    create: {
-      tenantId,
-      propertyId: property.id, // FASE 4: propertyId es el nuevo PK
-      teamId,
-    },
-    update: {},
-  });
+      update: {},
+    });
+  }
 
   revalidatePath("/host/properties");
   revalidatePath(`/host/properties/${propertyId}`);
@@ -276,13 +301,29 @@ export async function removeTeamFromProperty(formData: FormData) {
     return;
   }
 
-  await (prisma as any).propertyTeam.deleteMany({
-    where: {
-      propertyId: property.id,
-      teamId,
-      tenantId,
-    },
-  });
+  const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
+
+  if (useWorkGroupReads) {
+    // Ruta WGE: eliminar links propiedad↔workGroup para todos los WGs del team
+    const executors = await prisma.workGroupExecutor.findMany({
+      where: { hostTenantId: tenantId, teamId },
+      select: { workGroupId: true },
+    });
+    const workGroupIds = executors.map((e) => e.workGroupId);
+    if (workGroupIds.length > 0) {
+      await prisma.hostWorkGroupProperty.deleteMany({
+        where: { tenantId, workGroupId: { in: workGroupIds }, propertyId: property.id },
+      });
+    }
+  } else {
+    await (prisma as any).propertyTeam.deleteMany({
+      where: {
+        propertyId: property.id,
+        teamId,
+        tenantId,
+      },
+    });
+  }
 
   revalidatePath("/host/properties");
   revalidatePath(`/host/properties/${propertyId}`);

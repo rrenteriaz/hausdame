@@ -701,18 +701,41 @@ export async function createCleaning(formData: FormData) {
     return;
   }
 
-  // PASO 1: Determinar el equipo de limpieza de la propiedad
-  const propertyTeam = await (prisma as any).propertyTeam.findFirst({
-    where: {
-      propertyId: property.id,
-      tenantId,
-    },
-    select: {
-      teamId: true,
-    },
-  });
-
+  // PASO 1: Determinar el equipo de limpieza de la propiedad (flag-aware: WGE o PropertyTeam legacy)
+  const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
   let teamId: string | null = null;
+
+  if (useWorkGroupReads) {
+    const { getServiceTeamsForPropertyViaWorkGroups } = await import(
+      "@/lib/workgroups/resolveWorkGroupsForProperty"
+    );
+    const wgeTeamIds = await getServiceTeamsForPropertyViaWorkGroups(tenantId, property.id);
+    if (wgeTeamIds.length === 1) {
+      teamId = wgeTeamIds[0];
+    } else if (wgeTeamIds.length > 1) {
+      // Un solo query para todos: preferir el primer equipo con al menos 1 membership ACTIVE
+      const membershipsPerTeam = await prisma.teamMembership.findMany({
+        where: { teamId: { in: wgeTeamIds }, status: "ACTIVE" },
+        select: { teamId: true },
+      });
+      const teamsWithMembers = new Set(membershipsPerTeam.map((m) => m.teamId));
+      // Mantener orden canónico (wgeTeamIds ya viene ordenado por ID)
+      teamId = wgeTeamIds.find((id) => teamsWithMembers.has(id)) ?? wgeTeamIds[0];
+    }
+    // wgeTeamIds.length === 0 → teamId permanece null → NO_TEAM_CONFIGURED
+  } else {
+    const propertyTeam = await (prisma as any).propertyTeam.findFirst({
+      where: {
+        propertyId: property.id,
+        tenantId,
+      },
+      select: {
+        teamId: true,
+      },
+    });
+    teamId = propertyTeam?.teamId ?? null;
+  }
+
   const assignedMemberId: string | null = null;
   let assignmentStatus: "OPEN" | "ASSIGNED" = "OPEN";
   let needsAttention = false;
@@ -720,9 +743,7 @@ export async function createCleaning(formData: FormData) {
 
   // PASO 2: Si hay equipo, obtener memberships activas del equipo
   let assignedMembershipId: string | null = null;
-  if (propertyTeam) {
-    teamId = propertyTeam.teamId;
-
+  if (teamId) {
     // Obtener TeamMembership ACTIVE del equipo (estándar)
     const activeMemberships = await prisma.teamMembership.findMany({
       where: {

@@ -149,33 +149,52 @@ export async function getCleaningsNeedingAttention(
     }
   }
 
+  // Fallback WGE: para propiedades con PropertyTeam count=0, verificar cobertura operativa
+  // real vía hostWorkGroupProperty + workGroupExecutor ACTIVE.
+  // Evita el falso positivo NO_ASSIGNED_TEAM cuando WORKGROUP_READS_ENABLED no está activo
+  // pero la propiedad sí tiene cobertura real por WorkGroups.
+  const wgeCoveredPropertyIds = new Set<string>();
+  if (propertyIds.length > 0) {
+    const uniquePropertyIds = Array.from(new Set(propertyIds)) as string[];
+    const zeroCountIds = uniquePropertyIds.filter(
+      (id) => (propertyTeamsCountMap.get(id) ?? 0) === 0
+    );
+    if (zeroCountIds.length > 0) {
+      const wgeLinks = await prisma.hostWorkGroupProperty.findMany({
+        where: { tenantId, propertyId: { in: zeroCountIds } },
+        select: { propertyId: true, workGroupId: true },
+      });
+      const wgeWgIds = Array.from(new Set(wgeLinks.map((l) => l.workGroupId)));
+      const activeExecutors = wgeWgIds.length
+        ? await prisma.workGroupExecutor.findMany({
+            where: { hostTenantId: tenantId, status: "ACTIVE", workGroupId: { in: wgeWgIds } },
+            select: { workGroupId: true },
+          })
+        : [];
+      const activeWgSet = new Set(activeExecutors.map((e) => e.workGroupId));
+      for (const link of wgeLinks) {
+        if (activeWgSet.has(link.workGroupId)) {
+          wgeCoveredPropertyIds.add(link.propertyId);
+        }
+      }
+    }
+  }
+
   for (const cleaning of cleanings) {
     let reason: CleaningNeedsAttentionReason | null = null;
     const propertyTeamsCount = propertyTeamsCountMap.get(cleaning.propertyId) ?? 0;
 
-    // Caso 0: Sin equipo asignado (prioridad más alta)
-    if (propertyTeamsCount === 0) {
+    // Caso 0: Sin equipo asignado (prioridad más alta).
+    // Solo aplica si tampoco existe cobertura operativa real vía WGE (fallback defensivo).
+    if (propertyTeamsCount === 0 && !wgeCoveredPropertyIds.has(cleaning.propertyId)) {
       reason = "NO_ASSIGNED_TEAM";
     } else if (!cleaning.assignedMemberId && !cleaning.assignedMembershipId) {
       // Caso 1: Sin cleaner asignado
       reason = "NO_ASSIGNED_MEMBER";
-    } else if (cleaning.assignedMemberId) {
-      // Caso 2: Cleaner asignado pero verificar disponibilidad
-      const eligibleMembers = await getEligibleMembersForCleaning(
-        tenantId,
-        cleaning.propertyId,
-        cleaning.scheduledDate
-      );
-      
-      // Verificar si el cleaner asignado está en la lista de elegibles
-      const assignedMemberIsEligible = eligibleMembers.some(
-        (m) => m.id === cleaning.assignedMemberId
-      );
-
-      if (!assignedMemberIsEligible) {
-        reason = "MEMBER_NOT_AVAILABLE";
-      }
     }
+    // Caso 2 eliminado: MEMBER_NOT_AVAILABLE ya no clasifica una limpieza como sin confirmar.
+    // Una limpieza con cleaner asignado (assignedMemberId o assignedMembershipId) está confirmada,
+    // independientemente del horario configurado en TeamMemberScheduleDay.
 
     // Si tiene razón, agregar a la lista
     if (reason) {

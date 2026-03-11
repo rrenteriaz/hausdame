@@ -159,38 +159,74 @@ export async function updateTeamProperties(formData: FormData) {
   const validPropertyIds = new Set(validProperties.map((p) => p.id));
   const finalPropertyIds = propertyIds.filter((id) => validPropertyIds.has(id));
 
-  const existing = await (prisma as any).propertyTeam.findMany({
-    where: { tenantId: tenantId, teamId },
-    select: { propertyId: true },
-  });
-  const existingIds = new Set(existing.map((e: any) => e.propertyId));
+  const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
 
-  const toCreate = finalPropertyIds.filter((id) => !existingIds.has(id));
-  const toDelete = existing
-    .map((e: any) => e.propertyId)
-    .filter((id: string) => !finalPropertyIds.includes(id));
+  if (useWorkGroupReads) {
+    // Ruta WGE: sincronizar propiedades vía hostWorkGroupProperty
+    // Usa el primer workGroup del team (patrón canónico: un WG por team)
+    const executors = await prisma.workGroupExecutor.findMany({
+      where: { hostTenantId: tenantId, teamId },
+      select: { workGroupId: true },
+      orderBy: { createdAt: "asc" },
+    });
 
-  await prisma.$transaction(async (tx) => {
-    if (toDelete.length > 0) {
-      await (tx as any).propertyTeam.deleteMany({
-        where: {
-          tenantId: tenantId,
-          teamId,
-          propertyId: { in: toDelete },
-        },
-      });
+    if (executors.length === 0) {
+      console.warn("[updateTeamProperties] No WGE executors for team:", teamId);
+      revalidatePath("/host/teams");
+      revalidatePath(`/host/teams/${teamId}`);
+      return;
     }
 
-    if (toCreate.length > 0) {
-      await (tx as any).propertyTeam.createMany({
-        data: toCreate.map((propertyId) => ({
-          tenantId: tenantId,
-          teamId,
-          propertyId,
-        })),
-      });
-    }
-  });
+    const canonicalWorkGroupId = executors[0].workGroupId;
+
+    const existingLinks = await prisma.hostWorkGroupProperty.findMany({
+      where: { tenantId, workGroupId: canonicalWorkGroupId },
+      select: { propertyId: true },
+    });
+    const existingIds = new Set(existingLinks.map((l) => l.propertyId));
+
+    const toCreate = finalPropertyIds.filter((id) => !existingIds.has(id));
+    const toDelete = [...existingIds].filter((id) => !finalPropertyIds.includes(id));
+
+    await prisma.$transaction(async (tx) => {
+      if (toDelete.length > 0) {
+        await tx.hostWorkGroupProperty.deleteMany({
+          where: { tenantId, workGroupId: canonicalWorkGroupId, propertyId: { in: toDelete } },
+        });
+      }
+      if (toCreate.length > 0) {
+        await tx.hostWorkGroupProperty.createMany({
+          data: toCreate.map((propertyId) => ({ tenantId, workGroupId: canonicalWorkGroupId, propertyId })),
+          skipDuplicates: true,
+        });
+      }
+    });
+  } else {
+    // Ruta legacy: PropertyTeam
+    const existing = await (prisma as any).propertyTeam.findMany({
+      where: { tenantId: tenantId, teamId },
+      select: { propertyId: true },
+    });
+    const existingIds = new Set(existing.map((e: any) => e.propertyId));
+
+    const toCreate = finalPropertyIds.filter((id) => !existingIds.has(id));
+    const toDelete = existing
+      .map((e: any) => e.propertyId)
+      .filter((id: string) => !finalPropertyIds.includes(id));
+
+    await prisma.$transaction(async (tx) => {
+      if (toDelete.length > 0) {
+        await (tx as any).propertyTeam.deleteMany({
+          where: { tenantId: tenantId, teamId, propertyId: { in: toDelete } },
+        });
+      }
+      if (toCreate.length > 0) {
+        await (tx as any).propertyTeam.createMany({
+          data: toCreate.map((propertyId) => ({ tenantId: tenantId, teamId, propertyId })),
+        });
+      }
+    });
+  }
 
   revalidatePath("/host/teams");
   revalidatePath(`/host/teams/${teamId}`);
