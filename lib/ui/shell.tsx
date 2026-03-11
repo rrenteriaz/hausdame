@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { DesktopNav } from "./HostNavigation";
 
@@ -22,13 +23,14 @@ export function AppShell({
       <header className={`border-b bg-white sticky top-0 z-50 ${isMessagesPage ? "hidden sm:block" : "hidden lg:block"}`}>
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
           {/* Marca Hausdame */}
-          <Link href="/host/hoy" className="flex items-center gap-2 shrink-0">
-            <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-base font-bold">
-              H
-            </div>
-            <span className="text-base font-semibold tracking-tight">
-              Hausdame
-            </span>
+          <Link href="/host/hoy" className="flex items-center shrink-0">
+            <Image
+              src="/hausdame_SinFondo2.png"
+              alt="Hausdame logo"
+              width={180}
+              height={160}
+              className="object-contain"
+            />
           </Link>
 
           {/* Navegación (TopNav) - solo desktop */}
@@ -38,9 +40,9 @@ export function AppShell({
 
       {/* Contenido principal */}
       {/* En páginas de mensajes: altura fija usando --app-vh si está disponible, sin scroll del main (solo el área de mensajes scrollea) */}
-      <main 
+      <main
         className={`${isMessagesPage ? "p-0 flex flex-col min-h-0 flex-1 sm:flex-1 sm:h-auto" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 pb-20 sm:pb-6"}`}
-        style={isMessagesPage ? { 
+        style={isMessagesPage ? {
           height: "calc(var(--app-vh, 1dvh) * 100)",
           maxHeight: "calc(var(--app-vh, 1dvh) * 100)"
         } : undefined}

@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   validateRedirect,
   AUTH_REDIRECT_PREFIXES,
@@ -48,7 +49,7 @@ export default function LoginClient() {
       }
 
       // Usar SOLO data.redirectTo (validado por el API). No usar redirectParam para navegar.
-      let redirectTo = data.redirectTo || "/host/properties";
+      let redirectTo = data.redirectTo || "/host/hoy";
       if (redirectTo.startsWith("/join/host")) {
         const url = new URL(redirectTo, window.location.origin);
         url.searchParams.set("auto", "1");
@@ -65,7 +66,12 @@ export default function LoginClient() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-8">
-          <h1 className="text-2xl font-bold text-center mb-6">Iniciar sesión</h1>
+          <div className="flex flex-col items-center gap-2 mb-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/hausdame_SinFondo2.png" alt="Hausdame" width={180} height={160} className="object-contain" />
+            </Link>
+            <h1 className="text-2xl font-bold text-center">Iniciar sesión</h1>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

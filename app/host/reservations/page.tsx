@@ -83,7 +83,7 @@ function getCleaningStatusText(cleanings: Array<{ status: string; needsAttention
 export default async function ReservationsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ propertyId?: string; status?: string; dateBucket?: string }>;
+  searchParams?: Promise<{ propertyId?: string; status?: string; dateBucket?: string; year?: string }>;
 }) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
@@ -102,43 +102,48 @@ export default async function ReservationsPage({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // Años disponibles (para chips)
+  const allDates = await prisma.reservation.findMany({
+    where: { tenantId },
+    select: { startDate: true },
+  });
+  const availableYears = [...new Set(allDates.map((r) => r.startDate.getFullYear()))].sort() as number[];
+
+  const selectedYear = resolvedSearchParams?.year ? parseInt(resolvedSearchParams.year) : null;
+
   // Construir filtros
-  // Por defecto, mostrar solo reservas CONFIRMED si no se especifica otro status
-  const where: any = {
-    tenantId: tenantId,
-  };
+  const where: any = { tenantId };
 
   if (resolvedSearchParams?.propertyId) {
     where.propertyId = resolvedSearchParams.propertyId;
   }
 
-  // Si no hay filtro de status, mostrar solo CONFIRMED por defecto
-  // Si el usuario selecciona "all", mostrar todas las reservas
+  // Status: por defecto CONFIRMED
   const statusFilter = resolvedSearchParams?.status;
   if (statusFilter === "all") {
-    // No agregar filtro de status (mostrar todas)
+    // no filter
   } else if (statusFilter) {
-    // Usar el filtro específico seleccionado
     where.status = statusFilter;
   } else {
-    // Por defecto: solo CONFIRMED
     where.status = "CONFIRMED";
   }
 
-  // Filtro por fecha (dateBucket)
-  // Por defecto: mostrar "Actuales" (CURRENT_FUTURE) si no se especifica
-  const dateBucket = resolvedSearchParams?.dateBucket || "CURRENT_FUTURE";
-  if (dateBucket === "PAST") {
-    // Reservas pasadas: endDate < hoy
-    where.endDate = {
-      lt: today,
-    };
-  } else if (dateBucket === "CURRENT_FUTURE") {
-    // Reservas actuales y futuras: endDate >= hoy
-    where.endDate = {
-      gte: today,
+  // Año seleccionado
+  if (selectedYear) {
+    where.startDate = {
+      gte: new Date(selectedYear, 0, 1),
+      lt: new Date(selectedYear + 1, 0, 1),
     };
   }
+
+  // Período: por defecto Próximas (CURRENT_FUTURE)
+  const dateBucket = resolvedSearchParams?.dateBucket || "CURRENT_FUTURE";
+  if (dateBucket === "PAST") {
+    where.endDate = { lt: today };
+  } else if (dateBucket === "CURRENT_FUTURE") {
+    where.endDate = { gte: today };
+  }
+  // "ALL" — sin filtro de fecha
 
   // Obtener reservas con property y cleanings
   const reservations = await prisma.reservation.findMany({
@@ -189,20 +194,19 @@ export default async function ReservationsPage({
   // Convertir a array y ordenar por fecha del mes (más próximo primero)
   const monthGroups = Array.from(reservationsByMonth.entries())
     .map(([monthKey, monthReservations]) => {
-      // Obtener la fecha del primer día del mes para ordenar
       const firstReservation = monthReservations[0];
       const monthDate = new Date(
         firstReservation.startDate.getFullYear(),
         firstReservation.startDate.getMonth(),
         1
       );
-      return {
-        monthKey,
-        monthReservations,
-        monthDate,
-      };
+      return { monthKey, monthReservations, monthDate };
     })
     .sort((a, b) => a.monthDate.getTime() - b.monthDate.getTime());
+
+  // Mes actual para abrir por defecto
+  const currentMonthKey = today.toLocaleDateString("es-MX", { year: "numeric", month: "long" });
+  const hasCurrentMonth = monthGroups.some((g) => g.monthKey === currentMonthKey);
 
   // Función para formatear el mes en español con capitalización
   const formatMonthTitle = (monthKey: string): string => {
@@ -214,18 +218,22 @@ export default async function ReservationsPage({
       <div className="space-y-6">
 
       {/* Filtros */}
-      <section className="sm:rounded-2xl sm:border sm:border-neutral-200 sm:bg-white sm:p-4 sm:space-y-3">
+      <div className="space-y-3">
         <ReservationFilters
           properties={properties}
           currentPropertyId={resolvedSearchParams?.propertyId}
           currentStatus={resolvedSearchParams?.status || "CONFIRMED"}
           currentDateBucket={
-            resolvedSearchParams?.dateBucket === "PAST" || resolvedSearchParams?.dateBucket === "CURRENT_FUTURE"
-              ? (resolvedSearchParams.dateBucket as "PAST" | "CURRENT_FUTURE")
-              : "CURRENT_FUTURE" // Por defecto: Actuales
+            resolvedSearchParams?.dateBucket === "PAST" ||
+            resolvedSearchParams?.dateBucket === "CURRENT_FUTURE" ||
+            resolvedSearchParams?.dateBucket === "ALL"
+              ? (resolvedSearchParams.dateBucket as "PAST" | "CURRENT_FUTURE" | "ALL")
+              : "CURRENT_FUTURE"
           }
+          availableYears={availableYears}
+          currentYear={selectedYear}
         />
-      </section>
+      </div>
 
       {/* Lista de reservas agrupadas por mes */}
       <section>
@@ -238,13 +246,14 @@ export default async function ReservationsPage({
         ) : (
           <div className="space-y-4">
             {monthGroups.map(({ monthKey, monthReservations }, groupIndex) => {
-              const isFirstMonth = groupIndex === 0;
+              const isCurrentMonth = monthKey === currentMonthKey;
+              const shouldOpen = isCurrentMonth || (!hasCurrentMonth && groupIndex === 0);
               return (
                 <CollapsibleSection
                   key={monthKey}
                   title={formatMonthTitle(monthKey)}
                   count={monthReservations.length}
-                  defaultOpen={isFirstMonth}
+                  defaultOpen={shouldOpen}
                 >
                   <ListContainer>
                     {monthReservations.map((reservation, index) => {

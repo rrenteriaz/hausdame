@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
     ]);
     const redirectTo =
       validatedRedirect ??
-      (user.role === "CLEANER" ? "/cleaner" : "/host/properties");
+      (user.role === "CLEANER" ? "/cleaner" : "/host/hoy");
 
     // Crear respuesta PRIMERO
     const response = NextResponse.json({

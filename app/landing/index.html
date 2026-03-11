@@ -1,0 +1,2639 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hausdame — Plataforma de operaciones para alquileres cortos</title>
+  <meta name="description"
+    content="Hausdame centraliza la gestión operativa de tus propiedades: limpieza, inventario, incidencias, equipos y accesos inteligentes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f9fb;
+      --bg-dark: #0f1117;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --text-light: #9ca3af;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-light: #eff6ff;
+      --accent-subtle: #dbeafe;
+      --success: #059669;
+      --radius: 12px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
+      --shadow: 0 4px 16px rgba(0, 0, 0, .08);
+      --shadow-lg: 0 12px 48px rgba(0, 0, 0, .12);
+      --shadow-xl: 0 24px 80px rgba(0, 0, 0, .16);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── UTILS ─────────────────────────────────────────────────── */
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      border-radius: 100px;
+      padding: 4px 12px;
+    }
+
+    .section-title {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -.02em;
+      color: var(--text);
+    }
+
+    .section-sub {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ─── BUTTONS ────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--radius);
+      padding: 12px 22px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .18s ease;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, .35);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, .4);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-alt);
+      border-color: #d1d5db;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      background: var(--bg-alt);
+    }
+
+    .btn-lg {
+      font-size: 16px;
+      padding: 14px 28px;
+    }
+
+    .btn-white {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+    }
+
+    .btn-white:hover {
+      background: #f1f5ff;
+      transform: translateY(-1px);
+    }
+
+    /* ─── NAVBAR ─────────────────────────────────────────────────── */
+    #navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      transition: box-shadow .2s;
+    }
+
+    #navbar.scrolled {
+      box-shadow: var(--shadow);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 24px;
+    }
+
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -.03em;
+      flex-shrink: 0;
+    }
+
+    .nav-logo span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .15s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+      background: var(--bg-alt);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      color: var(--text);
+    }
+
+    /* ─── HERO ───────────────────────────────────────────────────── */
+    #hero {
+      padding: 96px 0 80px;
+      background: linear-gradient(180deg, #f0f5ff 0%, #ffffff 60%);
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 32px;
+    }
+
+    .hero-headline {
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      color: var(--text);
+      max-width: 860px;
+    }
+
+    .hero-headline .highlight {
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: clamp(17px, 2vw, 20px);
+      color: var(--text-muted);
+      max-width: 600px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hero-note {
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    /* Dashboard Mockup */
+    .hero-mockup {
+      width: 100%;
+      max-width: 960px;
+      margin-top: 16px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: #1a1d27;
+    }
+
+    .mockup-topbar {
+      background: #1a1d27;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .mockup-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mockup-dots span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .mockup-dots span:nth-child(1) {
+      background: #ff5f57;
+    }
+
+    .mockup-dots span:nth-child(2) {
+      background: #febc2e;
+    }
+
+    .mockup-dots span:nth-child(3) {
+      background: #28c840;
+    }
+
+    .mockup-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .4);
+      letter-spacing: .02em;
+    }
+
+    .mockup-body {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: 460px;
+    }
+
+    .mockup-sidebar {
+      background: #13151e;
+      padding: 20px 0;
+      border-right: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .mockup-sidebar-logo {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      padding: 0 20px 20px;
+      letter-spacing: -.02em;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+      margin-bottom: 12px;
+    }
+
+    .mockup-sidebar-logo span {
+      color: #60a5fa;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .45);
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .sidebar-item.active {
+      color: #fff;
+      background: rgba(37, 99, 235, .25);
+      border-right: 2px solid #2563eb;
+    }
+
+    .sidebar-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .mockup-main {
+      background: #0f1117;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .mockup-main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .mockup-page-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .mockup-badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(37, 99, 235, .2);
+      color: #60a5fa;
+      border: 1px solid rgba(37, 99, 235, .3);
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #1a1d27;
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .4);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.02em;
+    }
+
+    .stat-value.green {
+      color: #34d399;
+    }
+
+    .stat-value.yellow {
+      color: #fbbf24;
+    }
+
+    .stat-value.red {
+      color: #f87171;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #1a1d27;
+      border-radius: 8px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .task-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .task-dot.green {
+      background: #34d399;
+    }
+
+    .task-dot.yellow {
+      background: #fbbf24;
+    }
+
+    .task-dot.blue {
+      background: #60a5fa;
+    }
+
+    .task-dot.red {
+      background: #f87171;
+    }
+
+    .task-text {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .75);
+      flex: 1;
+    }
+
+    .task-prop {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .35);
+    }
+
+    .task-status {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .task-status.done {
+      background: rgba(52, 211, 153, .15);
+      color: #34d399;
+    }
+
+    .task-status.pending {
+      background: rgba(251, 191, 36, .15);
+      color: #fbbf24;
+    }
+
+    .task-status.progress {
+      background: rgba(96, 165, 250, .15);
+      color: #60a5fa;
+    }
+
+    .task-status.alert {
+      background: rgba(248, 113, 113, .15);
+      color: #f87171;
+    }
+
+    /* ─── PROBLEM ────────────────────────────────────────────────── */
+    #problem {
+      padding: 96px 0;
+      background: var(--bg);
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 56px;
+    }
+
+    .problem-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: box-shadow .2s;
+    }
+
+    .problem-card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .problem-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #fee2e2;
+      color: #dc2626;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+
+    .problem-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .problem-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ─── SOLUTION ───────────────────────────────────────────────── */
+    #solution {
+      padding: 96px 0;
+      background: var(--bg-dark);
+      color: #fff;
+    }
+
+    #solution .section-title {
+      color: #fff;
+    }
+
+    #solution .section-sub {
+      color: rgba(255, 255, 255, .6);
+    }
+
+    .solution-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 72px;
+      align-items: center;
+      margin-top: 56px;
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .flow-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 20px 0;
+      position: relative;
+    }
+
+    .flow-step::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 52px;
+      width: 2px;
+      height: calc(100% - 32px);
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .flow-step:last-child::before {
+      display: none;
+    }
+
+    .flow-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, .3);
+      border: 1.5px solid rgba(37, 99, 235, .6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #60a5fa;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .flow-content h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .flow-content p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .5);
+      line-height: 1.6;
+    }
+
+    .solution-visual {
+      background: #1a1d27;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .timeline-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .5);
+      margin-bottom: 20px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tl-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .05);
+      transition: background .2s;
+    }
+
+    .tl-item:hover {
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .tl-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .tl-text {
+      flex: 1;
+    }
+
+    .tl-text strong {
+      display: block;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .tl-text span {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .4);
+    }
+
+    .tl-time {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .3);
+    }
+
+    /* ─── FEATURES ───────────────────────────────────────────────── */
+    #features {
+      padding: 96px 0;
+      background: var(--bg-alt);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 56px;
+    }
+
+    .feature-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: all .2s;
+    }
+
+    .feature-card:hover {
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-subtle);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feature-list li {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-list li::before {
+      content: '';
+      display: block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ─── AUTOMATION ─────────────────────────────────────────────── */
+    #automation {
+      padding: 96px 0;
+      background: var(--bg);
+    }
+
+    .automation-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+      margin-top: 56px;
+    }
+
+    .auto-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auto-card {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-alt);
+      transition: all .2s;
+    }
+
+    .auto-card:hover {
+      border-color: var(--accent-subtle);
+      box-shadow: var(--shadow);
+    }
+
+    .auto-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .auto-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .auto-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .auto-visual {
+      background: var(--bg-dark);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .auto-visual-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .4);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .trigger-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .trigger-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .trigger-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .85);
+      flex: 1;
+    }
+
+    .trigger-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+    }
+
+    .trigger-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      flex-shrink: 0;
+    }
+
+    .connector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 16px;
+    }
+
+    .connector-line {
+      width: 2px;
+      height: 20px;
+      background: rgba(255, 255, 255, .1);
+      margin-left: 3px;
+    }
+
+    .connector-text {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .3);
+    }
+
+    /* ─── SMART LOCKS ────────────────────────────────────────────── */
+    #smartlocks {
+      padding: 96px 0;
+      background: var(--bg-alt);
+    }
+
+    .locks-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .locks-visual {
+      background: var(--bg-dark);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      order: -1;
+    }
+
+    .lock-card-demo {
+      background: #1a1d27;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .lock-demo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .lock-demo-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .lock-demo-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(52, 211, 153, .15);
+      border: 1px solid rgba(52, 211, 153, .3);
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .lock-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lock-entry {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .05);
+      border-radius: 8px;
+    }
+
+    .lock-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .lock-info {
+      flex: 1;
+    }
+
+    .lock-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .lock-time {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .4);
+    }
+
+    .lock-code {
+      font-size: 13px;
+      font-weight: 700;
+      color: #60a5fa;
+      letter-spacing: .08em;
+    }
+
+    .lock-exp {
+      font-size: 10px;
+      color: rgba(255, 255, 255, .3);
+      text-align: right;
+    }
+
+    .locks-content {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .lock-benefit {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .lock-benefit-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .lock-benefit h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .lock-benefit p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ─── INTEGRATIONS ───────────────────────────────────────────── */
+    #integrations {
+      padding: 96px 0;
+      background: var(--bg);
+    }
+
+    .integrations-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 56px;
+    }
+
+    .integrations-grid {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .integration-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 28px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      box-shadow: var(--shadow-sm);
+      transition: all .2s;
+      min-width: 200px;
+    }
+
+    .integration-card:hover {
+      box-shadow: var(--shadow);
+      border-color: var(--accent-subtle);
+      transform: translateY(-2px);
+    }
+
+    .integration-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .integration-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .integration-name {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .integration-desc {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .integration-note {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 520px;
+      line-height: 1.7;
+    }
+
+    /* ─── PRICING ────────────────────────────────────────────────── */
+    #pricing {
+      padding: 96px 0;
+      background: var(--bg-alt);
+    }
+
+    .pricing-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 56px;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      width: 100%;
+    }
+
+    .pricing-card {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      transition: all .2s;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-subtle), var(--shadow-lg);
+    }
+
+    .pricing-card:hover:not(.featured) {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      background: var(--accent);
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .pricing-plan {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .pricing-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .pricing-price .amount {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+
+    .pricing-price .period {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .pricing-price .free {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--success);
+    }
+
+    .pricing-props {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .pricing-features-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .pricing-features-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .pricing-features-list li .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .pricing-extra {
+      font-size: 13px;
+      color: var(--text-muted);
+      background: var(--bg-alt);
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ─── FAQ ────────────────────────────────────────────────────── */
+    #faq {
+      padding: 96px 0;
+      background: var(--bg);
+    }
+
+    .faq-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 56px;
+    }
+
+    .faq-list {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .faq-question {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      gap: 16px;
+      transition: color .15s;
+    }
+
+    .faq-question:hover {
+      color: var(--accent);
+    }
+
+    .faq-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-alt);
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all .2s;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .faq-item.open .faq-icon {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .3s ease, padding .3s ease;
+      padding: 0;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+      padding-bottom: 24px;
+    }
+
+    /* ─── FINAL CTA ──────────────────────────────────────────────── */
+    #cta {
+      padding: 96px 0;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+      color: #fff;
+    }
+
+    .cta-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 28px;
+    }
+
+    .cta-headline {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1.1;
+    }
+
+    .cta-sub {
+      font-size: 18px;
+      color: rgba(255, 255, 255, .75);
+      max-width: 480px;
+      line-height: 1.7;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────────────── */
+    footer {
+      background: var(--bg-dark);
+      color: rgba(255, 255, 255, .6);
+      padding: 64px 0 40px;
+    }
+
+    .footer-inner {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .footer-logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.03em;
+    }
+
+    .footer-logo span {
+      color: #60a5fa;
+    }
+
+    .footer-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 260px;
+    }
+
+    .footer-col h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 16px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-col a {
+      font-size: 14px;
+      color: rgba(255, 255, 255, .5);
+      text-decoration: none;
+      transition: color .15s;
+    }
+
+    .footer-col a:hover {
+      color: #fff;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, .08);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-copy {
+      font-size: 13px;
+    }
+
+    /* ─── SOCIAL PROOF BAR ───────────────────────────────────────── */
+    .trust-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .trust-item svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .mockup-body {
+        grid-template-columns: 1fr;
+      }
+
+      .mockup-sidebar {
+        display: none;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .problem-grid,
+      .features-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .solution-inner,
+      .automation-inner,
+      .locks-inner {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .locks-visual {
+        order: 0;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+
+      .nav-links,
+      .nav-actions .btn-secondary {
+        display: none;
+      }
+
+      .nav-mobile-toggle {
+        display: block;
+      }
+
+      .problem-grid,
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .integrations-grid {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-up {
+      animation: fadeUp .6s ease both;
+    }
+
+    .fade-up-d1 {
+      animation-delay: .1s;
+    }
+
+    .fade-up-d2 {
+      animation-delay: .2s;
+    }
+
+    .fade-up-d3 {
+      animation-delay: .3s;
+    }
+
+    .fade-up-d4 {
+      animation-delay: .4s;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .4;
+      }
+    }
+
+    .pulse {
+      animation: pulse-dot 2s ease infinite;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════════════════════════ -->
+  <nav id="navbar">
+    <div class="container">
+      <div class="nav-inner">
+        <a href="#" class="nav-logo">Haus<span>dame</span></a>
+        <ul class="nav-links">
+          <li><a href="#features">Producto</a></li>
+          <li><a href="#features">Funciones</a></li>
+          <li><a href="#pricing">Precios</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a href="#" class="btn btn-ghost">Iniciar sesión</a>
+          <a href="#" class="btn btn-primary">Solicitar demo</a>
+        </div>
+        <button class="nav-mobile-toggle" aria-label="Menú">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════════════════ -->
+  <section id="hero">
+    <div class="container">
+      <div class="hero-inner">
+        <span class="tag fade-up">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+            <circle cx="5" cy="5" r="5" />
+          </svg>
+          Plataforma operativa para alquileres cortos o vacacionales
+        </span>
+
+        <h1 class="hero-headline fade-up fade-up-d1">
+          Controla la operación<br class="br-lg"> de tus <span class="highlight">propiedades.</span>
+        </h1>
+
+        <p class="hero-sub fade-up fade-up-d2">
+          Hausdame conecta limpiezas, inventario, incidencias,
+          equipos y accesos inteligentes en una sola plataforma operativa.
+        </p>
+
+        <div class="hero-actions fade-up fade-up-d3">
+          <a href="#" class="btn btn-primary btn-lg">Solicitar demo</a>
+          <a href="#pricing" class="btn btn-secondary btn-lg">Probar gratis</a>
+        </div>
+        <p class="hero-note fade-up fade-up-d4">1 propiedad gratis · Sin tarjeta de crédito</p>
+
+        <!-- Dashboard Mockup -->
+        <div class="hero-mockup fade-up fade-up-d4">
+          <div class="mockup-topbar">
+            <div class="mockup-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="mockup-title">Hausdame — Panel de operaciones</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-sidebar">
+              <div class="mockup-sidebar-logo">Haus<span>dame</span></div>
+              <div class="sidebar-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                </svg>
+                Resumen
+              </div>
+              <div class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                </svg>
+                Propiedades
+              </div>
+              <div class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 11 12 14 22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+                Limpiezas
+              </div>
+              <div class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                Inventario
+              </div>
+              <div class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                Incidencias
+              </div>
+              <div class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Accesos
+              </div>
+            </div>
+            <div class="mockup-main">
+              <div class="mockup-main-header">
+                <span class="mockup-page-title">Hoy — 9 de marzo</span>
+                <span class="mockup-badge">4 propiedades activas</span>
+              </div>
+              <div class="stats-row">
+                <div class="stat-card">
+                  <div class="stat-label">Limpiezas hoy</div>
+                  <div class="stat-value">6</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Completadas</div>
+                  <div class="stat-value green">4</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Pendientes</div>
+                  <div class="stat-value yellow">2</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Incidencias</div>
+                  <div class="stat-value red">1</div>
+                </div>
+              </div>
+              <div class="task-list">
+                <div class="task-item">
+                  <div class="task-dot green"></div>
+                  <span class="task-text">Limpieza completada — Apartamento Centro</span>
+                  <span class="task-prop">Marta G.</span>
+                  <span class="task-status done">Listo</span>
+                </div>
+                <div class="task-item">
+                  <div class="task-dot yellow"></div>
+                  <span class="task-text">Limpieza pendiente — Villa Mediterránea</span>
+                  <span class="task-prop">Carlos R.</span>
+                  <span class="task-status pending">Pendiente</span>
+                </div>
+                <div class="task-item">
+                  <div class="task-dot blue"></div>
+                  <span class="task-text">Inventario verificado — Estudio Playa</span>
+                  <span class="task-prop">Ana M.</span>
+                  <span class="task-status progress">En curso</span>
+                </div>
+                <div class="task-item">
+                  <div class="task-dot red"></div>
+                  <span class="task-text">Incidencia: persiana rota — Ático Norte</span>
+                  <span class="task-prop">Luis T.</span>
+                  <span class="task-status alert">Alerta</span>
+                </div>
+                <div class="task-item">
+                  <div class="task-dot green"></div>
+                  <span class="task-text">Código de acceso generado — Villa Mediterránea</span>
+                  <span class="task-prop">Auto</span>
+                  <span class="task-status done">Activo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust bar -->
+  <div class="container">
+    <div class="trust-bar">
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Sin configuraciones complejas
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Funciona desde el día 1
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        App móvil para tu equipo
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Soporte en español
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     PROBLEM
+═══════════════════════════════════════════════════════════════ -->
+  <section id="problem">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">El problema</span>
+        <h2 class="section-title">Gestionar operaciones no debería<br>requerir cinco herramientas distintas.</h2>
+        <p class="section-sub">La mayoría de hosts gestionan sus propiedades con una combinación caótica de WhatsApp,
+          hojas de cálculo y notas de voz. El resultado: errores, olvidos y estrés constante.</p>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-icon">💬</div>
+          <h3>Coordinación por WhatsApp</h3>
+          <p>Las tareas de limpieza se asignan por mensajes que se pierden, se olvidan o generan confusión entre el
+            equipo.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">📊</div>
+          <h3>Inventario en hojas de cálculo</h3>
+          <p>Sin visibilidad en tiempo real de qué falta, qué se rompió o qué necesita reponerse en cada habitación.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">📋</div>
+          <h3>Incidencias reportadas informalmente</h3>
+          <p>Los daños y problemas se reportan de manera desorganizada, sin fotos, sin seguimiento ni historial.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">🔑</div>
+          <h3>Códigos de acceso generados a mano</h3>
+          <p>Compartir accesos por mensajes, sin control de vencimiento ni registro de quién entró y cuándo.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">👁️</div>
+          <h3>Equipos sin visibilidad</h3>
+          <p>Los limpiadores no saben qué propiedad les toca ni cuándo. Los gestores no saben si la limpieza se
+            completó.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">⏰</div>
+          <h3>Tareas olvidadas entre reservas</h3>
+          <p>Sin automatización, las tareas operativas dependen de que alguien las recuerde manualmente en cada
+            rotación.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     SOLUTION
+═══════════════════════════════════════════════════════════════ -->
+  <section id="solution">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag" style="background:rgba(37,99,235,.2);color:#93c5fd;">La solución</span>
+        <h2 class="section-title">Hausdame centraliza toda la<br>operación de tus propiedades.</h2>
+        <p class="section-sub" style="color:rgba(255,255,255,.6);">Conecta el flujo operativo entre cada reserva. Desde
+          que llega el huésped hasta que sale, todo está coordinado y visible.</p>
+      </div>
+      <div class="solution-inner">
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-content">
+              <h4>Llega la reserva</h4>
+              <p>Hausdame recibe la información desde Airbnb o iCal y prepara el flujo operativo automáticamente.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-content">
+              <h4>Limpieza asignada automáticamente</h4>
+              <p>Se crea la tarea de limpieza, se asigna al equipo correspondiente y se notifica en la app.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-content">
+              <h4>Checklist completado e inventario verificado</h4>
+              <p>El limpiador sigue el checklist, documenta el estado y reporta el inventario desde el móvil.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-content">
+              <h4>Incidencias reportadas con evidencia</h4>
+              <p>Cualquier daño o anomalía se reporta con fotos y descripción directamente en la plataforma.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">5</div>
+            <div class="flow-content">
+              <h4>Acceso inteligente creado</h4>
+              <p>El código de acceso del huésped se genera automáticamente y expira al finalizar la reserva.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">6</div>
+            <div class="flow-content">
+              <h4>Propiedad lista para el huésped</h4>
+              <p>Todo verificado, todo documentado. El gestor recibe la confirmación en tiempo real.</p>
+            </div>
+          </div>
+        </div>
+        <div class="solution-visual">
+          <div class="timeline-title">Línea de tiempo operativa</div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-icon" style="background:rgba(37,99,235,.15);">📅</div>
+              <div class="tl-text">
+                <strong>Reserva recibida</strong>
+                <span>Airbnb · 14–17 marzo</span>
+              </div>
+              <span class="tl-time">Auto</span>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:rgba(52,211,153,.15);">🧹</div>
+              <div class="tl-text">
+                <strong>Limpieza programada</strong>
+                <span>17 mar · 11:00 — Marta G.</span>
+              </div>
+              <span class="tl-time" style="color:#34d399;">Listo</span>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:rgba(251,191,36,.15);">📋</div>
+              <div class="tl-text">
+                <strong>Inventario verificado</strong>
+                <span>17 habitaciones · 3 repuestos</span>
+              </div>
+              <span class="tl-time" style="color:#fbbf24;">Pendiente</span>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:rgba(96,165,250,.15);">🔐</div>
+              <div class="tl-text">
+                <strong>Código de acceso</strong>
+                <span>Expira 17 mar · 12:00</span>
+              </div>
+              <span class="tl-time" style="color:#60a5fa;">Generado</span>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:rgba(167,139,250,.15);">👤</div>
+              <div class="tl-text">
+                <strong>Check-in del huésped</strong>
+                <span>17 mar · 15:00</span>
+              </div>
+              <span class="tl-time">Próximo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     FEATURES
+═══════════════════════════════════════════════════════════════ -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">Funciones</span>
+        <h2 class="section-title">Las herramientas operativas<br>que un PMS no te da.</h2>
+        <p class="section-sub">Hausdame reúne en un solo lugar las herramientas operativas que los hosts necesitan cada
+          día.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🧹</div>
+          <h3>Gestión de limpiezas</h3>
+          <p>Programa, asigna y rastrea cada limpieza de forma automática entre reservas.</p>
+          <ul class="feature-list">
+            <li>Tareas programadas automáticamente</li>
+            <li>Checklists personalizables</li>
+            <li>Seguimiento de estado en tiempo real</li>
+            <li>Asignación por equipo o limpiador</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Control de inventario</h3>
+          <p>Conoce en todo momento el estado de los suministros en cada habitación de cada propiedad.</p>
+          <ul class="feature-list">
+            <li>Inventario por habitación</li>
+            <li>Registro de reposiciones</li>
+            <li>Evidencia fotográfica</li>
+            <li>Verificación post-limpieza</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚠️</div>
+          <h3>Reporte de incidencias</h3>
+          <p>Centraliza los reportes de daños y mantenimiento con toda la documentación necesaria.</p>
+          <ul class="feature-list">
+            <li>Reporte de daños con foto</li>
+            <li>Alertas de mantenimiento</li>
+            <li>Historial por propiedad</li>
+            <li>Visibilidad operativa completa</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>Equipos y roles</h3>
+          <p>Coordina tu equipo con roles y permisos claros para cada nivel de responsabilidad.</p>
+          <ul class="feature-list">
+            <li>Roles: limpiador, jefe de equipo, gestor</li>
+            <li>Asignaciones por propiedad</li>
+            <li>Permisos diferenciados</li>
+            <li>Notificaciones en app móvil</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Accesos inteligentes</h3>
+          <p>Gestiona los accesos de huéspedes y personal con códigos temporales y automatizados.</p>
+          <ul class="feature-list">
+            <li>Códigos temporales para huéspedes</li>
+            <li>Ventanas de acceso para limpiadores</li>
+            <li>Gestión remota del acceso</li>
+            <li>Expiración automática</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📈</div>
+          <h3>Línea de tiempo operativa</h3>
+          <p>Visualiza todo el ciclo operativo de cada propiedad: desde la reserva hasta el próximo check-in.</p>
+          <ul class="feature-list">
+            <li>Vista por propiedad y fecha</li>
+            <li>Estado de limpieza e inspección</li>
+            <li>Registro de check-in y checkout</li>
+            <li>Preparación para la próxima reserva</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     AUTOMATION
+═══════════════════════════════════════════════════════════════ -->
+  <section id="automation">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">Automatización</span>
+        <h2 class="section-title">Automatiza la rutina.<br>Enfócate en el negocio.</h2>
+        <p class="section-sub">Hausdame se encarga de las tareas repetitivas para que tú te concentres en lo que
+          realmente importa: crecer.</p>
+      </div>
+      <div class="automation-inner">
+        <div class="auto-cards">
+          <div class="auto-card">
+            <div class="auto-card-icon">🧹</div>
+            <div>
+              <h4>Limpiezas automáticas</h4>
+              <p>Cada checkout genera automáticamente una tarea de limpieza asignada al equipo correcto.</p>
+            </div>
+          </div>
+          <div class="auto-card">
+            <div class="auto-card-icon">🔔</div>
+            <div>
+              <h4>Notificaciones en tiempo real</h4>
+              <p>El equipo recibe alertas en el móvil cuando hay una tarea nueva, un cambio o una urgencia.</p>
+            </div>
+          </div>
+          <div class="auto-card">
+            <div class="auto-card-icon">⚠️</div>
+            <div>
+              <h4>Alertas de incidencias</h4>
+              <p>Los gestores son notificados al instante cuando se reporta un daño o problema en la propiedad.</p>
+            </div>
+          </div>
+          <div class="auto-card">
+            <div class="auto-card-icon">🔑</div>
+            <div>
+              <h4>Códigos de acceso automáticos</h4>
+              <p>Los códigos para huéspedes se generan y expiran solos según las fechas de la reserva.</p>
+            </div>
+          </div>
+        </div>
+        <div class="auto-visual">
+          <div class="auto-visual-title">Flujo automatizado</div>
+          <div class="trigger-flow">
+            <div class="trigger-item">
+              <div class="trigger-dot"></div>
+              <span class="trigger-label">Checkout confirmado en Airbnb</span>
+            </div>
+            <div class="connector">
+              <div class="connector-line"></div>
+              <span class="connector-text">Desencadena automáticamente</span>
+            </div>
+            <div class="trigger-item">
+              <div class="trigger-dot" style="background:#60a5fa;"></div>
+              <span class="trigger-label">Tarea de limpieza creada y asignada</span>
+            </div>
+            <div class="connector">
+              <div class="connector-line"></div>
+              <span class="connector-text"></span>
+            </div>
+            <div class="trigger-item">
+              <div class="trigger-dot" style="background:#fbbf24;"></div>
+              <span class="trigger-label">Notificación enviada al limpiador</span>
+            </div>
+            <div class="connector">
+              <div class="connector-line"></div>
+              <span class="connector-text"></span>
+            </div>
+            <div class="trigger-item">
+              <div class="trigger-dot" style="background:#a78bfa;"></div>
+              <span class="trigger-label">Código de acceso generado para la próxima reserva</span>
+            </div>
+            <div class="connector">
+              <div class="connector-line"></div>
+              <span class="connector-text"></span>
+            </div>
+            <div class="trigger-item">
+              <div class="trigger-dot" style="background:#34d399;"></div>
+              <span class="trigger-label">Gestor recibe confirmación de propiedad lista</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     SMART LOCKS
+═══════════════════════════════════════════════════════════════ -->
+  <section id="smartlocks">
+    <div class="container">
+      <div style="display:flex;flex-direction:column;gap:56px;">
+        <div class="section-header">
+          <span class="tag">Accesos inteligentes</span>
+          <h2 class="section-title">Acceso inteligente para<br>huéspedes y personal.</h2>
+          <p class="section-sub">Gestiona quién entra y cuándo sin llamadas, sin WhatsApp y sin riesgo de seguridad.</p>
+        </div>
+        <div class="locks-inner">
+          <div class="locks-visual">
+            <div class="lock-card-demo">
+              <div class="lock-demo-header">
+                <span class="lock-demo-title">Accesos activos — Apartamento Centro</span>
+                <span class="lock-demo-badge pulse">● En vivo</span>
+              </div>
+              <div class="lock-entries">
+                <div class="lock-entry">
+                  <div class="lock-avatar" style="background:#2563eb;">H</div>
+                  <div class="lock-info">
+                    <div class="lock-name">María López (Huésped)</div>
+                    <div class="lock-time">Check-in 14 mar · 15:00 → 17 mar · 11:00</div>
+                  </div>
+                  <div>
+                    <div class="lock-code">4829</div>
+                    <div class="lock-exp">Expira auto.</div>
+                  </div>
+                </div>
+                <div class="lock-entry">
+                  <div class="lock-avatar" style="background:#059669;">L</div>
+                  <div class="lock-info">
+                    <div class="lock-name">Marta García (Limpieza)</div>
+                    <div class="lock-time">17 mar · 10:00 → 13:00</div>
+                  </div>
+                  <div>
+                    <div class="lock-code">7163</div>
+                    <div class="lock-exp">3 horas</div>
+                  </div>
+                </div>
+                <div class="lock-entry" style="opacity:.5;">
+                  <div class="lock-avatar" style="background:#6b7280;">H</div>
+                  <div class="lock-info">
+                    <div class="lock-name">Próximo huésped</div>
+                    <div class="lock-time">18 mar · 15:00 → 21 mar · 11:00</div>
+                  </div>
+                  <div>
+                    <div class="lock-code" style="color:rgba(96,165,250,.4);">——</div>
+                    <div class="lock-exp">Pendiente</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="locks-content">
+            <div class="lock-benefit">
+              <div class="lock-benefit-icon">🔒</div>
+              <div>
+                <h4>Códigos temporales para huéspedes</h4>
+                <p>Se generan automáticamente con las fechas de la reserva y expiran solos al hacer checkout. Sin
+                  intervención manual.</p>
+              </div>
+            </div>
+            <div class="lock-benefit">
+              <div class="lock-benefit-icon">🕐</div>
+              <div>
+                <h4>Ventanas de acceso para el equipo de limpieza</h4>
+                <p>Define exactamente cuándo puede entrar el personal. El acceso se activa y desactiva automáticamente.
+                </p>
+              </div>
+            </div>
+            <div class="lock-benefit">
+              <div class="lock-benefit-icon">📱</div>
+              <div>
+                <h4>Gestión remota desde cualquier lugar</h4>
+                <p>Controla todos los accesos desde la plataforma sin necesidad de estar físicamente en la propiedad.
+                </p>
+              </div>
+            </div>
+            <div class="lock-benefit">
+              <div class="lock-benefit-icon">🛡️</div>
+              <div>
+                <h4>Seguridad sin esfuerzo</h4>
+                <p>Ningún código se reutiliza entre huéspedes. El historial de accesos queda registrado automáticamente.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     INTEGRATIONS
+═══════════════════════════════════════════════════════════════ -->
+  <section id="integrations">
+    <div class="container">
+      <div class="integrations-inner">
+        <div class="section-header" style="align-items:center;text-align:center;">
+          <span class="tag">Integraciones</span>
+          <h2 class="section-title">Conectado con tus<br>fuentes de reservas.</h2>
+          <p class="section-sub" style="text-align:center;margin:0 auto;">Hausdame se integra con los canales que ya
+            utilizas para recibir reservas y activar las operaciones automáticamente, cuando llega una reserva, la
+            operación se activa sola.</p>
+        </div>
+        <!-- Integraciones actuales -->
+        <div style="width:100%;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <span
+              style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);">Integraciones
+              actuales</span>
+            <div style="flex:1;height:1px;background:var(--border);"></div>
+          </div>
+          <div class="integrations-grid">
+            <div class="integration-card">
+              <div class="integration-logo" style="background:#ff5a5f1a;">🏠</div>
+              <div class="integration-info">
+                <span class="integration-name">Airbnb</span>
+                <span class="integration-desc">Sincronización de reservas</span>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-logo" style="background:#0056d21a;">📅</div>
+              <div class="integration-info">
+                <span class="integration-name">iCal</span>
+                <span class="integration-desc">Calendario universal</span>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-logo" style="background:#2563eb1a;">🔐</div>
+              <div class="integration-info">
+                <span class="integration-name">TTLock</span>
+                <span class="integration-desc">Cerraduras inteligentes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Próximamente -->
+        <div style="width:100%;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <span
+              style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);">Próximamente</span>
+            <div style="flex:1;height:1px;background:var(--accent-subtle);"></div>
+          </div>
+          <div class="integrations-grid">
+            <div class="integration-card" style="border-style:dashed;border-color:var(--accent-subtle);opacity:.8;">
+              <div class="integration-logo" style="background:#003b951a;">🏨</div>
+              <div class="integration-info">
+                <span class="integration-name" style="color:var(--text-muted);">Booking.com</span>
+                <span class="integration-desc">En desarrollo</span>
+              </div>
+            </div>
+            <div class="integration-card" style="border-style:dashed;border-color:var(--accent-subtle);opacity:.8;">
+              <div class="integration-logo" style="background:#0046871a;">✈️</div>
+              <div class="integration-info">
+                <span class="integration-name" style="color:var(--text-muted);">Expedia</span>
+                <span class="integration-desc">En desarrollo</span>
+              </div>
+            </div>
+            <div class="integration-card" style="border-style:dashed;border-color:var(--accent-subtle);opacity:.8;">
+              <div class="integration-logo" style="background:#1da1f21a;">🏖️</div>
+              <div class="integration-info">
+                <span class="integration-name" style="color:var(--text-muted);">VRBO</span>
+                <span class="integration-desc">En desarrollo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     PRICING
+═══════════════════════════════════════════════════════════════ -->
+  <section id="pricing">
+    <div class="container">
+      <div class="pricing-inner">
+        <div class="section-header" style="align-items:center;text-align:center;">
+          <span class="tag">Precios</span>
+          <h2 class="section-title">Precios simples que<br>crecen contigo.</h2>
+          <p class="section-sub" style="text-align:center;margin:0 auto;">Empieza gratis con 1 propiedad. Escala cuando
+            tu portfolio crezca. Sin sorpresas.</p>
+        </div>
+        <div class="pricing-grid">
+          <!-- Free -->
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-plan">Gratis</div>
+              <div class="pricing-price" style="margin-top:12px;">
+                <span class="free">$0</span>
+              </div>
+              <div class="pricing-props" style="margin-top:8px;">1 propiedad · Siempre gratis</div>
+            </div>
+            <ul class="pricing-features-list">
+              <li><span class="check">✓</span> 1 propiedad</li>
+              <li><span class="check">✓</span> Gestión de limpiezas</li>
+              <li><span class="check">✓</span> Inventario básico</li>
+              <li><span class="check">✓</span> Reporte de incidencias</li>
+              <li><span class="check">✓</span> 2 miembros de equipo</li>
+            </ul>
+            <a href="#" class="btn btn-secondary" style="width:100%;justify-content:center;">Empezar gratis</a>
+          </div>
+          <!-- Starter -->
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-plan">Starter</div>
+              <div class="pricing-price" style="margin-top:12px;">
+                <span class="amount">$15</span>
+                <span class="period">/ mes</span>
+              </div>
+              <div class="pricing-props" style="margin-top:8px;">2–10 propiedades</div>
+              <div style="margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;">Ideal para hosts pequeños
+              </div>
+            </div>
+            <ul class="pricing-features-list">
+              <li><span class="check">✓</span> Hasta 10 propiedades</li>
+              <li><span class="check">✓</span> Todo del plan Gratis</li>
+              <li><span class="check">✓</span> Equipo ilimitado</li>
+              <li><span class="check">✓</span> Integración iCal</li>
+              <li><span class="check">✓</span> Accesos TTLock</li>
+            </ul>
+            <a href="#" class="btn btn-secondary" style="width:100%;justify-content:center;">Comenzar</a>
+          </div>
+          <!-- Growth -->
+          <div class="pricing-card featured">
+            <div class="pricing-badge">Más popular</div>
+            <div>
+              <div class="pricing-plan">Growth</div>
+              <div class="pricing-price" style="margin-top:12px;">
+                <span class="amount">$25</span>
+                <span class="period">/ mes</span>
+              </div>
+              <div class="pricing-props" style="margin-top:8px;">11–20 propiedades</div>
+              <div style="margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;">Para property managers
+              </div>
+            </div>
+            <ul class="pricing-features-list">
+              <li><span class="check">✓</span> Hasta 20 propiedades</li>
+              <li><span class="check">✓</span> Todo del plan Starter</li>
+              <li><span class="check">✓</span> Integración Airbnb</li>
+              <li><span class="check">✓</span> Automatizaciones avanzadas</li>
+              <li><span class="check">✓</span> Soporte prioritario</li>
+            </ul>
+            <a href="#" class="btn btn-primary" style="width:100%;justify-content:center;">Comenzar</a>
+          </div>
+          <!-- Scale -->
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-plan">Scale</div>
+              <div class="pricing-price" style="margin-top:12px;">
+                <span class="amount">$35</span>
+                <span class="period">/ mes</span>
+              </div>
+              <div class="pricing-props" style="margin-top:8px;">21–30 propiedades</div>
+            </div>
+            <ul class="pricing-features-list">
+              <li><span class="check">✓</span> Hasta 30 propiedades</li>
+              <li><span class="check">✓</span> Todo del plan Growth</li>
+              <li><span class="check">✓</span> Reportes avanzados</li>
+              <li><span class="check">✓</span> API access</li>
+              <li><span class="check">✓</span> Onboarding dedicado</li>
+            </ul>
+            <a href="#" class="btn btn-secondary" style="width:100%;justify-content:center;">Comenzar</a>
+          </div>
+        </div>
+        <div class="pricing-extra"
+          style="max-width:480px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+          <strong>¿Más de 30 propiedades?</strong><br>
+          Cada bloque adicional de 10 propiedades suma <strong>$10/mes</strong>.<br>
+          <span style="color:var(--text-light);font-size:13px;">31–40 propiedades → $45/mes · 41–50 → $55/mes · y así
+            sucesivamente.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     FAQ
+═══════════════════════════════════════════════════════════════ -->
+  <section id="faq">
+    <div class="container">
+      <div class="faq-inner">
+        <div class="section-header" style="align-items:center;text-align:center;">
+          <span class="tag">FAQ</span>
+          <h2 class="section-title">Preguntas frecuentes</h2>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item">
+            <button class="faq-question">
+              ¿Hausdame reemplaza mi PMS o channel manager?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              No. Hausdame no compite con los sistemas de gestión de reservas (PMS) ni los channel managers como Lodgify
+              o Hostaway. Mientras esos sistemas gestionan las reservas, los pagos y la distribución de canales,
+              Hausdame se encarga de la capa operativa: lo que ocurre entre reserva y reserva. Son herramientas
+              complementarias.
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              ¿Se integra con Airbnb?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Sí. Hausdame se conecta con Airbnb para importar automáticamente las fechas de reserva y activar los
+              flujos operativos correspondientes. También soporta iCal para sincronización con cualquier otra plataforma
+              de reservas.
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              ¿Mi equipo de limpieza puede usar el sistema?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Sí, y es exactamente para eso. Hausdame incluye una app móvil para que tu equipo reciba tareas, siga
+              checklists, reporte incidencias y verifique inventario directamente desde su teléfono. Puedes asignar
+              roles diferenciados: limpiador, jefe de equipo o gestor.
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              ¿Necesito cerraduras inteligentes para usar Hausdame?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              No. Las cerraduras inteligentes son una funcionalidad adicional y opcional. Puedes usar Hausdame para
+              gestionar limpiezas, inventario, incidencias y equipos sin tener ningún dispositivo de acceso inteligente.
+              Cuando estés listo, puedes añadir la integración con TTLock.
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              ¿Cómo funciona el plan gratuito?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              El plan gratuito incluye 1 propiedad, gestión de limpiezas, inventario básico, reporte de incidencias y
+              hasta 2 miembros de equipo. No tiene límite de tiempo, no requiere tarjeta de crédito y no caduca. Es
+              ideal para empezar a conocer la plataforma con tu primera propiedad.
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              ¿Puedo cambiar de plan en cualquier momento?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Sí. Puedes subir o bajar de plan en cualquier momento desde tu panel de configuración. Los cambios se
+              aplican en el siguiente ciclo de facturación. No hay penalizaciones ni contratos de permanencia.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     FINAL CTA
+═══════════════════════════════════════════════════════════════ -->
+  <section id="cta">
+    <div class="container">
+      <div class="cta-inner">
+        <h2 class="cta-headline">Las operaciones no deberían<br>depender de WhatsApp.</h2>
+        <p class="cta-sub">Gestiona las operaciones de tus propiedades con claridad y control usando Hausdame.</p>
+        <div class="cta-actions">
+          <a href="#" class="btn btn-white btn-lg">Solicitar demo</a>
+          <a href="#pricing" class="btn btn-lg"
+            style="background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);">Ver precios</a>
+        </div>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);">1 propiedad gratis · Sin tarjeta de crédito ·
+          Configuración en minutos</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════════ -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="footer-logo">Haus<span>dame</span></div>
+          <p class="footer-desc">La plataforma de operaciones para hosts y gestores de alquileres de corta estancia.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Producto</h4>
+          <ul>
+            <li><a href="#features">Funciones</a></li>
+            <li><a href="#pricing">Precios</a></li>
+            <li><a href="#integrations">Integraciones</a></li>
+            <li><a href="#">Documentación</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Empresa</h4>
+          <ul>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#">Privacidad</a></li>
+            <li><a href="#">Términos</a></li>
+            <li><a href="#">Contacto</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Cuenta</h4>
+          <ul>
+            <li><a href="#">Iniciar sesión</a></li>
+            <li><a href="#">Solicitar demo</a></li>
+            <li><a href="#pricing">Empezar gratis</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2025 Hausdame. Todos los derechos reservados.</span>
+        <span style="font-size:13px;">Hecho para hosts que quieren operar con control.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════════ -->
+  <script>
+    // Navbar scroll shadow
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+
+    // Intersection Observer for fade-up on sections
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feature-card, .problem-card, .auto-card, .pricing-card, .integration-card').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity .5s ease, transform .5s ease';
+      observer.observe(el);
+    });
+  </script>
+
+</body>
+
+</html>

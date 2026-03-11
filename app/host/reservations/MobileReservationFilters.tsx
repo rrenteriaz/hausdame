@@ -15,7 +15,9 @@ interface MobileReservationFiltersProps {
   properties: Property[];
   currentPropertyId?: string;
   currentStatus?: string;
-  currentDateBucket?: "PAST" | "CURRENT_FUTURE" | null;
+  currentDateBucket?: "PAST" | "CURRENT_FUTURE" | "ALL" | null;
+  availableYears?: number[];
+  currentYear?: number | null;
 }
 
 export default function MobileReservationFilters({
@@ -23,6 +25,8 @@ export default function MobileReservationFilters({
   currentPropertyId,
   currentStatus = "CONFIRMED",
   currentDateBucket,
+  availableYears = [],
+  currentYear,
 }: MobileReservationFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -67,6 +71,16 @@ export default function MobileReservationFilters({
       params.set("status", "all");
     } else {
       params.delete("status");
+    }
+    router.push(`/host/reservations${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
+  const handleYearChange = (year: number | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (year) {
+      params.set("year", String(year));
+    } else {
+      params.delete("year");
     }
     router.push(`/host/reservations${params.toString() ? `?${params.toString()}` : ""}`);
   };
@@ -315,6 +329,35 @@ export default function MobileReservationFilters({
         onSelect={handleStatusChange}
         title="Seleccionar estado"
       />
+
+      {/* Year chips — móvil */}
+      {availableYears.length > 1 && (
+        <div className="flex flex-wrap gap-2 px-1 pt-2 pb-1">
+          <button
+            onClick={() => handleYearChange(null)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+              !currentYear
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "bg-white text-neutral-700 border-neutral-300"
+            }`}
+          >
+            Todos
+          </button>
+          {availableYears.map((year) => (
+            <button
+              key={year}
+              onClick={() => handleYearChange(year)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                currentYear === year
+                  ? "bg-neutral-900 text-white border-neutral-900"
+                  : "bg-white text-neutral-700 border-neutral-300"
+              }`}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }
