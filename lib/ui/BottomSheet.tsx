@@ -9,6 +9,7 @@ interface BottomSheetProps {
   subtitle?: string;
   children: React.ReactNode;
   maxHeight?: string;
+  zIndex?: string;
 }
 
 export default function BottomSheet({
@@ -18,6 +19,7 @@ export default function BottomSheet({
   subtitle,
   children,
   maxHeight = "90vh",
+  zIndex = "z-50",
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(true);
@@ -106,7 +108,7 @@ export default function BottomSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className={`fixed inset-0 ${zIndex} flex items-end justify-center`}
       onClick={handleOverlayClick}
     >
       {/* Overlay con animación - ligado a animateIn */}

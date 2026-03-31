@@ -342,6 +342,7 @@ export default function AddressModal({
         onClose={() => onOpenChange(false)}
         title={title}
         maxHeight="90vh"
+        zIndex="z-[2001]"
       >
         <div className="px-6 pt-8 pb-4 sm:pb-8">{content}</div>
       </BottomSheet>
@@ -352,7 +353,7 @@ export default function AddressModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-end"
+      className="fixed inset-0 z-[2001] flex items-center justify-end"
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
       }}
