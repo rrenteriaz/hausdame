@@ -18,12 +18,12 @@ import {
   searchGlobalCatalogItemsAction,
   ensureTenantCatalogItemFromGlobalAction,
   getFrequentItemsAction,
-  getExistingAreas,
+  getPropertyZones,
   checkDuplicateInventoryLineAction,
 } from "@/app/host/inventory/actions";
 import { InventoryPriority } from "@prisma/client";
 import { inferInventoryData, type AttentionLevel } from "@/lib/inventory-inference";
-import { AREA_SUGGESTIONS, isBedSizeVariantable, getBedSizeVariantConfig, BED_SIZE_VARIANT } from "@/lib/inventory-suggestions";
+import { isBedSizeVariantable, getBedSizeVariantConfig, BED_SIZE_VARIANT } from "@/lib/inventory-suggestions";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { normalizeName } from "@/lib/inventory-normalize";
 
@@ -66,15 +66,16 @@ export default function AddInventoryItemWizard({
 
   // Estado del wizard
   const [step, setStep] = useState<WizardStep>("ITEM");
-  const [lastUsedArea, setLastUsedArea] = useState<string>("");
-  const [persistedArea, setPersistedArea] = useState<string>(""); // Área persistida para "Agregar otro"
+  const [lastUsedZoneId, setLastUsedZoneId] = useState<string>("");
+  const [persistedZoneId, setPersistedZoneId] = useState<string>(""); // Zona persistida para "Agregar otro"
 
   // Estado del formulario
   const [itemName, setItemName] = useState("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedGlobalCatalogItemId, setSelectedGlobalCatalogItemId] = useState<string | null>(null); // ID del item del CG seleccionado
   const [selectedItemVariantKey, setSelectedItemVariantKey] = useState<string | null>(null); // Para items del catálogo con variante
-  const [area, setArea] = useState("");
+  const [propertyZoneId, setPropertyZoneId] = useState(""); // Phase 7: zone id (primary)
+  const [zoneName, setZoneName] = useState(""); // display name derivado de la zona
   const [attentionLevel, setAttentionLevel] = useState<AttentionLevel>("LOW");
   const [inferredCategory, setInferredCategory] = useState<string>("OTHER");
   const [inferredHint, setInferredHint] = useState<string>("");
@@ -85,7 +86,7 @@ export default function AddInventoryItemWizard({
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [frequentItems, setFrequentItems] = useState<CatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [existingAreas, setExistingAreas] = useState<string[]>([]);
+  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null }[]>([]); // Phase 7
   
   // Ref para evitar respuestas fuera de orden
   const requestIdRef = useRef(0);
@@ -116,12 +117,11 @@ export default function AddInventoryItemWizard({
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Cargar áreas existentes al abrir (sin preseleccionar área)
+  // Phase 7: Cargar zonas OPERATIONAL al abrir
   useEffect(() => {
     if (isOpen) {
-      getExistingAreas(propertyId).then((areas) => {
-        setExistingAreas(areas);
-        // NO preseleccionar área automáticamente
+      getPropertyZones(propertyId).then((zones) => {
+        setPropertyZones(zones);
       });
 
       // Cargar items frecuentes
@@ -272,12 +272,15 @@ export default function AddInventoryItemWizard({
     setItemName("");
     setSelectedItemId(null);
     setSearchTerm("");
-    setArea(persistedArea || lastUsedArea || "");
+    // Phase 7: restore persisted zone
+    const restoredId = persistedZoneId || lastUsedZoneId || "";
+    setPropertyZoneId(restoredId);
+    setZoneName(propertyZones.find((z) => z.id === restoredId)?.name ?? "");
     setAttentionLevel("LOW");
     onClose();
   };
 
-  // Resetear para "Agregar otro" (mantiene área)
+  // Resetear para "Agregar otro" (mantiene zona)
   const handleAddAnother = () => {
     setStep("ITEM");
     setItemName("");
@@ -287,10 +290,11 @@ export default function AddInventoryItemWizard({
     setVariantValue("");
     setSearchTerm("");
     setAttentionLevel("LOW");
-    // Mantener área persistida
-    setArea(persistedArea || lastUsedArea || "");
-    
-    // Enfocar input después de un pequeño delay
+    // Phase 7: mantener zona persistida
+    const restoredId = persistedZoneId || lastUsedZoneId || "";
+    setPropertyZoneId(restoredId);
+    setZoneName(propertyZones.find((z) => z.id === restoredId)?.name ?? "");
+
     setTimeout(() => {
       searchInputRef.current?.focus();
     }, 100);
@@ -299,7 +303,8 @@ export default function AddInventoryItemWizard({
   // Paso 1: Seleccionar item
   const handleItemSelect = (item: CatalogItem | null, customName?: string) => {
     // Resetear todo cuando se cambia el item/nombre
-    setArea("");
+    setPropertyZoneId("");
+    setZoneName("");
     setVariantValue("");
     setSelectedItemVariantKey(null);
     setAttentionLevel("LOW");
@@ -336,25 +341,27 @@ export default function AddInventoryItemWizard({
   const handleBack = () => {
     if (step === "AREA") {
       setStep("ITEM");
-      // Resetear área al volver
-      setArea("");
+      // Phase 7: resetear zona al volver
+      setPropertyZoneId("");
+      setZoneName("");
       setVariantValue("");
     } else if (step === "ATTENTION") {
       setStep("AREA");
     }
   };
 
-  // Paso 2: Seleccionar área (ahora se maneja directamente en el render del paso AREA)
-  const handleAreaSelect = (selectedArea: string) => {
-    setArea(selectedArea);
-    setLastUsedArea(selectedArea);
-    setPersistedArea(selectedArea);
-    // El avance a ATTENTION se maneja en el onClick del botón de área
+  // Paso 2: Seleccionar zona (Phase 7)
+  const handleAreaSelect = (zoneId: string, name: string) => {
+    setPropertyZoneId(zoneId);
+    setZoneName(name);
+    setLastUsedZoneId(zoneId);
+    setPersistedZoneId(zoneId);
+    // El avance a ATTENTION se maneja en el onClick del botón de zona
   };
 
   // Paso 3: Confirmar y crear
   const handleConfirm = async () => {
-    if (!itemName.trim() || !area.trim()) {
+    if (!itemName.trim() || !propertyZoneId) {
       return;
     }
 
@@ -382,7 +389,7 @@ export default function AddInventoryItemWizard({
         // Paso 2: Preparar FormData
         const formData = new FormData();
         formData.set("propertyId", propertyId);
-        formData.set("area", area);
+        formData.set("propertyZoneId", propertyZoneId); // Phase 7: zone as primary
         formData.set("category", inference.category);
         formData.set("priority", attentionLevel); // Usar el priority seleccionado por el usuario, no el inferido
         formData.set("expectedQty", "1");
@@ -442,12 +449,12 @@ export default function AddInventoryItemWizard({
             : attentionLevel === "LOW"
             ? "Baja"
             : "Media";
-        const toastMessage = `${itemName} · ${area} · ${attentionLabel}`;
+        const toastMessage = `${itemName} · ${zoneName} · ${attentionLabel}`;
         showToast(toastMessage, "success");
 
         // Callback de éxito
         if (onSuccess) {
-          onSuccess(itemName, area, attentionLevel);
+          onSuccess(itemName, zoneName, attentionLevel);
         }
 
         // Mostrar opciones: "Agregar otro" o "Terminar"
@@ -662,13 +669,12 @@ export default function AddInventoryItemWizard({
         );
 
       case "AREA":
-        const allAreas = [...new Set([...existingAreas, ...AREA_SUGGESTIONS])].sort();
-        
+        // Phase 7: zonas desde PropertyZone (sorted by sortOrder)
         // Determinar si el item es variantable
-        const isVariantable = selectedItemVariantKey === "bed_size" || 
+        const isVariantable = selectedItemVariantKey === "bed_size" ||
                               (itemName && isBedSizeVariantable(itemName, selectedItemVariantKey));
         const bedSizeConfig = isVariantable ? getBedSizeVariantConfig() : null;
-        
+
         return (
           <div className="space-y-4">
             <div>
@@ -679,62 +685,27 @@ export default function AddInventoryItemWizard({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {allAreas.map((areaOption) => (
+              {propertyZones.map((zone) => (
                 <button
-                  key={areaOption}
+                  key={zone.id}
                   onClick={() => {
-                    setArea(areaOption);
-                    setLastUsedArea(areaOption);
-                    setPersistedArea(areaOption);
-                    // Si es variantable y no hay variante seleccionada, no avanzar todavía
-                    // (el usuario debe seleccionar variante primero)
+                    handleAreaSelect(zone.id, zone.name);
                     if (isVariantable && !variantValue) {
                       return;
                     }
-                    // Si no es variantable o ya tiene variante, avanzar a ATTENTION
                     if (!isVariantable || variantValue) {
                       setStep("ATTENTION");
                     }
                   }}
                   className={`p-4 rounded-lg border-2 transition ${
-                    area === areaOption
+                    propertyZoneId === zone.id
                       ? "border-neutral-900 bg-neutral-900 text-white"
                       : "border-neutral-200 hover:border-neutral-300"
                   }`}
                 >
-                  {areaOption}
+                  {zone.name}
                 </button>
               ))}
-            </div>
-
-            {/* Campo "Otra área" */}
-            <div>
-              <input
-                type="text"
-                placeholder="Otra área"
-                value={area && !allAreas.includes(area) ? area : ""}
-                onChange={(e) => {
-                  const value = e.target.value.trim();
-                  if (value) {
-                    setArea(value);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && area.trim()) {
-                    setLastUsedArea(area);
-                    setPersistedArea(area);
-                    // Si es variantable y no hay variante seleccionada, no avanzar todavía
-                    if (isVariantable && !variantValue) {
-                      return;
-                    }
-                    // Si no es variantable o ya tiene variante, avanzar a ATTENTION
-                    if (!isVariantable || variantValue) {
-                      setStep("ATTENTION");
-                    }
-                  }
-                }}
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-base focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-              />
             </div>
 
             {/* Selector de variante (solo si el item es variantable) */}
@@ -753,8 +724,8 @@ export default function AddInventoryItemWizard({
                       type="button"
                       onClick={() => {
                         setVariantValue(option.value);
-                        // Auto-avance: si ya hay área seleccionada y variante es requerida, avanzar automáticamente
-                        if (area.trim()) {
+                        // Phase 7: auto-avance si ya hay zona seleccionada
+                        if (propertyZoneId) {
                           setStep("ATTENTION");
                         }
                       }}
@@ -851,7 +822,7 @@ export default function AddInventoryItemWizard({
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={isPending || !itemName.trim() || !area.trim()}
+                disabled={isPending || !itemName.trim() || !propertyZoneId}
                 className="flex-1 py-3 px-4 bg-neutral-900 text-white rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 {isPending ? "Creando…" : "Agregar ítem"}
@@ -873,7 +844,7 @@ export default function AddInventoryItemWizard({
               <div className="text-4xl mb-4 text-green-500">✓</div>
               <h2 className="text-xl font-semibold mb-2">Ítem agregado</h2>
               <p className="text-sm text-neutral-500">
-                {itemName} · {area} · {attentionLabelConfirm}
+                {itemName} · {zoneName} · {attentionLabelConfirm}
               </p>
             </div>
 

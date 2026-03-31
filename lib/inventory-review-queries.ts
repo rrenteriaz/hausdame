@@ -39,35 +39,51 @@ export async function fetchActiveInventoryLines(propertyId: string, tenantId: st
           category: true,
         },
       },
+      // Fase 5: zona física como source of truth para nombre y orden
+      propertyZone: {
+        select: {
+          id: true,
+          name: true,
+          normalizedName: true,
+          sortOrder: true,
+          zoneType: true,
+        },
+      },
     },
     orderBy: [
+      { propertyZone: { sortOrder: "asc" } }, // Fase 5: orden por zona (fallback: area asc)
       { item: { name: "asc" } },
-      { area: "asc" },
     ],
   });
 
-  return lines.map((line) => ({
-    id: line.id,
-    area: line.area,
-    expectedQty: line.expectedQty,
-    variantKey: line.variantKey,
-    variantValue: line.variantValue,
-    item: line.item,
-    allLines: [{
+  return lines.map((line) => {
+    // Fase 5: usar propertyZone.name como fuente de verdad.
+    // Fallback temporal a line.area para líneas sin zona (no debería ocurrir post-Fase 4).
+    const zoneName = line.propertyZone?.name ?? line.area;
+    return {
       id: line.id,
-      area: line.area,
+      area: zoneName, // mantiene la firma de retorno; callers siguen funcionando
+      propertyZone: line.propertyZone ?? null,
       expectedQty: line.expectedQty,
       variantKey: line.variantKey,
       variantValue: line.variantValue,
-      brand: line.brand,
-      model: line.model,
-      color: line.color,
-      size: line.size,
-      condition: line.condition,
-      priority: line.priority,
-      notes: line.notes,
-    }],
-  }));
+      item: line.item,
+      allLines: [{
+        id: line.id,
+        area: zoneName,
+        expectedQty: line.expectedQty,
+        variantKey: line.variantKey,
+        variantValue: line.variantValue,
+        brand: line.brand,
+        model: line.model,
+        color: line.color,
+        size: line.size,
+        condition: line.condition,
+        priority: line.priority,
+        notes: line.notes,
+      }],
+    };
+  });
 }
 
 /**
@@ -131,6 +147,34 @@ export async function fetchInventoryReview(cleaningId: string, tenantId: string)
     return null;
   }
 
-  console.log(`[fetchInventoryReview] Loaded review for ${cleaningId}, reports: ${review.reports.length}, itemChanges: ${review.itemChanges.length}`);
-  return review;
+  // Normalizar shape de evidencias
+  const normalizedReports = review.reports.map((report) => ({
+    ...report,
+    evidence: report.evidence.map((ev) => ({
+      id: ev.id,
+      assetId: ev.assetId,
+      url: ev.asset.publicUrl || "",
+      variant: ev.asset.variant as string | null,
+    })),
+  }));
+
+  const normalizedChanges = review.itemChanges.map((change) => ({
+    ...change,
+    evidence: change.evidence.map((ev) => ({
+      id: ev.id,
+      assetId: ev.assetId,
+      url: ev.asset.publicUrl || "",
+      variant: ev.asset.variant as string | null,
+    })),
+  }));
+
+  console.log(
+    `[fetchInventoryReview] Loaded review for ${cleaningId}, reports: ${review.reports.length}, itemChanges: ${review.itemChanges.length}`
+  );
+
+  return {
+    ...review,
+    reports: normalizedReports,
+    itemChanges: normalizedChanges,
+  };
 }

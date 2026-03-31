@@ -7,6 +7,7 @@ import {
   applyInventoryChange,
   rejectInventoryChange,
   resolveInventoryReport,
+  updateInventoryReport,
 } from "./actions";
 import InventoryInboxItemCard from "./InventoryInboxItemCard";
 import ResolveReportModal from "./ResolveReportModal";
@@ -18,37 +19,7 @@ import IconFilterButton from "@/lib/ui/IconFilterButton";
 import OptionPickerSheet from "@/lib/ui/OptionPickerSheet";
 import PropertyPickerSheet from "@/lib/ui/PropertyPickerSheet";
 
-export interface InboxItem {
-  type: "CHANGE" | "REPORT";
-  id: string;
-  itemId: string;
-  itemName: string;
-  itemThumbnail: string | null;
-  property: string;
-  propertyId: string | null;
-  cleaningId: string | null;
-  area: string | null;
-  createdAt: Date;
-  createdBy: string;
-  // Para cambios
-  quantityBefore?: number;
-  quantityAfter?: number;
-  reason?: string;
-  reasonOtherText?: string | null;
-  note?: string | null;
-  status?: string;
-  // Para reportes
-  reportType?: string;
-  severity?: InventoryReportSeverity;
-  description?: string | null;
-  managerResolution?: InventoryReportResolution | null;
-  resolvedAt?: Date | null;
-  evidence?: Array<{
-    id: string;
-    url: string;
-    variant?: string | null;
-  }>;
-}
+import { InboxItem } from "./types";
 
 interface InventoryInboxClientProps {
   initialItems: InboxItem[];
@@ -62,6 +33,7 @@ interface InventoryInboxClientProps {
     severity?: InventoryReportSeverity;
     dateRange?: "7d" | "30d" | "all";
   };
+  tenantId?: string;
 }
 
 export default function InventoryInboxClient({
@@ -71,6 +43,7 @@ export default function InventoryInboxClient({
   initialTab,
   inboxReturnUrl,
   initialFilters,
+  tenantId,
 }: InventoryInboxClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -129,6 +102,32 @@ export default function InventoryInboxClient({
         router.refresh();
       } catch (err: any) {
         setError(err.message || "Error al resolver el reporte");
+      }
+    });
+  };
+
+  const handleUpdateReport = async (
+    reportId: string,
+    data: any,
+    imageFiles?: File[],
+    removedIds?: string[]
+  ) => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const result = await updateInventoryReport(reportId, data, imageFiles, removedIds);
+        if (result.success && result.report) {
+          // Actualizar el reporte seleccionado en el estado local para reflejar cambios inmediatos
+          setSelectedReport(prev => prev ? { ...prev, ...(result.report as any) } : null);
+          
+          // También actualizarlo en la lista general para que al cerrar el modal se vea reflejado
+          setItems(prev => prev.map(item => 
+            item.id === reportId ? { ...item, ...result.report as any } : item
+          ));
+        }
+        router.refresh();
+      } catch (err: any) {
+        setError(err.message || "Error al actualizar el reporte");
       }
     });
   };
@@ -484,6 +483,8 @@ export default function InventoryInboxClient({
         <ResolveReportModal
           report={selectedReport}
           onResolve={handleResolveReport}
+          onUpdateReport={handleUpdateReport}
+          tenantId={tenantId}
           onClose={() => {
             setShowResolveModal(false);
             setSelectedReport(null);

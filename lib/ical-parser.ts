@@ -109,8 +109,8 @@ export async function parseIcalUrl(icalUrl: string): Promise<ParsedReservation[]
 
       if (event.start) {
         startDate = event.start instanceof Date ? event.start : new Date(event.start);
-        // Normalizar a medianoche para all-day events
-        startDate.setHours(0, 0, 0, 0);
+        // Normalizar a medianoche UTC para all-day events (VALUE=DATE)
+        startDate.setUTCHours(0, 0, 0, 0);
       } else {
         console.warn(`[parseIcalUrl] Event ${event.uid} sin DTSTART, omitiendo`);
         continue;
@@ -118,14 +118,14 @@ export async function parseIcalUrl(icalUrl: string): Promise<ParsedReservation[]
 
       if (event.end) {
         endDate = event.end instanceof Date ? event.end : new Date(event.end);
-        // Normalizar a medianoche para all-day events
-        endDate.setHours(0, 0, 0, 0);
+        // Normalizar a medianoche UTC para all-day events (VALUE=DATE)
+        endDate.setUTCHours(0, 0, 0, 0);
         // DTEND es exclusivo, así que ya representa el día de salida correctamente
       } else if (event.start) {
         // Si no hay DTEND, usar DTSTART + 1 día (fallback)
         endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + 1);
-        endDate.setHours(0, 0, 0, 0);
+        endDate.setUTCDate(endDate.getUTCDate() + 1);
+        endDate.setUTCHours(0, 0, 0, 0);
       } else {
         console.warn(`[parseIcalUrl] Event ${event.uid} sin DTEND, omitiendo`);
         continue;

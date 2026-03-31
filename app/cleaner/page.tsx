@@ -59,7 +59,7 @@ export default async function CleanerPage({
           </h2>
           <p className="text-neutral-700 mb-3">
             Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles.
+            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
           </p>
           <p className="text-neutral-600 text-sm">
             Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
@@ -101,7 +101,7 @@ export default async function CleanerPage({
         <SummaryCards
           myCount={0}
           availableCount={0}
-          upcomingCount={0}
+          inProgressCount={0}
           memberId={undefined}
           returnTo="/cleaner"
         />
@@ -149,7 +149,7 @@ export default async function CleanerPage({
           </h2>
           <p className="text-neutral-700 mb-3">
             Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles.
+            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
           </p>
           <p className="text-neutral-600 text-sm">
             Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
@@ -267,7 +267,7 @@ export default async function CleanerPage({
           </h2>
           <p className="text-neutral-700 mb-3">
             Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles.
+            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
           </p>
           <p className="text-neutral-600 text-sm">
             Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
@@ -329,7 +329,7 @@ export default async function CleanerPage({
         <SummaryCards
           myCount={0}
           availableCount={0}
-          upcomingCount={0}
+          inProgressCount={0}
           memberId={memberIdParam}
           returnTo={buildReturnTo()}
         />
@@ -383,12 +383,13 @@ export default async function CleanerPage({
   // Por ahora, usamos "" como fallback si es null para evitar errores de tipo
   let currentMemberId: string = "";
   if (primaryTeamId) {
-    // Intentar obtener el primer TeamMember del primer team para compatibilidad
+    // Lookup para compatibilidad con componentes UI y lectura legacy.
+    // Sin filtro isActive: tras la migración WGE los TeamMember pueden quedar desactivados
+    // pero necesitamos su ID para leer histórico legacy (no implica acceso activo).
     const firstTeamMember = await (prisma as any).teamMember.findFirst({
       where: {
         userId: user.id,
         teamId: primaryTeamId,
-        isActive: true,
       },
     });
     if (firstTeamMember) {
@@ -482,11 +483,11 @@ export default async function CleanerPage({
   const sevenDaysLater = new Date();
   sevenDaysLater.setDate(now.getDate() + 7);
   sevenDaysLater.setHours(23, 59, 59, 999);
-  const availabilityStart = getAvailabilityStartDate(now);
+  const availabilityStart = getAvailabilityStartDate(now, { includePastOpen: true });
 
   // Obtener contadores usando query layer canónico
   const counts = await getCleanerCleaningsCounts(context);
-  const upcomingCount = counts.upcoming7dCount;
+  const inProgressCount = counts.inProgressCount;
   const availableCount = counts.availableCount;
   const myCount = counts.assignedToMeCount;
 
@@ -570,7 +571,7 @@ export default async function CleanerPage({
           </h2>
           <p className="text-neutral-700 mb-3">
             Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles.
+            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
           </p>
           <p className="text-neutral-600 text-sm">
             Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
@@ -632,7 +633,7 @@ export default async function CleanerPage({
         <SummaryCards
           myCount={0}
           availableCount={0}
-          upcomingCount={0}
+          inProgressCount={0}
           memberId={memberIdParam}
           returnTo={buildReturnTo()}
         />
@@ -659,8 +660,8 @@ export default async function CleanerPage({
   }
 
   // Obtener listas usando query layer canónico (rango extendido para calendario + listas)
-  const [assignedResult, availableResult] = await Promise.all([
-    // Mis limpiezas asignadas
+  const [assignedResult, availableResult, calendarAssignedResult] = await Promise.all([
+    // Mis limpiezas asignadas (solo activas — para listas de trabajo)
     getCleanerCleaningsList(
       {
         scope: "assigned",
@@ -679,16 +680,69 @@ export default async function CleanerPage({
       },
       context
     ),
+    // Mis limpiezas para el calendario (incluye COMPLETED para mostrar historial)
+    getCleanerCleaningsList(
+      {
+        scope: "assigned",
+        scheduledDateFrom: dateRangeStart,
+        scheduledDateTo: dateRangeEnd,
+        includeCompleted: true,
+      },
+      context
+    ),
   ]);
 
   myCleanings = assignedResult.cleanings;
   eligibleCleanings = availableResult.cleanings;
-  
+
+  // Compatibilidad de lectura legacy: registros previos a la migración WGE
+  // usan assignedMemberId (TeamMember.id) en vez de assignedMembershipId (TeamMembership.id).
+  // Se consultan por separado y se unen a los resultados WGE para el calendario.
+  //
+  // Usamos findMany sin filtro isActive para obtener TODOS los TeamMember históricos del user
+  // en sus equipos (puede haber >1 si hubo rotaciones: baja + reingreso al equipo).
+  let legacyCalendarCleanings: any[] = [];
+  if (cleanerScope.propertyIds.length > 0 && teamIds.length > 0) {
+    const allUserLegacyMemberRows = await (prisma as any).teamMember.findMany({
+      where: { userId: user.id, teamId: { in: teamIds } },
+      select: { id: true },
+    });
+    const allUserLegacyMemberIds: string[] = allUserLegacyMemberRows.map((m: any) => m.id);
+
+    if (allUserLegacyMemberIds.length > 0) {
+      legacyCalendarCleanings = await prisma.cleaning.findMany({
+        where: {
+          tenantId: { in: cleanerScope.tenantIds },
+          propertyId: { in: cleanerScope.propertyIds },
+          scheduledDate: { gte: dateRangeStart, lte: dateRangeEnd },
+          status: { in: ["PENDING", "IN_PROGRESS", "COMPLETED"] },
+          assignedMemberId: { in: allUserLegacyMemberIds },
+          assignedMembershipId: null, // solo legacy, evita duplicados con WGE
+        },
+        include: {
+          property: {
+            select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
+          },
+        },
+        orderBy: { scheduledDate: "asc" },
+      });
+    }
+
+  }
+
+  // Unión WGE + legacy deduplicada por id
+  const wgeCalendarIds = new Set(calendarAssignedResult.cleanings.map((c: any) => c.id));
+  const mergedCalendarCleanings = [
+    ...calendarAssignedResult.cleanings,
+    ...legacyCalendarCleanings.filter((c: any) => !wgeCalendarIds.has(c.id)),
+  ];
+  const myCleaningsCalendarSource = mergedCalendarCleanings;
+
   // El query layer ya filtra por availabilityStart cuando scope="available"
   // Pero necesitamos separar para el calendario (lostCleaningsForCalendar)
   const eligibleFuture = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) >= availabilityStart);
   const eligibleLost = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) < availabilityStart);
-  eligibleCleanings = eligibleFuture; // Para listas, solo futuras
+  // eligibleCleanings = eligibleFuture; // REMOVIDO: Ahora permitimos ver y reclamar pasadas (hasta 30 días) en la lista de disponibles
 
   // Para memberCleanings (limpiezas del equipo asignadas a otros), necesitamos una query adicional
   // LEGACY RETIRADO: Ya no existe modo legacy, siempre usar memberships
@@ -699,7 +753,8 @@ export default async function CleanerPage({
       .map((m) => m.id);
 
     if (activeTeamIds.length > 0 && activeMembershipIds.length > 0) {
-      memberCleanings = await prisma.cleaning.findMany({
+      // WGE: limpiezas asignadas a otros miembros vía assignedMembershipId
+      const wgeMemberCleanings = await prisma.cleaning.findMany({
         where: {
           tenantId: { in: cleanerScope.tenantIds },
           propertyId: { in: cleanerScope.propertyIds },
@@ -716,14 +771,62 @@ export default async function CleanerPage({
         },
         orderBy: { scheduledDate: "asc" },
       });
+
+      // Compatibilidad legacy: limpiezas de otros miembros del equipo asignadas
+      // con el sistema anterior (assignedMemberId = TeamMember.id, assignedMembershipId = null).
+      // Sin filtro isActive: los TeamMember del equipo pueden estar desactivados tras la migración
+      // pero sus IDs siguen siendo referenciados en limpiezas históricas.
+      // Excluimos los propios IDs del usuario para no duplicar con myCleaningsForCalendar.
+      const allUserOwnMemberRows = await (prisma as any).teamMember.findMany({
+        where: { userId: user.id, teamId: { in: activeTeamIds } },
+        select: { id: true },
+      });
+      const allUserOwnMemberIds: string[] = allUserOwnMemberRows.map((m: any) => m.id);
+
+      const otherTeamMembers = await prisma.teamMember.findMany({
+        where: {
+          teamId: { in: activeTeamIds },
+          ...(allUserOwnMemberIds.length > 0 ? { id: { notIn: allUserOwnMemberIds } } : {}),
+        },
+        select: { id: true },
+      });
+      const otherMemberIds = otherTeamMembers.map((m: any) => m.id);
+
+      let legacyMemberCleanings: any[] = [];
+      if (otherMemberIds.length > 0) {
+        legacyMemberCleanings = await prisma.cleaning.findMany({
+          where: {
+            tenantId: { in: cleanerScope.tenantIds },
+            propertyId: { in: cleanerScope.propertyIds },
+            scheduledDate: { gte: extendedRangeStart, lte: extendedRangeEnd },
+            status: { not: "CANCELLED" },
+            assignedMemberId: { in: otherMemberIds },
+            assignedMembershipId: null, // solo legacy, evita duplicados con WGE
+          },
+          include: {
+            property: {
+              select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
+            },
+          },
+          orderBy: { scheduledDate: "asc" },
+        });
+      }
+
+      // Unión WGE + legacy deduplicada por id
+      const wgeMemberIds = new Set(wgeMemberCleanings.map((c: any) => c.id));
+      memberCleanings = [
+        ...wgeMemberCleanings,
+        ...legacyMemberCleanings.filter((c: any) => !wgeMemberIds.has(c.id)),
+      ];
     }
   }
 
-  // Calendario (filtrar por rango del calendario)
-  myCleaningsForCalendar = myCleanings.filter((c: any) => {
+  // Calendario (fuente separada que incluye COMPLETED para mostrar historial)
+  myCleaningsForCalendar = myCleaningsCalendarSource.filter((c: any) => {
     const d = new Date(c.scheduledDate);
     return d >= dateRangeStart && d <= dateRangeEnd;
   });
+
   eligibleCleaningsForCalendar = eligibleFuture.filter((c: any) => {
     const d = new Date(c.scheduledDate);
     return d >= dateRangeStart && d <= dateRangeEnd;
@@ -736,6 +839,30 @@ export default async function CleanerPage({
     const d = new Date(c.scheduledDate);
     return d >= dateRangeStart && d <= dateRangeEnd;
   });
+
+  // Limpiezas OPEN pasadas del equipo (sin asignar) — solo para calendario mensual
+  // Criterios: ningún asignado, pasadas, status activo, dentro del rango de fechas del calendario
+  let openPastCleaningsForCalendar: any[] = [];
+  if (cleanerScope.propertyIds.length > 0 && view === "month") {
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+    openPastCleaningsForCalendar = await prisma.cleaning.findMany({
+      where: {
+        tenantId: { in: cleanerScope.tenantIds },
+        propertyId: { in: cleanerScope.propertyIds },
+        scheduledDate: { gte: dateRangeStart, lt: todayStart },
+        assignedMembershipId: null,
+        assignedMemberId: null,
+        status: { in: ["PENDING", "IN_PROGRESS"] },
+      },
+      include: {
+        property: {
+          select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
+        },
+      },
+      orderBy: { scheduledDate: "asc" },
+    });
+  }
 
   // Filtro para "Mis limpiezas" - por defecto "pending"
   const myFilter = params?.myFilter || "pending";
@@ -990,6 +1117,16 @@ export default async function CleanerPage({
               },
               status: c.status,
             }))}
+            openPastCleanings={openPastCleaningsForCalendar.map((c: any) => ({
+              id: c.id,
+              scheduledDate: c.scheduledDate,
+              property: {
+                id: c.property.id,
+                name: c.property.name,
+                shortName: c.property.shortName,
+              },
+              status: c.status,
+            }))}
             buildMonthHref={buildMonthHref}
             buildDayHref={buildDayHref}
           />
@@ -1058,7 +1195,7 @@ export default async function CleanerPage({
       <SummaryCards
         myCount={myCount}
         availableCount={availableCount}
-        upcomingCount={upcomingCount}
+        inProgressCount={inProgressCount}
         memberId={memberIdParam}
         returnTo={buildReturnTo()}
       />

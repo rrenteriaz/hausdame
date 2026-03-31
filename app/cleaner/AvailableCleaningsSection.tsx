@@ -83,13 +83,14 @@ export default function AvailableCleaningsSection({
               const isLast = index === eligibleCleanings.length - 1;
               const propertyName =
                 cleaning.property.shortName || cleaning.property.name;
+              const isOverdue = new Date(cleaning.scheduledDate) < new Date();
 
               return (
                 <div
                   key={cleaning.id}
                   className={`relative ${
                     !isLast ? "border-b border-neutral-200" : ""
-                  }`}
+                  } ${isOverdue ? "bg-amber-50/30" : ""}`}
                 >
                   <CleanerCleaningLink
                     href={`/cleaner/cleanings/${cleaning.id}?returnTo=${encodeURIComponent(returnTo)}`}
@@ -106,9 +107,16 @@ export default function AvailableCleaningsSection({
                       alt={propertyName}
                     />
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base font-medium text-neutral-900 truncate">
-                        {propertyName}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-medium text-neutral-900 truncate">
+                          {propertyName}
+                        </h3>
+                        {isOverdue && (
+                          <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 border border-amber-200">
+                            Atrasada
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
                         {cleaning.scheduledDate.toLocaleString("es-MX", {
                           day: "2-digit",

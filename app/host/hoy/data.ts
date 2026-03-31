@@ -7,7 +7,7 @@ import { InventoryReportStatus } from "@prisma/client";
 import { BlockData, HoyData, ProximasData, BlockItem } from "./types";
 
 /**
- * Helpers para rangos de fecha
+ * Helpers para rangos de fecha (hora local — para limpiezas scheduledDate)
  */
 function getStartOfToday(): Date {
   const now = new Date();
@@ -33,6 +33,35 @@ function getEndOfNext7Days(): Date {
   future.setDate(future.getDate() + 7);
   future.setHours(23, 59, 59, 999);
   return future;
+}
+
+/**
+ * Helpers UTC — para reservas (startDate = UTC midnight desde iCal VALUE=DATE)
+ */
+function getStartOfUTCToday(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+function getEndOfUTCToday(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999)
+  );
+}
+
+function getStartOfUTCTomorrow(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
+  );
+}
+
+function getEndOfUTCNext7Days(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 7, 23, 59, 59, 999)
+  );
 }
 
 /**
@@ -65,7 +94,7 @@ export async function getHoyData(
   // 2. Incidencias abiertas
   const openIncidentsData = await getOpenIncidents(tenantId, propertyId);
 
-  // 3. Limpiezas de hoy
+  // 3. Limpiezas de hoy (hora local — scheduledDate es hora local)
   const todayCleaningsData = await getTodayCleanings(
     tenantId,
     startOfToday,
@@ -73,11 +102,11 @@ export async function getHoyData(
     propertyId
   );
 
-  // 4. Reservas para hoy
+  // 4. Reservas para hoy (UTC midnight — startDate de reserva es UTC midnight iCal)
   const todayReservationsData = await getTodayReservations(
     tenantId,
-    startOfToday,
-    endOfToday,
+    getStartOfUTCToday(),
+    getEndOfUTCToday(),
     propertyId
   );
 
@@ -130,7 +159,7 @@ export async function getProximasData(
     );
   });
 
-  // 3. Próximas limpiezas
+  // 3. Próximas limpiezas (hora local — scheduledDate es hora local)
   const upcomingCleaningsData = await getUpcomingCleanings(
     tenantId,
     startOfTomorrow,
@@ -138,11 +167,11 @@ export async function getProximasData(
     propertyId
   );
 
-  // 4. Próximas reservas
+  // 4. Próximas reservas (UTC midnight — startDate de reserva es UTC midnight iCal)
   const upcomingReservationsData = await getUpcomingReservations(
     tenantId,
-    startOfTomorrow,
-    endOfNext7Days,
+    getStartOfUTCTomorrow(),
+    getEndOfUTCNext7Days(),
     propertyId
   );
 
@@ -234,9 +263,12 @@ export async function getAllTodayReservations(
   tenantId: string,
   propertyId?: string
 ): Promise<BlockItem[]> {
-  const startOfToday = getStartOfToday();
-  const endOfToday = getEndOfToday();
-  const data = await getTodayReservations(tenantId, startOfToday, endOfToday, propertyId);
+  const data = await getTodayReservations(
+    tenantId,
+    getStartOfUTCToday(),
+    getEndOfUTCToday(),
+    propertyId
+  );
   return data.allItems || data.items;
 }
 
@@ -244,9 +276,12 @@ export async function getAllUpcomingReservations(
   tenantId: string,
   propertyId?: string
 ): Promise<BlockItem[]> {
-  const startOfTomorrow = getStartOfTomorrow();
-  const endOfNext7Days = getEndOfNext7Days();
-  const data = await getUpcomingReservations(tenantId, startOfTomorrow, endOfNext7Days, propertyId);
+  const data = await getUpcomingReservations(
+    tenantId,
+    getStartOfUTCTomorrow(),
+    getEndOfUTCNext7Days(),
+    propertyId
+  );
   return data.allItems || data.items;
 }
 

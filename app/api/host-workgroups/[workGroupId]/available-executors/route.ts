@@ -57,10 +57,51 @@ export async function GET(
 
   const teamsMap = new Map(teams.map((t) => [t.id, t]));
 
+  // Obtener líder efectivo por teamId (TEAM_LEADER ACTIVE o primer miembro ACTIVE)
+  const leaderByTeamId: Record<string, { name: string | null }> = {};
+  if (teamIds.length > 0) {
+    const memberships = await prisma.teamMembership.findMany({
+      where: {
+        teamId: { in: teamIds },
+        status: "ACTIVE",
+      },
+      select: {
+        teamId: true,
+        role: true,
+        createdAt: true,
+        User: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [{ teamId: "asc" }, { createdAt: "asc" }],
+    });
+
+    const byTeam = new Map<string, typeof memberships>();
+    for (const m of memberships) {
+      const arr = byTeam.get(m.teamId) || [];
+      arr.push(m);
+      byTeam.set(m.teamId, arr);
+    }
+
+    for (const [teamId, list] of byTeam.entries()) {
+      const explicitLeader = list.find((m) => m.role === "TEAM_LEADER");
+      const effective = explicitLeader || list[0] || null;
+      if (effective?.User) {
+        leaderByTeamId[teamId] = { name: effective.User.name ?? null };
+      }
+    }
+  }
+
   // Formatear ejecutores disponibles
   const executors = allExecutors.map((executor) => ({
     teamId: executor.teamId,
-    teamName: teamsMap.get(executor.teamId)?.name || `Equipo ${executor.teamId.slice(0, 8)}`,
+    teamName:
+      (leaderByTeamId[executor.teamId]?.name &&
+        `${leaderByTeamId[executor.teamId]!.name} (Cleaner)`) ||
+      teamsMap.get(executor.teamId)?.name ||
+      `Equipo ${executor.teamId.slice(0, 8)}`,
     servicesTenantId: executor.servicesTenantId,
   }));
 

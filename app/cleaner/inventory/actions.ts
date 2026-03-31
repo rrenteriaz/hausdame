@@ -37,10 +37,19 @@ export async function getInventoryForCleaning(cleaningId: string) {
           category: true,
         },
       },
+      // Fase 5: zona física como source of truth para nombre y orden
+      propertyZone: {
+        select: {
+          id: true,
+          name: true,
+          sortOrder: true,
+          zoneType: true,
+        },
+      },
     },
     orderBy: [
       { priority: "desc" }, // HIGH primero
-      { area: "asc" },
+      { propertyZone: { sortOrder: "asc" } }, // Fase 5: orden por sortOrder de zona
       { item: { name: "asc" } },
     ],
   });
@@ -68,10 +77,13 @@ export async function getInventoryForCleaning(cleaningId: string) {
   }
 
   // Construir DTO con información combinada
+  // Fase 5: usar propertyZone.name como source of truth para el área.
+  // Fallback temporal a line.area para líneas sin zona (no debería ocurrir post-Fase 4).
   return inventoryLines.map((line) => ({
     lineId: line.id,
     itemName: line.item.name,
-    area: line.area,
+    area: line.propertyZone?.name ?? line.area,
+    propertyZone: line.propertyZone ?? null,
     attentionLevel: line.priority as InventoryPriority,
     currentStatus: checksMap.get(line.id)?.status || null,
     note: checksMap.get(line.id)?.note || null,

@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getDefaultTenant } from "@/lib/tenant";
 import { fetchInventoryReview, fetchActiveInventoryLines } from "@/lib/inventory-review-queries";
 import { validateRedirect } from "@/lib/auth/validateRedirect";
+import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import InventoryReviewPanel from "./InventoryReviewPanel";
 
 export default async function CleanerInventoryReviewPage({
@@ -40,6 +41,9 @@ export default async function CleanerInventoryReviewPage({
     fetchActiveInventoryLines(cleaning.propertyId, cleaning.tenantId),
   ]);
 
+  const lineIds = (inventoryLines || []).map((l: any) => l.id);
+  const historyStatsMap = await fetchInventoryHistoryStats(lineIds, cleaning.tenantId);
+
   return (
     <InventoryReviewPanel
       cleaningId={cleaningId}
@@ -48,6 +52,7 @@ export default async function CleanerInventoryReviewPage({
       inventoryLines={(inventoryLines || []).map((line: any) => ({
         id: line.id,
         area: line.area,
+        propertyZone: line.propertyZone ?? null, // Fase 9: zona para agrupación y orden
         expectedQty: line.expectedQty,
         variantKey: line.variantKey,
         variantValue: line.variantValue,
@@ -57,7 +62,9 @@ export default async function CleanerInventoryReviewPage({
           category: line.item?.category || "UNSPECIFIED",
         },
         allLines: line.allLines || [],
+        historyStats: historyStatsMap.get(line.id) || null,
       }))}
+      tenantId={cleaning.tenantId}
       returnTo={returnTo}
       mode="page"
     />

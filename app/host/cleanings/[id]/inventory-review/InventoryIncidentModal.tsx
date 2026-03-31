@@ -14,7 +14,7 @@ import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 import { 
   InventoryReviewItemChange,
   InventoryReport,
-  InventoryReportEvidence
+  InventoryEvidenceView
 } from "@/types/inventory";
 
 interface InventoryLine {
@@ -53,6 +53,8 @@ interface InventoryIncidentModalProps {
   isSubmitting?: boolean;
   /** Error del último submit; se muestra dentro del modal */
   submitError?: string | null;
+  /** Si la revisión ya fue enviada (SUBMITTED) */
+  isSubmitted?: boolean;
 }
 
 const REASON_OPTIONS: { value: InventoryChangeReason; label: string }[] = [
@@ -91,6 +93,7 @@ export default function InventoryIncidentModal({
   onDeleteReport,
   isSubmitting = false,
   submitError = null,
+  isSubmitted = false,
 }: InventoryIncidentModalProps) {
   const [quantityAfter, setQuantityAfter] = useState(quantityBefore);
   const [selectedReason, setSelectedReason] = useState<InventoryChangeReason | null>(
@@ -109,15 +112,24 @@ export default function InventoryIncidentModal({
   const [showPhotoChoiceModal, setShowPhotoChoiceModal] = useState(false);
   const [reportImages, setReportImages] = useState<Array<{ file: File; previewUrl: string }>>([]);
   const [removedExistingImageIds, setRemovedExistingImageIds] = useState<string[]>([]);
+  
+  // Reglas de negocio para deshabilitar campos
+  const isResolved = existingReport?.status === "RESOLVED";
+  const quantityDisabled = isSubmitted || isResolved;
+  const reportTypeDisabled = isSubmitted || isResolved;
+  const reportFieldsDisabled = isResolved;
+  const evidenceDisabled = isResolved;
+  const deleteReportDisabled = isSubmitted || isResolved;
+
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const MAX_REPORT_IMAGES = 5;
 
   const existingImages =
-    existingReport?.evidence?.filter((e) => e?.asset?.publicUrl).map((e) => ({
+    existingReport?.evidence?.map((e) => ({
       id: e.id,
-      url: e.asset!.publicUrl!,
+      url: e.url,
     })) ?? [];
   const visibleExistingImages = existingImages.filter((e) => !removedExistingImageIds.includes(e.id));
   const maxNewImages = Math.max(0, MAX_REPORT_IMAGES - visibleExistingImages.length);
@@ -192,7 +204,7 @@ export default function InventoryIncidentModal({
   const isPendingReport = !existingReport || existingReport.status === "PENDING";
 
   const canSubmit =
-    isPendingReport &&
+    !isResolved &&
     canSubmitQuantity && (hasQuantityChange || hasReport || wantsToDeleteReport || hasPendingImageDeletions);
 
   const handleSubmit = (e?: React.MouseEvent) => {
@@ -296,7 +308,8 @@ export default function InventoryIncidentModal({
                 <button
                   type="button"
                   onClick={() => setQuantityAfter(Math.max(0, quantityAfter - 1))}
-                  className="w-10 h-10 rounded border border-neutral-300 flex items-center justify-center hover:bg-neutral-50"
+                  disabled={quantityDisabled}
+                  className="w-10 h-10 rounded border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   −
                 </button>
@@ -307,13 +320,15 @@ export default function InventoryIncidentModal({
                     const val = parseInt(e.target.value, 10);
                     if (!isNaN(val) && val >= 0) setQuantityAfter(val);
                   }}
-                  className="w-20 text-center border border-neutral-300 rounded px-3 py-2"
+                  disabled={quantityDisabled}
+                  className="w-20 text-center border border-neutral-300 rounded px-3 py-2 disabled:bg-neutral-100 disabled:cursor-not-allowed"
                   min="0"
                 />
                 <button
                   type="button"
                   onClick={() => setQuantityAfter(quantityAfter + 1)}
-                  className="w-10 h-10 rounded border border-neutral-300 flex items-center justify-center hover:bg-neutral-50"
+                  disabled={quantityDisabled}
+                  className="w-10 h-10 rounded border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
@@ -332,10 +347,11 @@ export default function InventoryIncidentModal({
                           key={option.value}
                           type="button"
                           onClick={() => setSelectedReason(option.value)}
+                          disabled={quantityDisabled}
                           className={`px-4 py-2 rounded-full text-sm font-medium border transition ${selectedReason === option.value
                               ? "bg-neutral-900 text-white border-neutral-900"
                               : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
-                            }`}
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {option.label}
                         </button>
@@ -352,7 +368,8 @@ export default function InventoryIncidentModal({
                         value={reasonOtherText}
                         onChange={(e) => setReasonOtherText(e.target.value)}
                         placeholder="Describe la razón del cambio..."
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                        disabled={quantityDisabled}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg disabled:bg-neutral-100 disabled:cursor-not-allowed"
                       />
                     </div>
                   )}
@@ -366,7 +383,8 @@ export default function InventoryIncidentModal({
                       placeholder="Agrega una nota adicional..."
                       maxLength={200}
                       rows={2}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg resize-none"
+                      disabled={quantityDisabled}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg resize-none disabled:bg-neutral-100 disabled:cursor-not-allowed"
                     />
                     <p className="text-xs text-neutral-500 mt-1">{note.length}/200</p>
                   </div>
@@ -387,10 +405,11 @@ export default function InventoryIncidentModal({
                       key={option.value}
                       type="button"
                       onClick={() => setSelectedType(selectedType === option.value ? null : option.value)}
+                      disabled={reportTypeDisabled}
                       className={`px-4 py-2 rounded-full text-sm font-medium border transition ${selectedType === option.value
                           ? "bg-neutral-900 text-white border-neutral-900"
                           : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
-                        }`}
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {option.label}
                     </button>
@@ -409,10 +428,11 @@ export default function InventoryIncidentModal({
                           key={option.value}
                           type="button"
                           onClick={() => setSelectedSeverity(option.value)}
+                          disabled={reportFieldsDisabled}
                           className={`px-4 py-2 rounded-full text-sm font-medium border transition ${selectedSeverity === option.value
                               ? "bg-neutral-900 text-white border-neutral-900"
                               : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
-                            }`}
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {option.label}
                         </button>
@@ -445,7 +465,8 @@ export default function InventoryIncidentModal({
                                 <button
                                   type="button"
                                   onClick={() => removeExistingImage(id)}
-                                  className="absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black/80"
+                                  disabled={evidenceDisabled}
+                                  className="absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs hover:bg-black/80 disabled:opacity-50 disabled:cursor-not-allowed"
                                   aria-label="Quitar foto"
                                 >
                                   ×
@@ -497,7 +518,8 @@ export default function InventoryIncidentModal({
                                 <button
                                   type="button"
                                   onClick={() => setShowPhotoChoiceModal(true)}
-                                  className="flex-1 min-w-[140px] sm:min-w-[200px] w-full h-24 sm:h-14 rounded-lg border-2 border-dashed border-neutral-300 flex flex-row items-center justify-center gap-3 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 transition-colors cursor-pointer py-4 sm:py-3 px-4"
+                                  disabled={evidenceDisabled}
+                                  className="flex-1 min-w-[140px] sm:min-w-[200px] w-full h-24 sm:h-14 rounded-lg border-2 border-dashed border-neutral-300 flex flex-row items-center justify-center gap-3 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 transition-colors cursor-pointer py-4 sm:py-3 px-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-50"
                                 >
                                   <svg className="w-8 h-8 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -526,7 +548,8 @@ export default function InventoryIncidentModal({
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Describe la incidencia..."
                       rows={3}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg resize-none"
+                      disabled={reportFieldsDisabled}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg resize-none disabled:bg-neutral-100 disabled:cursor-not-allowed"
                     />
                   </div>
                 </>
@@ -551,7 +574,8 @@ export default function InventoryIncidentModal({
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  disabled={deleteReportDisabled}
+                  className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Eliminar reporte
                 </button>

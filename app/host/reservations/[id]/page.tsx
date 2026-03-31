@@ -6,15 +6,10 @@ import { requireHostUser } from "@/lib/auth/requireUser";
 import PageHeader from "@/lib/ui/PageHeader";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
-
-function formatDate(date: Date): string {
-  return date.toLocaleString("es-MX", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
+import {
+  formatReservationDateLong,
+  formatReservationDateRange,
+} from "@/lib/ui/formatReservationDate";
 
 function formatDateTime(date: Date): string {
   return date.toLocaleString("es-MX", {
@@ -192,7 +187,7 @@ export default async function ReservationDetailPage({
           showBack
           backHref={returnTo}
           title="Detalle de reserva"
-          subtitle={`${propertyName} · ${formatDateRange(reservation.startDate, reservation.endDate)}`}
+          subtitle={`${propertyName} · ${formatReservationDateRange(reservation.startDate, reservation.endDate)}`}
           variant="compact"
         />
 
@@ -211,7 +206,7 @@ export default async function ReservationDetailPage({
         <div>
           <p className="text-xs text-neutral-500">Fechas</p>
           <p className="text-base text-neutral-900">
-            {formatDate(reservation.startDate)} — {formatDate(reservation.endDate)}
+            {formatReservationDateLong(reservation.startDate)} — {formatReservationDateLong(reservation.endDate)}
           </p>
         </div>
 
@@ -268,7 +263,10 @@ export default async function ReservationDetailPage({
               {reservation.cleanings.map((cleaning) => {
                 const scheduledAt = (cleaning as any).scheduledAtPlanned || cleaning.scheduledDate;
                 const assignedMember = (cleaning as any).assignedMember;
-                const needsAttention = (cleaning as any).needsAttention;
+                // Alineado con getCleaningAttentionReasons() línea 188:
+                // Si hay alguien asignado (assignedMembershipId OR assignedMemberId), NO mostrar alerta
+                const needsAttention = (cleaning as any).needsAttention &&
+                  !cleaning.assignedMembershipId && !cleaning.assignedMemberId;
 
                 return (
                   <li key={cleaning.id}>
@@ -358,21 +356,4 @@ export default async function ReservationDetailPage({
   );
 }
 
-function formatDateRange(start: Date, end: Date): string {
-  const startStr = start.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-  const endStr = end.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  if (startStr === endStr) {
-    return startStr;
-  }
-  return `${startStr} — ${endStr}`;
-}
 

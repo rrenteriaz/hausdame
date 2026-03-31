@@ -6,13 +6,15 @@ import { deleteInventoryAreaAction } from "@/app/host/inventory/actions";
 
 interface DeleteAreaButtonProps {
   propertyId: string;
-  area: string;
+  propertyZoneId: string;
+  areaName: string;
   itemCount: number;
 }
 
 export default function DeleteAreaButton({
   propertyId,
-  area,
+  propertyZoneId,
+  areaName,
   itemCount,
 }: DeleteAreaButtonProps) {
   const router = useRouter();
@@ -26,7 +28,7 @@ export default function DeleteAreaButton({
     try {
       const formData = new FormData();
       formData.set("propertyId", propertyId);
-      formData.set("area", area);
+      formData.set("propertyZoneId", propertyZoneId);
       const result = await deleteInventoryAreaAction(formData);
       setShowConfirm(false);
       if (result?.count === 0) {
@@ -51,7 +53,7 @@ export default function DeleteAreaButton({
           setShowConfirm(true);
         }}
         className="p-1.5 text-neutral-400 hover:text-red-600 rounded transition-colors"
-        aria-label={`Eliminar área ${area}`}
+        aria-label={`Eliminar área ${areaName}`}
         title="Eliminar área"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +79,7 @@ export default function DeleteAreaButton({
               Eliminar área
             </h3>
             <p className="text-sm text-neutral-600 mb-4">
-              ¿Eliminar el área &quot;{area}&quot; y sus {itemCount} item
+              ¿Eliminar el área &quot;{areaName}&quot; y sus {itemCount} item
               {itemCount !== 1 ? "s" : ""}? Esta acción no se puede deshacer.
             </p>
             {error && (

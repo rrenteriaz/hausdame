@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { startCleaning, completeCleaning, reopenCleaning, deleteCleaning } from "../actions";
 import CancelCleaningModal from "../CancelCleaningModal";
 import InventoryRequiredModal from "./InventoryRequiredModal";
+import EditCleaningDateModal from "./EditCleaningDateModal";
 
 interface CleaningDetailActionsProps {
   cleaning: {
@@ -17,13 +18,15 @@ interface CleaningDetailActionsProps {
     };
   };
   returnTo: string;
+  isManual?: boolean;
 }
 
-export default function CleaningDetailActions({ cleaning, returnTo }: CleaningDetailActionsProps) {
+export default function CleaningDetailActions({ cleaning, returnTo, isManual }: CleaningDetailActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [inventoryRequiredModalOpen, setInventoryRequiredModalOpen] = useState(false);
+  const [editDateModalOpen, setEditDateModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCancelClick = () => {
@@ -81,8 +84,25 @@ export default function CleaningDetailActions({ cleaning, returnTo }: CleaningDe
         returnTo={returnTo}
       />
 
+      <EditCleaningDateModal
+        cleaningId={cleaning.id}
+        scheduledDate={cleaning.scheduledDate}
+        returnTo={returnTo}
+        isOpen={editDateModalOpen}
+        onClose={() => setEditDateModalOpen(false)}
+      />
+
       {cleaning.status === "PENDING" ? (
         <div className="flex items-center gap-3">
+          {isManual && (
+            <button
+              type="button"
+              onClick={() => setEditDateModalOpen(true)}
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 active:scale-[0.99] transition"
+            >
+              Editar fecha
+            </button>
+          )}
           <button
             type="button"
             onClick={handleCancelClick}

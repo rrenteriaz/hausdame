@@ -5,7 +5,7 @@ import Link from "next/link";
 interface SummaryCardsProps {
   myCount: number;
   availableCount: number;
-  upcomingCount: number;
+  inProgressCount: number;
   memberId?: string;
   returnTo?: string;
 }
@@ -13,7 +13,7 @@ interface SummaryCardsProps {
 export default function SummaryCards({
   myCount,
   availableCount,
-  upcomingCount,
+  inProgressCount,
   memberId,
   returnTo,
 }: SummaryCardsProps) {
@@ -35,11 +35,12 @@ export default function SummaryCards({
   myParams.set("returnTo", safeReturnTo);
   const myHref = `/cleaner/cleanings/all?${myParams.toString()}`;
 
-  const upcomingParams = new URLSearchParams();
-  if (memberId) upcomingParams.set("memberId", memberId);
-  upcomingParams.set("scope", "upcoming");
-  upcomingParams.set("returnTo", safeReturnTo);
-  const upcomingHref = `/cleaner/cleanings/all?${upcomingParams.toString()}`;
+  const inProgressParams = new URLSearchParams();
+  if (memberId) inProgressParams.set("memberId", memberId);
+  inProgressParams.set("scope", "all");
+  inProgressParams.set("status", "IN_PROGRESS");
+  inProgressParams.set("returnTo", safeReturnTo);
+  const inProgressHref = `/cleaner/cleanings/all?${inProgressParams.toString()}`;
 
   return (
     <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
@@ -63,14 +64,14 @@ export default function SummaryCards({
         <p className="text-[10px] text-neutral-400 mt-0.5">Para asignar</p>
       </Link>
 
-      {/* Próximas limpiezas */}
+      {/* Limpiezas en progreso */}
       <Link
-        href={upcomingHref}
+        href={inProgressHref}
         className="rounded-xl border border-neutral-200 bg-white p-3 text-left hover:bg-neutral-50 hover:border-neutral-300 active:scale-[0.98] transition-all cursor-pointer"
       >
-        <p className="text-xs text-neutral-500 mb-1">Próximas limpiezas</p>
-        <p className="text-2xl font-semibold text-neutral-900">{upcomingCount}</p>
-        <p className="text-[10px] text-neutral-400 mt-0.5">Próximos 7 días</p>
+        <p className="text-xs text-neutral-500 mb-1">En progreso</p>
+        <p className="text-2xl font-semibold text-neutral-900">{inProgressCount}</p>
+        <p className="text-[10px] text-neutral-400 mt-0.5">Asignadas a mí</p>
       </Link>
     </section>
   );

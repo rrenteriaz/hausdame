@@ -28,10 +28,13 @@ model Tenant {
   inventoryEvidence          InventoryEvidence[]
   inventoryItems             InventoryItem[]
   inventoryItemAssets        InventoryItemAsset[]
+  inventoryLineAssets        InventoryLineAsset[]
   inventoryLines             InventoryLine[]
   inventoryReports           InventoryReport[]
   inventoryReviews           InventoryReview[]
   inventoryReviewItemChanges InventoryReviewItemChange[]
+  inventoryLogs              InventoryLog[]
+  propertyZones              PropertyZone[]
   locks                      Lock[]
   lockCodes                  LockCode[]
   metricEvents               MetricEvent[]
@@ -253,6 +256,8 @@ model Property {
   inventoryChecks         InventoryCheck[]
   inventoryLines          InventoryLine[]
   inventoryReviews        InventoryReview[]
+  inventoryLogs           InventoryLog[]
+  propertyZones           PropertyZone[]
   locks                   Lock[]
   coverMedia              Asset?                  @relation("PropertyCover", fields: [coverMediaId], references: [id])
   tenant                  Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -843,6 +848,7 @@ model Asset {
   cleaningMedia                CleaningMedia[]
   inventoryEvidence            InventoryEvidence[]
   inventoryItemAssets          InventoryItemAsset[]
+  inventoryLineAssets          InventoryLineAsset[]
   propertyCover                Property?                     @relation("PropertyCover")
   userAvatar                   User?                         @relation("UserAvatar")
 
@@ -870,6 +876,27 @@ model InventoryItemAsset {
   @@unique([tenantId, itemId, position])
   @@unique([tenantId, itemId, assetId])
   @@index([tenantId, itemId])
+  @@index([tenantId, assetId])
+}
+
+/// *
+/// * Relación entre InventoryLine y Asset (imágenes de la línea específica).
+/// * Fase 11: modelo híbrido — la línea tiene sus propias imágenes con fallback al InventoryItem.
+/// * Permite 1-3 imágenes por línea, ordenadas por posición (1, 2, 3).
+model InventoryLineAsset {
+  id        String        @id @default(cuid())
+  tenantId  String
+  lineId    String
+  assetId   String
+  position  Int
+  createdAt DateTime      @default(now())
+  asset     Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  line      InventoryLine @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, lineId, position])
+  @@unique([tenantId, lineId, assetId])
+  @@index([tenantId, lineId])
   @@index([tenantId, assetId])
 }
 
@@ -1022,18 +1049,24 @@ model InventoryLine {
   variantKey             String?
   variantValue           String?
   variantValueNormalized String?
+  version                Int                @default(1)
   isActive               Boolean            @default(true)
+  propertyZoneId         String?
   inventoryChecks        InventoryCheck[]
   inventoryReviewItemChanges InventoryReviewItemChange[]
   inventoryReports       InventoryReport[]
+  inventoryLogs          InventoryLog[]
+  inventoryLineAssets    InventoryLineAsset[]
   item                   InventoryItem      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   property               Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   tenant                 Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  propertyZone           PropertyZone?      @relation(fields: [propertyZoneId], references: [id], onDelete: SetNull)
 
-  @@unique([propertyId, areaNormalized, itemId, variantKey, variantValueNormalized])
+  @@unique([propertyId, areaNormalized, itemId, variantKey, variantValueNormalized, version])
   @@index([tenantId, propertyId])
   @@index([propertyId, areaNormalized])
   @@index([propertyId, itemId])
+  @@index([propertyZoneId])
 }
 
 /// *
@@ -1203,6 +1236,65 @@ model InventoryEvidence {
   @@index([changeId])
   @@index([reportId])
   @@index([assetId])
+}
+
+/// *
+/// * Zona física de una propiedad (operativa o virtual).
+/// * Operativas: Sala, Cocina, Baño 1, etc.
+/// * Virtuales: Almacén (STORAGE), Dañados / Baja (DAMAGED).
+model PropertyZone {
+  id             String                   @id @default(cuid())
+  tenantId       String
+  propertyId     String
+  name           String
+  normalizedName String
+  zoneType       PropertyZoneType
+  virtualKind    PropertyZoneVirtualKind?
+  sortOrder      Int?
+  isActive       Boolean                  @default(true)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property       Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  inventoryLines InventoryLine[]
+  inventoryLogs  InventoryLog[]
+
+  @@unique([propertyId, normalizedName])
+  @@index([tenantId, propertyId])
+  @@index([propertyId, normalizedName])
+  @@index([propertyId, zoneType])
+  @@index([propertyId, isActive])
+}
+
+/// *
+/// * Log inmutable de eventos sobre una línea de inventario.
+/// * Registra movimientos, ajustes, envíos a zonas virtuales, desactivaciones.
+model InventoryLog {
+  id              String           @id @default(cuid())
+  tenantId        String
+  propertyId      String
+  inventoryLineId String?
+  propertyZoneId  String?
+  type            InventoryLogType
+  quantity        Int?
+  fromZoneId      String?
+  toZoneId        String?
+  reason          String?
+  metadata        Json?
+  userId          String?
+  createdAt       DateTime         @default(now())
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  inventoryLine InventoryLine? @relation(fields: [inventoryLineId], references: [id], onDelete: SetNull)
+  propertyZone  PropertyZone?  @relation(fields: [propertyZoneId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, propertyId])
+  @@index([inventoryLineId])
+  @@index([propertyZoneId])
+  @@index([type])
+  @@index([propertyId, createdAt])
 }
 
 /// *
@@ -1574,6 +1666,7 @@ enum InventoryCheckStatus {
 
 enum InventoryReportResolution {
   REPAIR
+  DEEP_CLEAN
   KEEP_USING
   REPLACE_AND_DISCARD
   DISCARD
@@ -1685,4 +1778,23 @@ enum CleanerWorkFlagStatus {
   ACTIVE
   PAUSED
   CLOSED
+}
+
+enum PropertyZoneType {
+  OPERATIONAL
+  VIRTUAL
+}
+
+enum PropertyZoneVirtualKind {
+  STORAGE
+  DAMAGED
+}
+
+enum InventoryLogType {
+  MOVE
+  ADJUST
+  CREATE
+  DELETE
+  DAMAGE
+  RESTORE
 }

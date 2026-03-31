@@ -17,11 +17,10 @@ import {
   InventoryReportType, 
   InventoryReportSeverity 
 } from "@prisma/client";
-import { 
-  InventoryReview, 
-  InventoryReport, 
+import {
+  InventoryReview,
+  InventoryReport,
   InventoryReviewItemChange,
-  InventoryReportEvidence
 } from "@/types/inventory";
 import InventoryReviewItemRow from "./InventoryReviewItemRow";
 import InventoryIncidentModal, { InventoryIncidentPayload } from "./InventoryIncidentModal";
@@ -39,6 +38,17 @@ interface InventoryLine {
     category: string;
   };
   allLines?: any[]; // Todas las líneas agrupadas para el detalle
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryReviewScreenProps {
@@ -47,6 +57,7 @@ interface InventoryReviewScreenProps {
   initialReview: InventoryReview | null;
   inventoryLines: InventoryLine[];
   returnTo?: string;
+  tenantId?: string;
 }
 
 export default function InventoryReviewScreen({
@@ -55,6 +66,7 @@ export default function InventoryReviewScreen({
   initialReview,
   inventoryLines,
   returnTo,
+  tenantId,
 }: InventoryReviewScreenProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -129,6 +141,7 @@ export default function InventoryReviewScreen({
     setIsIncidentSubmitting(true);
     const lineId = selectedLineForIncident.id;
     const itemId = selectedLineForIncident.item?.id || "";
+    const existingChange = changes.get(lineId);
 
     try {
       // Eliminar evidencias marcadas para borrar (antes de crear/actualizar reporte)
@@ -192,6 +205,7 @@ export default function InventoryReviewScreen({
         }
       }
 
+      let finalReportData: InventoryReport | null = null;
       if (payload.report) {
         const { type, severity, description } = payload.report;
         const fd = new FormData();
@@ -202,9 +216,14 @@ export default function InventoryReviewScreen({
         fd.set("type", type);
         fd.set("severity", severity);
         if (description) fd.set("description", description);
+        
         const existingReport = reports.get(lineId);
         if (existingReport?.id) fd.set("reportId", existingReport.id);
+        
+        // 1. Crear/Actualizar reporte base
         const reportResult = await createInventoryReport(fd);
+        
+        // 2. Subir evidencias SIEMPRE ANTES de actualizar el estado local final
         if (reportImageFiles?.length) {
           for (const file of reportImageFiles) {
             const evFd = new FormData();
@@ -213,19 +232,28 @@ export default function InventoryReviewScreen({
             await uploadInventoryReportEvidence(evFd);
           }
         }
-        // Fuente de verdad post-save: el backend retorna el reporte con sus evidencias actuales.
-        const backendEvidence = reportResult.evidence ?? [];
+
+        // 3. Obtener el estado FINAL HIDRATADO del reporte (el backend ya lo retorna en reportResult si lo pedimos)
+        // Pero para asegurar consistencia tras uploads, pedimos la versión final
+        const fdFinal = new FormData();
+        fdFinal.set("reviewId", effectiveReviewId);
+        fdFinal.set("cleaningId", cleaningId);
+        fdFinal.set("itemId", itemId);
+        fdFinal.set("inventoryLineId", lineId);
+        fdFinal.set("type", type);
+        fdFinal.set("severity", severity);
+        if (description) fdFinal.set("description", description);
+        fdFinal.set("reportId", reportResult.id);
+        
+        const finalReportResult = await createInventoryReport(fdFinal);
+        finalReportData = finalReportResult;
+      }
+
+      // Actualizar estados locales de forma atómica al final
+
+      if (finalReportData) {
         const newReports = new Map(reports);
-        newReports.set(lineId, {
-          id: reportResult.id,
-          itemId,
-          inventoryLineId: lineId,
-          type,
-          severity,
-          description: payload.report.description,
-          status: reportResult.status,
-          evidence: backendEvidence,
-        });
+        newReports.set(lineId, finalReportData);
         setReports(newReports);
       }
 
@@ -435,7 +463,10 @@ export default function InventoryReviewScreen({
                 change={change}
                 report={report}
                 onReportClick={() => {
-                  if (isSubmitted) return;
+                  // Permitir click si el reporte es PENDING (aunque review esté SUBMITTED)
+                  const canEditReport = !isSubmitted || (report && report.status === "PENDING");
+                  if (!canEditReport) return;
+                  
                   setSelectedLineForIncident(line);
                   setShowIncidentModal(true);
                 }}
@@ -443,7 +474,8 @@ export default function InventoryReviewScreen({
                   setSelectedLineForDetail(line);
                   setShowItemDetailModal(true);
                 }}
-                disabled={isSubmitted}
+                disabled={isSubmitted && (!report || report.status !== "PENDING")}
+                tenantId={tenantId}
               />
             );
           })}
@@ -479,6 +511,7 @@ export default function InventoryReviewScreen({
           }
           isSubmitting={isIncidentSubmitting}
           submitError={error}
+          isSubmitted={isSubmitted}
         />
       )}
 
@@ -505,7 +538,8 @@ export default function InventoryReviewScreen({
               setShowItemDetailModal(false);
               setSelectedLineForDetail(null);
             } : undefined}
-            disabled={isSubmitted}
+            disabled={isSubmitted && (!lineReport || lineReport.status !== "PENDING")}
+            tenantId={tenantId}
           />
         );
       })()}

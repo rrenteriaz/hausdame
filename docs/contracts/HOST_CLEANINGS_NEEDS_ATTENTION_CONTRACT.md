@@ -108,6 +108,44 @@ El copy mostrado **DEBE** seguir exactamente el contrato:
 
 **Implicación:** Todos usan el mismo `assignmentLevel` y el mismo copy canónico.
 
+### 4.4 La alerta visible NO debe derivarse del flag `needsAttention` de forma aislada
+
+**Regla crítica:** `Cleaning.needsAttention` es un flag persistido en base de datos que puede quedar con valor `true` de forma desactualizada (stale) tras eventos del sistema — por ejemplo, cuando un cleaner acepta una limpieza que previamente estuvo sin asignar.
+
+**❌ PROHIBIDO en cualquier vista o componente:**
+```ts
+// MAL: usa el flag persistido directamente sin validar el estado de asignación
+if (cleaning.needsAttention) { /* mostrar alerta */ }
+cleanings.some((c) => c.needsAttention)
+```
+
+**✅ CORRECTO:** La visibilidad de la alerta **DEBE** seguir la misma lógica que usa `getCleaningAttentionReasons()` para generar razones visibles — que en su línea de control principal evalúa:
+
+```ts
+// lib/cleaning-attention-reasons.ts
+if (cleaning.needsAttention && !cleaning.assignedMemberId && !cleaning.assignedMembershipId) {
+  // solo entonces agregar razones visibles
+}
+```
+
+**Regla derivada:** Si existe cleaner asignado por cualquier path, **NO debe mostrarse la alerta visible**, aunque `cleaning.needsAttention === true`:
+
+| Campo | Condición que suprime la alerta |
+|-------|--------------------------------|
+| `assignedMembershipId` | `!== null` (path moderno — TeamMembership) |
+| `assignedMemberId` | `!== null` (path legacy — TeamMember) |
+
+**Condición canónica correcta para mostrar la alerta en UI:**
+```ts
+cleaning.needsAttention && !cleaning.assignedMembershipId && !cleaning.assignedMemberId
+```
+
+**Aplica a todas las vistas que muestran la alerta "Atención requerida":**
+- `/host/reservations` (lista)
+- `/host/reservations/[id]` (detalle de reserva)
+- `/host/cleanings` (lista de limpiezas)
+- Cualquier componente futuro que consuma `Cleaning.needsAttention`
+
 ---
 
 ## 5. Estructura de la página
@@ -244,4 +282,48 @@ Para cada cleaning, se necesitan:
 ---
 
 **Fin del contrato**
+
+---
+
+## 10. Extensión v1.1 — Overdue Cleanings (Atrasadas)
+
+Esta sección extiende el comportamiento para incluir limpiezas pasadas no resueltas.
+
+### 10.1 Definición de Overdue
+Una cleaning se considera **OVERDUE** si:
+- `scheduledDate < today`
+- `status` NO es `COMPLETED` ni `CANCELLED`
+
+### 10.2 Ventana operativa (Host)
+Para evitar saturar la vista con histórico irrelevante, se define un límite hacia atrás:
+- **HOST_OVERDUE_WINDOW_DAYS** = 45 días.
+- Regla: `scheduledDate >= (today - 45 días)`.
+
+### 10.3 Reglas de inclusión en "Needs Attention"
+Una limpieza **OVERDUE** debe aparecer en la lista si cumple **CUALQUIERA** de estas:
+1. Cumple cualquier regla de atención existente (Niveles 0, 1, 2) y su `status` es `PENDING`.
+2. Está **OPEN** (`assignedMembershipId === null` AND `assignedMemberId === null`) independientemente de si su `status` es `PENDING` o `IN_PROGRESS`.
+
+**Regla crítica para IN_PROGRESS:**
+- Una cleaning `IN_PROGRESS` **SOLO** se incluye si está totalmente sin asignar (`assignedMembershipId === null` AND `assignedMemberId === null`).
+- Si está asignada y en progreso, **NO** requiere atención del Host (se asume flujo operativo normal del Cleaner).
+
+### 10.4 Indicadores visuales (UI)
+Si una cleaning es **OVERDUE**, la UI debe mostrar:
+1. **Badge:** "Vencida" (estilo ámbar).
+2. **Mensaje complementario:** Usar la constante `OVERDUE_MESSAGE_V1`.
+
+**Constante de Texto:**
+`OVERDUE_MESSAGE_V1 = "La fecha programada ya pasó y la limpieza sigue pendiente."`
+
+**IMPORTANTE:** Este mensaje es adicional y **NO** sustituye los mensajes definidos en `ASSIGNMENT_COPY_V1`.
+
+### 10.5 Orden de Resultados
+La lista debe priorizar la urgencia:
+1. **Overdue primero**: De más reciente a más antigua (`scheduledDate` DESC).
+2. **Futuras después**: De más próxima a más lejana (`scheduledDate` ASC).
+
+### 10.6 Exclusiones explícitas
+- `status === "COMPLETED"`: NUNCA se incluye.
+- `status === "CANCELLED"`: NUNCA se incluye.
 

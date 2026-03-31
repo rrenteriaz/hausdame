@@ -9,7 +9,13 @@ import {
   InventoryReportStatus,
   InventoryReportResolution,
   InventoryReportSeverity,
+  InventoryCondition,
+  InventoryChangeReason,
+  InventoryReportType,
 } from "@prisma/client";
+import { fetchInventoryHistoryStats, getInventoryLineHistory } from "@/lib/inventory-history-queries";
+
+import { InboxItem } from "./types";
 
 /**
  * Obtiene el resumen de pendientes y resueltos del inbox de inventario.
@@ -74,7 +80,7 @@ interface InboxFilters {
 /**
  * Obtiene los items del inbox (cambios y reportes) con filtros.
  */
-export async function getInventoryInboxItems(filters: InboxFilters = {}) {
+export async function getInventoryInboxItems(filters: InboxFilters = {}): Promise<InboxItem[]> {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
   if (!tenantId) return [];
@@ -172,7 +178,13 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
               },
             },
             inventoryLine: {
-              select: { area: true },
+              select: {
+                area: true,
+                // Fase 5: zona física como source of truth
+                propertyZone: {
+                  select: { id: true, name: true, sortOrder: true, zoneType: true },
+                },
+              },
             },
           },
           orderBy: { createdAt: "desc" },
@@ -241,7 +253,20 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
               },
             },
             inventoryLine: {
-              select: { area: true },
+              select: {
+                area: true,
+                // Fase 5: zona física como source of truth
+                propertyZone: {
+                  select: { id: true, name: true, sortOrder: true, zoneType: true },
+                },
+              },
+            },
+            resolvedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
             createdBy: {
               select: {
@@ -281,7 +306,7 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
         "N/A",
       propertyId: change.review?.cleaning?.propertyId || null,
       cleaningId: change.review?.cleaningId || null,
-      area: change.inventoryLine?.area || null,
+      area: change.inventoryLine?.propertyZone?.name ?? change.inventoryLine?.area ?? null, // Fase 5
       quantityBefore: change.quantityBefore,
       quantityAfter: change.quantityAfter,
       reason: change.reason,
@@ -305,6 +330,7 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
         if (assignee?.name) return assignee.name;
         return "Cleaner";
       })(),
+      inventoryLineId: change.inventoryLineId || null,
       createdAt: change.createdAt,
     })),
     ...reports.map((report) => ({
@@ -325,7 +351,7 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
       propertyId:
         report.review?.propertyId || report.cleaning?.propertyId || null,
       cleaningId: report.cleaningId || report.review?.cleaningId || null,
-      area: report.inventoryLine?.area || null,
+      area: report.inventoryLine?.propertyZone?.name ?? report.inventoryLine?.area ?? null, // Fase 5
       reportType: report.type,
       severity: report.severity,
       description: report.description,
@@ -333,14 +359,15 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
       managerResolution: report.managerResolution,
       createdBy:
         report.createdBy?.name || report.createdBy?.email || "Cleaner",
+      inventoryLineId: report.inventoryLineId || null,
       createdAt: report.createdAt,
       resolvedAt: report.resolvedAt,
+      resolvedBy: report.resolvedBy?.name || report.resolvedBy?.email || null,
       evidence: report.evidence
-        .filter((ev) => ev.asset.publicUrl)
         .map((ev) => ({
           id: ev.id,
           url: ev.asset.publicUrl!,
-          variant: ev.asset.variant as string,
+          variant: ev.asset.variant as string | null,
         })),
     })),
   ];
@@ -360,22 +387,36 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}) {
         isActive: true,
         OR: uniquePairs.map((p) => ({ itemId: p.itemId, propertyId: p.propertyId })),
       },
-      select: { itemId: true, propertyId: true, area: true },
-      orderBy: { area: "asc" },
+      select: {
+        itemId: true,
+        propertyId: true,
+        area: true,
+        // Fase 5: zona física como source of truth
+        propertyZone: {
+          select: { id: true, name: true, sortOrder: true },
+        },
+      },
+      orderBy: { propertyZone: { sortOrder: "asc" } }, // Fase 5
     });
     const areaByKey = new Map<string, string>();
     for (const line of fallbackLines) {
       const key = `${line.itemId}-${line.propertyId}`;
-      if (!areaByKey.has(key)) areaByKey.set(key, line.area);
+      // Fase 5: usar propertyZone.name como source of truth; fallback a area
+      if (!areaByKey.has(key)) areaByKey.set(key, line.propertyZone?.name ?? line.area);
     }
     for (const item of items) {
-      if (!item.area && item.propertyId) {
-        item.area = areaByKey.get(`${item.itemId}-${item.propertyId}`) || null;
-      }
     }
   }
 
-  return items;
+  // Enriquecer con historyStats
+  const lineIds = Array.from(new Set(items.map((i) => i.inventoryLineId).filter(Boolean))) as string[];
+  const historyStatsMap = await fetchInventoryHistoryStats(lineIds, tenantId);
+
+  return items.map((item) => ({
+    ...item,
+    inventoryLineId: item.inventoryLineId || null,
+    historyStats: item.inventoryLineId ? historyStatsMap.get(item.inventoryLineId) || null : null,
+  }));
 }
 
 /**
@@ -513,6 +554,8 @@ export async function resolveInventoryReport(
     where: { id: reportId, tenantId },
     include: {
       item: true,
+      cleaning: { select: { propertyId: true } },
+      review: { select: { propertyId: true } },
     },
   });
 
@@ -520,8 +563,11 @@ export async function resolveInventoryReport(
     throw new Error("Reporte no encontrado");
   }
 
-  if (report.status !== InventoryReportStatus.PENDING) {
-    throw new Error("Este reporte ya fue procesado");
+  if (
+    report.status !== InventoryReportStatus.PENDING &&
+    report.status !== InventoryReportStatus.RESOLVED
+  ) {
+    throw new Error("Este reporte no se puede procesar en su estado actual");
   }
 
   // Actualizar el reporte
@@ -571,9 +617,125 @@ export async function resolveInventoryReport(
     }
   }
 
+  // NUEVA LÓGICA: Reemplazo de item (REPLACE_AND_DISCARD)
+  if (resolution === InventoryReportResolution.REPLACE_AND_DISCARD) {
+    // Si el reporte está anclado a una línea específica, la reemplazamos
+    if (report.inventoryLineId) {
+      const currentLine = await prisma.inventoryLine.findUnique({
+        where: { id: report.inventoryLineId },
+      });
+
+      if (currentLine && currentLine.isActive) {
+        // 1. Desactivar la línea vieja
+        await prisma.inventoryLine.update({
+          where: { id: currentLine.id },
+          data: {
+            isActive: false,
+            updatedAt: new Date(),
+          },
+        });
+
+        // 2. Crear la nueva instancia (incrementará la versión automáticamente en lib/inventory.ts)
+        const { createInventoryLine } = await import("@/lib/inventory");
+        await createInventoryLine(tenantId, currentLine.propertyId, {
+          propertyZoneId: currentLine.propertyZoneId ?? undefined,
+          itemId: currentLine.itemId,
+          category: report.item.category,
+          expectedQty: currentLine.expectedQty,
+          condition: InventoryCondition.NEW, // Al ser reemplazo, nace como nuevo
+          priority: currentLine.priority,
+          brand: currentLine.brand,
+          model: currentLine.model,
+          serialNumber: null, // El serial anterior ya no aplica
+          color: currentLine.color,
+          size: currentLine.size,
+          notes: currentLine.notes,
+          variantKey: currentLine.variantKey,
+          variantValue: currentLine.variantValue,
+        });
+
+        console.log(
+          `[resolveInventoryReport] Item reemplazado: se desactivó línea ${currentLine.id} y se creó nueva instancia.`
+        );
+      }
+    } else {
+      // Fallback para reportes legacy sin inventoryLineId: 
+      // Desactivamos todas las líneas del item y creamos una nueva en la propiedad asociada
+      const propertyId = report.cleaning?.propertyId || report.review?.propertyId;
+      if (propertyId) {
+        await prisma.inventoryLine.updateMany({
+          where: { tenantId, itemId: report.itemId, propertyId, isActive: true },
+          data: { isActive: false },
+        });
+
+        // No podemos saber el área exacta si no hay lineId, pero intentamos crear una nueva
+        // NOTA: En un flujo ideal, report.inventoryLineId siempre debería estar presente.
+      }
+    }
+  }
+
   revalidatePath("/host/inventory/inbox");
   revalidatePath("/host/dashboard");
 
   return { success: true };
+}
+
+/**
+ * Actualiza los datos base de un reporte (descripción, severidad, tipo) y sus evidencias.
+ * Reutiliza las acciones canónicas de inventory-review con contexto de host.
+ */
+export async function updateInventoryReport(
+  reportId: string,
+  data: { description?: string; severity?: InventoryReportSeverity; type?: InventoryReportType },
+  imageFiles: File[] = [],
+  removedEvidenceIds: string[] = []
+) {
+  const { createInventoryReport, uploadInventoryReportEvidence, deleteInventoryReportEvidence } = await import("../../inventory-review/actions");
+
+  // 1. Obtener detalles del reporte para saber itemId y lineId
+  const report = await prisma.inventoryReport.findUnique({
+    where: { id: reportId },
+    select: { itemId: true, inventoryLineId: true, reviewId: true, cleaningId: true, type: true, severity: true }
+  });
+
+  if (!report) throw new Error("Reporte no encontrado");
+
+  // 2. Subir nuevas imágenes si las hay
+  for (const file of imageFiles) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("reportId", reportId);
+    formData.append("callerContext", "host");
+    await uploadInventoryReportEvidence(formData);
+  }
+
+  // 3. Eliminar evidencias marcadas
+  for (const evidenceId of removedEvidenceIds) {
+    await deleteInventoryReportEvidence(evidenceId, { callerContext: "host" });
+  }
+
+  // 4. Actualizar campos base y OBTENER REPORTE FINAL HIDRATADO
+  const reportFormData = new FormData();
+  reportFormData.append("callerContext", "host");
+  reportFormData.append("itemId", report.itemId);
+  if (report.inventoryLineId) reportFormData.append("inventoryLineId", report.inventoryLineId);
+  if (report.reviewId) reportFormData.append("reviewId", report.reviewId);
+  if (report.cleaningId) reportFormData.append("cleaningId", report.cleaningId);
+  reportFormData.append("type", data.type ?? report.type);
+  reportFormData.append("severity", data.severity ?? report.severity);
+  if (data.description) reportFormData.append("description", data.description);
+  reportFormData.append("reportId", reportId);
+  const finalReport = await createInventoryReport(reportFormData);
+
+  revalidatePath("/host/inventory/inbox");
+  return { success: true, report: finalReport };
+}
+
+/**
+ * Obtiene el historial de incidencias para una línea de inventario (Server Action).
+ */
+export async function getInventoryLineHistoryAction(lineId: string, tenantId: string) {
+  await requireHostUser(); // Protección adicional
+  return await getInventoryLineHistory(lineId, tenantId);
 }
 

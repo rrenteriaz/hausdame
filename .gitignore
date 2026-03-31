@@ -71,6 +71,13 @@ list_*.sql
 tmp/
 scripts/tmp/
 
+# Claude Code – configuración y memoria local
+.claude/
+
+# Scripts de debug temporales
+tmp_query_*.ts
+tmp_query_*.js
+
 # Logs y outputs locales
 lint-output.txt
 

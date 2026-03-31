@@ -648,6 +648,7 @@ export default async function CleaningDetailPage({
             property: cleaningTyped.property,
           }}
           returnTo={returnTo}
+          isManual={!cleaningTyped.reservationId}
         />
       </section>
         </div>

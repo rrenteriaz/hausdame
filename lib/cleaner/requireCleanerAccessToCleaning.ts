@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { resolveCleanerContext, CleanerContext } from "./resolveCleanerContext";
 import { forbidden, notFound } from "@/lib/http/errors";
 import { getActiveMembershipsForUser } from "./getActiveMembershipsForUser";
+import { getAccessibleHostTenantIdsForUser } from "./getAccessibleHostTenantIdsForUser";
 
 export interface CleanerCleaningAccess {
   user: {
@@ -163,7 +164,11 @@ export async function requireCleanerAccessToCleaning(
     const membershipsAccess = await getActiveMembershipsForUser(context.user.id);
     const myMembershipIds = membershipsAccess.membershipIds;
     const { allTeamIds, activeTeamIds, tenantIds } = membershipsAccess;
-    if (!tenantIds.includes(cleaning.tenantId) && !isAssignedToViewer) {
+    // En WGE, cleaning.tenantId es el tenant del Host (no el del equipo del cleaner).
+    // Por eso también se incluyen los hostTenantIds accesibles vía WorkGroupExecutor.
+    const hostTenantIds = await getAccessibleHostTenantIdsForUser(context.user.id);
+    const allAccessibleTenantIds = new Set([...tenantIds, ...hostTenantIds]);
+    if (!allAccessibleTenantIds.has(cleaning.tenantId) && !isAssignedToViewer) {
       forbidden("No tienes acceso a esta limpieza.");
     }
 

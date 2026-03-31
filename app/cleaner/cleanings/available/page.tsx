@@ -49,7 +49,7 @@ export default async function AvailableCleaningsPage({
   }
 
   const now = new Date();
-  const { start, end } = getAvailabilityWindow(now);
+  const { start, end } = getAvailabilityWindow(now, { includePastOpen: true });
 
   // Usar query layer canónico para obtener limpiezas disponibles
   const { cleanings: available } = await getCleanerCleaningsList(
@@ -88,6 +88,7 @@ export default async function AvailableCleaningsPage({
       minute: "2-digit",
     }),
     statusText: formatCleaningStatus(c.status),
+    isOverdue: c.scheduledDate < now,
   }));
 
   return (
@@ -110,7 +111,16 @@ export default async function AvailableCleaningsPage({
                 <ListRow href={detailsHref} isLast={isLast} ariaLabel={`Ver detalles de limpieza ${propertyName}`}>
                   <ListThumb src={thumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1 pr-24">
-                    <h3 className="text-base font-medium text-neutral-900 truncate">{propertyName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-medium text-neutral-900 truncate">
+                        {propertyName}
+                      </h3>
+                      {cleaning.isOverdue && (
+                        <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 whitespace-nowrap">
+                          Atrasada
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
                       {cleaning.formattedDateTime}
                       {" · "}

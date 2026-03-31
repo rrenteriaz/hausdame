@@ -9,38 +9,8 @@ import {
   InventoryReportSeverity,
 } from "@prisma/client";
 import { changeReasonLabel, reportTypeLabel, reportSeverityLabel } from "@/lib/inventory-i18n";
+import { InboxItem } from "./types";
 
-interface InboxItem {
-  type: "CHANGE" | "REPORT";
-  id: string;
-  itemId: string;
-  itemName: string;
-  itemThumbnail: string | null;
-  property: string;
-  propertyId: string | null;
-  cleaningId: string | null;
-  area: string | null;
-  createdAt: Date;
-  createdBy: string;
-  // Para cambios
-  quantityBefore?: number;
-  quantityAfter?: number;
-  reason?: string;
-  reasonOtherText?: string | null;
-  note?: string | null;
-  status?: string;
-  // Para reportes
-  reportType?: string;
-  severity?: InventoryReportSeverity;
-  description?: string | null;
-  managerResolution?: any;
-  resolvedAt?: Date | null;
-  evidence?: Array<{
-    id: string;
-    url: string;
-    variant?: string | null;
-  }>;
-}
 
 interface InventoryInboxItemCardProps {
   item: InboxItem;

@@ -30,6 +30,7 @@ export interface CleanerCleaningsCounts {
   assignedToMeCount: number; // Asignadas a mí, status PENDING o IN_PROGRESS
   availableCount: number; // OPEN, sin asignar, futuras
   upcoming7dCount: number; // Asignadas a mí, próximos 7 días, status PENDING o IN_PROGRESS
+  inProgressCount: number; // Asignadas a mí, status IN_PROGRESS
   historyCount?: number; // COMPLETED asignadas a mí
 }
 
@@ -267,18 +268,20 @@ export async function getCleanerCleaningsList(
   // Para "available", solo futuras (desde availabilityStart)
   // Pero respetar scheduledDateFrom si se proporciona (para rangos específicos)
   if (params.scope === "available") {
-    const availabilityStart = getAvailabilityStartDate(new Date());
+    const availabilityStart = getAvailabilityStartDate(new Date(), { includePastOpen: true });
     if (!whereClause.scheduledDate) {
       whereClause.scheduledDate = {};
     }
     // Si se proporciona scheduledDateFrom, usar el máximo entre availabilityStart y scheduledDateFrom
     if (params.scheduledDateFrom) {
-      whereClause.scheduledDate.gte = params.scheduledDateFrom > availabilityStart 
-        ? params.scheduledDateFrom 
-        : availabilityStart;
+      whereClause.scheduledDate.gte =
+        params.scheduledDateFrom > availabilityStart ? params.scheduledDateFrom : availabilityStart;
     } else {
       whereClause.scheduledDate.gte = availabilityStart;
     }
+
+    // Restricción de negocio: solo PENDING son reclamables (no IN_PROGRESS, COMPLETED o CANCELLED)
+    whereClause.status = "PENDING";
   }
 
   const cleanings = await (prisma as any).cleaning.findMany({
@@ -335,6 +338,7 @@ export async function getCleanerCleaningsCounts(
     return {
       assignedToMeCount: 0,
       availableCount: 0,
+      inProgressCount: 0,
       upcoming7dCount: 0,
       historyCount: 0,
     };
@@ -345,7 +349,7 @@ export async function getCleanerCleaningsCounts(
   const sevenDaysLater = new Date();
   sevenDaysLater.setDate(now.getDate() + 7);
   sevenDaysLater.setHours(23, 59, 59, 999);
-  const availabilityStart = getAvailabilityStartDate(now);
+  const availabilityStart = getAvailabilityStartDate(now, { includePastOpen: true });
 
   // Base where para todas las queries
   const baseWhere: any = {
@@ -372,13 +376,13 @@ export async function getCleanerCleaningsCounts(
     where: assignedWhere,
   });
 
-  // 2. Disponibles (OPEN, sin asignar, futuras)
+  // 2. Disponibles (OPEN, sin asignar, ventanas permitidas)
   const availableWhere = {
     ...baseWhere,
     assignmentStatus: "OPEN",
     assignedMembershipId: null,
     assignedMemberId: null,
-    status: { not: "CANCELLED" },
+    status: "PENDING", // Regla: solo PENDING son reclamables (no IN_PROGRESS)
     scheduledDate: { gte: availabilityStart },
   };
   const availableCount = await (prisma as any).cleaning.count({
@@ -408,7 +412,26 @@ export async function getCleanerCleaningsCounts(
     where: upcomingWhere,
   });
 
-  // 4. Historial (COMPLETED asignadas a mí)
+  // 4. En progreso (IN_PROGRESS asignadas a mí)
+  const inProgressWhere: any = {
+    ...baseWhere,
+    assignmentStatus: "ASSIGNED",
+    status: "IN_PROGRESS",
+  };
+  if (scope.mode === "membership") {
+    inProgressWhere.assignedMembershipId = { in: scope.membershipIds };
+  } else {
+    if (scope.legacyMemberId) {
+      inProgressWhere.assignedMemberId = scope.legacyMemberId;
+    } else {
+      inProgressWhere.id = "impossible-id";
+    }
+  }
+  const inProgressCount = await (prisma as any).cleaning.count({
+    where: inProgressWhere,
+  });
+
+  // 5. Historial (COMPLETED asignadas a mí)
   const historyWhere = {
     ...baseWhere,
     status: "COMPLETED",
@@ -430,6 +453,7 @@ export async function getCleanerCleaningsCounts(
     assignedToMeCount,
     availableCount,
     upcoming7dCount,
+    inProgressCount,
     historyCount,
   };
 }

@@ -5,9 +5,11 @@ import {
   InventoryReportSeverity,
 } from "@prisma/client";
 
-export interface InventoryReportEvidence {
+export interface InventoryEvidenceView {
   id: string;
-  asset?: { id: string; publicUrl: string | null } | null;
+  assetId: string;
+  url: string;
+  variant?: string | null;
 }
 
 export interface InventoryReport {
@@ -18,7 +20,7 @@ export interface InventoryReport {
   severity: InventoryReportSeverity;
   description: string | null;
   status: string;
-  evidence?: InventoryReportEvidence[];
+  evidence?: InventoryEvidenceView[];
 }
 
 export interface InventoryReviewItemChange {

@@ -68,9 +68,11 @@ export default function AddExecutorModal({
       formData.set("workGroupId", workGroupId);
       formData.set("teamId", selectedTeamId);
       formData.set("returnTo", returnTo);
+      formData.set("skipRedirect", "true");
       await addExecutorToWorkGroup(formData);
-      onClose();
+      setIsSaving(false);
       setSelectedTeamId("");
+      onClose();
       router.refresh();
     } catch (err: any) {
       setError(err?.message || "Error al agregar ejecutor");
@@ -87,9 +89,9 @@ export default function AddExecutorModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
-        <h3 className="text-lg font-semibold text-neutral-900">Conectar equipo ejecutor</h3>
+        <h3 className="text-lg font-semibold text-neutral-900">Agregar Cleaner</h3>
         <p className="text-sm text-neutral-600">
-          Selecciona un equipo que ya está conectado a otros grupos de trabajo de este Host.
+          Selecciona el Cleaner que quieres agregar a este grupo.
         </p>
 
         {isLoading ? (
@@ -104,14 +106,14 @@ export default function AddExecutorModal({
         ) : availableExecutors.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-300 p-4 text-center">
             <p className="text-xs text-neutral-500">
-              No hay equipos ejecutores disponibles para conectar. Todos los equipos ya están conectados a este grupo de trabajo.
+              No hay Cleaners disponibles para agregar. Todos los equipos ya están conectados a este grupo de trabajo.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="teamId" className="block text-xs font-medium text-neutral-700 mb-1">
-                Equipo ejecutor
+                Cleaner
               </label>
               <select
                 id="teamId"
@@ -121,7 +123,7 @@ export default function AddExecutorModal({
                 required
                 className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-base outline-none focus:ring-2 focus:ring-black/5 focus:border-neutral-500"
               >
-                <option value="">Seleccionar equipo...</option>
+                <option value="">Seleccionar Cleaner...</option>
                 {availableExecutors.map((executor) => (
                   <option key={executor.teamId} value={executor.teamId}>
                     {executor.teamName}

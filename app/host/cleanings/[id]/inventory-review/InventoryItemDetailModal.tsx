@@ -5,11 +5,20 @@ import { useState } from "react";
 import Image from "next/image";
 import { InventoryReportType, InventoryReportSeverity } from "@prisma/client";
 import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
-import { reportTypeLabel, reportSeverityLabel, itemCategoryLabel } from "@/lib/inventory-i18n";
+import { reportTypeLabel, reportSeverityLabel, itemCategoryLabel, resolutionLabel } from "@/lib/inventory-i18n";
+import HistorySubModal from "@/lib/ui/inventory/HistorySubModal";
 
 import { 
   InventoryReport,
 } from "@/types/inventory";
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(date));
+};
 
 interface InventoryLine {
   id: string;
@@ -36,6 +45,17 @@ interface InventoryLine {
     priority?: string | null;
     notes?: string | null;
   }>;
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryItemDetailModalProps {
@@ -47,6 +67,7 @@ interface InventoryItemDetailModalProps {
   onReportClick: () => void;
   onDeleteReport?: () => void;
   disabled?: boolean;
+  tenantId?: string;
 }
 
 export default function InventoryItemDetailModal({
@@ -58,8 +79,11 @@ export default function InventoryItemDetailModal({
   onReportClick,
   onDeleteReport,
   disabled = false,
+  tenantId,
 }: InventoryItemDetailModalProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const getVariantLabel = (variantKey: string | null, variantValue: string | null) => {
     if (!variantKey || !variantValue) return null;
@@ -261,6 +285,44 @@ export default function InventoryItemDetailModal({
             </div>
           )}
 
+          {/* Resumen de Historial */}
+          {line.historyStats && line.historyStats.totalCount > 0 && (
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden shadow-sm">
+              <div className="bg-neutral-100/50 px-4 py-2 border-b border-neutral-200 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Historial del item</span>
+                <span className="text-[10px] font-bold bg-neutral-200 text-neutral-700 px-1.5 py-0.5 rounded">
+                  {line.historyStats.totalCount} {line.historyStats.totalCount === 1 ? 'evento' : 'eventos'}
+                </span>
+              </div>
+              <div className="p-4 space-y-3">
+                {line.historyStats.latestReport && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-neutral-900">Última incidencia:</p>
+                      <span className="text-[10px] text-neutral-400 font-medium">
+                        {formatDate(line.historyStats.latestReport.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-neutral-700">
+                      {reportTypeLabel(line.historyStats.latestReport.type as any)}
+                    </p>
+                    {line.historyStats.latestReport.managerResolution && (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-[11px] font-bold border border-green-100">
+                        Resolución: {resolutionLabel(line.historyStats.latestReport.managerResolution as any)}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  className="w-full py-2 text-xs font-bold text-neutral-700 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors shadow-sm active:scale-[0.98]"
+                >
+                  Ver historial completo
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Reporte existente */}
           {report && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3">
@@ -288,6 +350,29 @@ export default function InventoryItemDetailModal({
                     <span className="font-medium text-red-800">Descripción:</span>{" "}
                     <span className="text-red-700">{report.description}</span>
                   </p>
+                )}
+                
+                {/* Galería de evidencias */}
+                {report.evidence && report.evidence.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-xs font-semibold text-red-800 mb-2 uppercase tracking-wider">Evidencia visual</p>
+                    <div className="flex gap-2 overflow-x-auto pb-1 snap-x scrollbar-hide">
+                      {report.evidence.map((ev) => (
+                        <div 
+                          key={ev.id} 
+                          className="relative w-24 h-24 flex-shrink-0 snap-start cursor-zoom-in active:scale-[0.98] transition-transform"
+                          onClick={() => setLightboxImage(ev.url)}
+                        >
+                          <Image
+                            src={ev.url}
+                            alt="Evidencia"
+                            fill
+                            className="object-cover rounded-md border border-red-200 shadow-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -367,6 +452,43 @@ export default function InventoryItemDetailModal({
           }
         }}
       />
+
+      {/* Modal de historial completo */}
+      {tenantId && (
+        <HistorySubModal
+          isOpen={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+          lineId={line.id}
+          tenantId={tenantId}
+          itemName={line.item.name}
+        />
+      )}
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 transition-opacity duration-300"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors p-2"
+            onClick={() => setLightboxImage(null)}
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          
+          <div className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={lightboxImage} 
+              alt="Evidencia ampliada" 
+              className="max-w-full max-h-full object-contain rounded shadow-2xl animate-in zoom-in-95 duration-200"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

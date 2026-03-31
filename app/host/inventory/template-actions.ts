@@ -8,6 +8,7 @@ import {
   InventoryCategory,
   InventoryCondition,
   InventoryPriority,
+  PropertyZoneType,
 } from "@prisma/client";
 import fs from "fs";
 import path from "path";
@@ -120,6 +121,7 @@ export async function applyInventoryTemplateToProperty(
     itemKey: string; // Referencia al key del catálogo
     area: string;
     areaNormalized: string;
+    propertyZoneId: string | null; // Phase 6: resolved inside tx
     expectedQty: number;
     condition: InventoryCondition;
     priority: InventoryPriority;
@@ -177,6 +179,7 @@ export async function applyInventoryTemplateToProperty(
         itemKey,
         area: line.area.trim(),
         areaNormalized,
+        propertyZoneId: null, // Phase 6: will be resolved inside tx
         expectedQty: line.expectedQty,
         condition: line.condition || InventoryCondition.USED_LT_1Y,
         priority: line.priority || InventoryPriority.MEDIUM,
@@ -394,6 +397,57 @@ export async function applyInventoryTemplateToProperty(
           },
         });
 
+        // 4.2.5. Phase 6: Upsert OPERATIONAL zones from template areas (template = canonical zone source)
+        const ZONE_SORT_ORDER_MAP: Record<string, number> = {
+          cochera: 10, sala: 20, comedor: 30, cocina: 40,
+          "bano 1": 50, "bano": 50, "recamara 1": 60, "recamara 2": 70,
+          "bano 2": 80, lavanderia: 90,
+        };
+        const ZONE_FALLBACK_SORT_ORDER = 500;
+
+        const distinctZoneAreas = new Map<string, string>(); // normalizedName → raw area name
+        for (const lineData of linesData) {
+          if (!distinctZoneAreas.has(lineData.areaNormalized)) {
+            distinctZoneAreas.set(lineData.areaNormalized, lineData.area);
+          }
+        }
+
+        for (const [normalizedName, areaName] of distinctZoneAreas) {
+          await tx.propertyZone.upsert({
+            where: { propertyId_normalizedName: { propertyId: property.id, normalizedName } },
+            create: {
+              tenantId,
+              propertyId: property.id,
+              name: areaName,
+              normalizedName,
+              zoneType: PropertyZoneType.OPERATIONAL,
+              virtualKind: null,
+              sortOrder: ZONE_SORT_ORDER_MAP[normalizedName] ?? ZONE_FALLBACK_SORT_ORDER,
+              isActive: true,
+            },
+            update: {}, // Never overwrite existing zones (name/sortOrder stay as-is)
+          });
+        }
+
+        // Build zone map for line resolution
+        const templateZones = await tx.propertyZone.findMany({
+          where: { tenantId, propertyId: property.id, isActive: true },
+          select: { id: true, normalizedName: true },
+        });
+        const zoneIdByNormalizedName = new Map<string, string>(
+          templateZones.map((z) => [z.normalizedName, z.id])
+        );
+
+        // Resolve propertyZoneId in linesData
+        for (const lineData of linesData) {
+          lineData.propertyZoneId = zoneIdByNormalizedName.get(lineData.areaNormalized) ?? null;
+          if (!lineData.propertyZoneId) {
+            console.warn(
+              `[applyInventoryTemplateToProperty] No zone for areaNormalized="${lineData.areaNormalized}" — propertyZoneId will be null`
+            );
+          }
+        }
+
         // 4.3. Crear InventoryLine con createMany + chunking
         // Construir array de líneas usando itemId map y deduplicar por constraint único
         // Constraint único: propertyId + areaNormalized + itemId + variantKey + variantValueNormalized
@@ -401,6 +455,7 @@ export async function applyInventoryTemplateToProperty(
           tenantId: string;
           propertyId: string;
           itemId: string;
+          propertyZoneId: string | null;
           area: string;
           areaNormalized: string;
           expectedQty: number;
@@ -439,6 +494,7 @@ export async function applyInventoryTemplateToProperty(
               tenantId: tenantId,
               propertyId: property.id,
               itemId,
+              propertyZoneId: lineData.propertyZoneId,
               area: lineData.area,
               areaNormalized: lineData.areaNormalized,
               expectedQty: lineData.expectedQty,

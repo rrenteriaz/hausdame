@@ -19,6 +19,8 @@ import { getCleaningAssignmentLevel } from "@/lib/cleanings/getCleaningAssignmen
 import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
 import prisma from "@/lib/prisma";
 
+const OVERDUE_MESSAGE_V1 = "La fecha programada ya pasó y la limpieza sigue pendiente.";
+
 /**
  * Obtiene el copy canónico según el nivel de asignación.
  * Basado en: docs/contracts/ASSIGNMENT_COPY_V1.md — Sección 3
@@ -79,11 +81,12 @@ function getAssignmentCopy(level: number, data: {
 export default async function CleaningsNeedingAttentionPage() {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
+  const now = new Date();
   if (!tenantId) throw new Error("Usuario sin tenant asociado");
 
   const cleaningsNeedingAttention = await getCleaningsNeedingAttention(
     tenantId,
-    true
+    false
   );
 
   // Obtener thumbnails para las propiedades
@@ -280,6 +283,11 @@ export default async function CleaningsNeedingAttentionPage() {
                         <h3 className="text-base font-medium text-neutral-900 truncate">
                           {propertyName}
                         </h3>
+                        {new Date(cleaning.scheduledDate) < now && (
+                          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                            Vencida
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
                         {cleaning.scheduledDate.toLocaleString("es-MX", {
@@ -298,6 +306,11 @@ export default async function CleaningsNeedingAttentionPage() {
                         {cleaning.assignmentCopy.secondary && (
                           <p className="text-xs text-neutral-500">
                             {cleaning.assignmentCopy.secondary}
+                          </p>
+                        )}
+                        {new Date(cleaning.scheduledDate) < now && (
+                          <p className="text-[10px] sm:text-xs text-amber-600 font-medium">
+                            {OVERDUE_MESSAGE_V1}
                           </p>
                         )}
                       </div>

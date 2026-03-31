@@ -54,14 +54,18 @@ export async function acceptCleaning(formData: FormData) {
 
       const currentMemberId = access.legacyMember.id;
 
+      const { start: startDate } = getAvailabilityWindow(now, { includePastOpen: true });
+
       await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const currentCleaning = await tx.cleaning.findFirst({
           where: {
             id: cleaningId,
             tenantId: access.cleaning.tenantId,
             assignmentStatus: "OPEN",
+            status: "PENDING", // Fortalecer: solo PENDING
             assignedMemberId: null,
-            scheduledDate: { gte: startOfToday },
+            assignedMembershipId: null, // Asegurar que ambos sean null
+            scheduledDate: { gte: startDate },
           },
         });
 
@@ -175,9 +179,10 @@ export async function acceptCleaning(formData: FormData) {
     const isUnassigned =
       cleaning.assignmentStatus === "OPEN" &&
       cleaning.assignedMembershipId === null &&
-      cleaning.assignedMemberId === null;
+      cleaning.assignedMemberId === null &&
+      (cleaning as any).status === "PENDING"; // Solo PENDING (no IN_PROGRESS)
 
-    const { start: startDate, end } = getAvailabilityWindow(now);
+    const { start: startDate, end } = getAvailabilityWindow(now, { includePastOpen: true });
     const isInAllowedWindow =
       cleaning.scheduledDate >= startDate &&
       cleaning.scheduledDate <= end;
@@ -225,6 +230,7 @@ export async function acceptCleaning(formData: FormData) {
         where: {
           id: cleaningId,
           assignmentStatus: "OPEN",
+          status: "PENDING", // Fortalecer: solo PENDING (ignorar IN_PROGRESS con assigned null)
           assignedMembershipId: null,
           assignedMemberId: null,
           scheduledDate: {

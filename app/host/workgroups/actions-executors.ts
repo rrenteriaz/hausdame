@@ -88,6 +88,9 @@ export async function addExecutorToWorkGroup(formData: FormData) {
 
   revalidatePath("/host/workgroups");
   revalidatePath(`/host/workgroups/${workGroupId}`);
+
+  const skipRedirect = formData.get("skipRedirect")?.toString() === "true";
+  if (skipRedirect) return;
   redirectBack(formData);
 }
 

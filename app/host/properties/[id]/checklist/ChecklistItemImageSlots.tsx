@@ -154,6 +154,24 @@ export default function ChecklistItemImageSlots({
                         className="object-cover"
                         sizes="112px"
                       />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(position)}
+                        disabled={isLoading}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-black/60 hover:bg-black/80 text-white transition disabled:opacity-50"
+                        aria-label="Eliminar foto"
+                      >
+                        {isDeleting ? (
+                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
                     </>
                   ) : (
                     <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition">
@@ -177,38 +195,6 @@ export default function ChecklistItemImageSlots({
                     </label>
                   )}
                 </div>
-                {thumbUrl && (
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <label className="cursor-pointer w-full">
-                      <input
-                        ref={(el) => {
-                          fileInputRefs.current[position - 1] = el;
-                        }}
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={(e) => handleFileSelect(position, e)}
-                        disabled={isLoading}
-                        className="hidden"
-                      />
-                      <button
-                        type="button"
-                        disabled={isLoading}
-                        className="px-2.5 py-1 text-xs font-medium text-white bg-black hover:bg-neutral-800 rounded transition disabled:opacity-50 shadow-sm w-full"
-                        onClick={() => fileInputRefs.current[position - 1]?.click()}
-                      >
-                        {isUploading ? "Subiendo..." : "Reemplazar"}
-                      </button>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(position)}
-                      disabled={isLoading}
-                      className="px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition disabled:opacity-50 shadow-sm w-full"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                )}
               </div>
             );
           });

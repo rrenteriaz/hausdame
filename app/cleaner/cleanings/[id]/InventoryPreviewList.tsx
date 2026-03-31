@@ -8,6 +8,8 @@ import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 interface InventoryLine {
   id: string;
   area: string;
+  // Fase 9: zona física como fuente de identidad para agrupación y orden
+  propertyZone?: { id: string; name: string; sortOrder: number } | null;
   expectedQty: number;
   variantKey: string | null;
   variantValue: string | null;
@@ -23,16 +25,29 @@ interface InventoryLine {
   condition?: string | null;
   priority?: string | null;
   notes?: string | null;
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryPreviewListProps {
   lines: InventoryLine[];
-  itemThumbs: Record<string, Array<string | null>>;
+  lineThumbs: Record<string, Array<string | null>>;
+  tenantId?: string;
 }
 
 export default function InventoryPreviewList({
   lines,
-  itemThumbs,
+  lineThumbs,
+  tenantId,
 }: InventoryPreviewListProps) {
   const [selectedLine, setSelectedLine] = useState<InventoryLine | null>(null);
   const getConditionLabel = (condition: string | null | undefined) => {
@@ -86,35 +101,45 @@ export default function InventoryPreviewList({
     );
   }
 
-  const linesByArea = useMemo(() => {
+  // Fase 9: agrupar por propertyZone.id como clave de identidad; fallback a area para líneas legacy
+  const linesByZone = useMemo(() => {
     const map = new Map<string, InventoryLine[]>();
     for (const line of lines) {
-      const area = (line.area || "Sin área").trim();
-      if (!map.has(area)) map.set(area, []);
-      map.get(area)!.push(line);
+      const key = line.propertyZone?.id ?? (line.area || "Sin área").trim();
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(line);
     }
     return map;
   }, [lines]);
 
-  const sortedAreas = useMemo(
-    () => Array.from(linesByArea.keys()).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })),
-    [linesByArea]
+  // Ordenar por sortOrder ASC; desempate alfabético por nombre de zona
+  const sortedZoneKeys = useMemo(
+    () => Array.from(linesByZone.keys()).sort((a, b) => {
+      const aOrder = linesByZone.get(a)![0]?.propertyZone?.sortOrder ?? Infinity;
+      const bOrder = linesByZone.get(b)![0]?.propertyZone?.sortOrder ?? Infinity;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      const aName = linesByZone.get(a)![0]?.propertyZone?.name ?? linesByZone.get(a)![0]?.area ?? a;
+      const bName = linesByZone.get(b)![0]?.propertyZone?.name ?? linesByZone.get(b)![0]?.area ?? b;
+      return aName.localeCompare(bName, "es", { sensitivity: "base" });
+    }),
+    [linesByZone]
   );
 
   return (
     <div className="space-y-3">
-      {sortedAreas.map((area) => {
-        const areaLines = linesByArea.get(area)!;
+      {sortedZoneKeys.map((zoneKey) => {
+        const areaLines = linesByZone.get(zoneKey)!;
+        const zoneName = (areaLines[0]?.propertyZone?.name ?? areaLines[0]?.area ?? "Sin área").trim();
         return (
           <CollapsibleSection
-            key={area}
-            title={area}
+            key={zoneKey}
+            title={zoneName}
             count={areaLines.length}
-            defaultOpen={sortedAreas.length <= 3}
+            defaultOpen={sortedZoneKeys.length <= 3}
           >
             <div className="space-y-2 pt-1">
               {areaLines.map((line) => {
-        const thumbs = itemThumbs[line.item.id] || [null, null, null];
+        const thumbs = lineThumbs[line.id] || [null, null, null];
         const firstThumb = thumbs.find((thumb) => thumb !== null);
 
         return (
@@ -165,6 +190,20 @@ export default function InventoryPreviewList({
                   <p className="text-xs text-neutral-500 mt-0.5">
                     {line.area} · Cantidad: {line.expectedQty}
                   </p>
+                  {line.historyStats && line.historyStats.totalCount > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      {line.historyStats.activeCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">
+                          {line.historyStats.activeCount} activo
+                        </span>
+                      )}
+                      {line.historyStats.resolvedCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-white text-neutral-600 text-[10px] border border-neutral-200">
+                          {line.historyStats.resolvedCount} previas
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -194,8 +233,9 @@ export default function InventoryPreviewList({
       <InventoryItemPreviewModal
         isOpen={selectedLine !== null}
         line={selectedLine}
-        itemThumbs={selectedLine ? (itemThumbs[selectedLine.item.id] || [null, null, null]) : [null, null, null]}
+        itemThumbs={selectedLine ? (lineThumbs[selectedLine.id] || [null, null, null]) : [null, null, null]}
         onClose={() => setSelectedLine(null)}
+        tenantId={tenantId}
       />
     </div>
   );

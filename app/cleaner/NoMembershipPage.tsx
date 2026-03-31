@@ -14,7 +14,7 @@ export default function NoMembershipPage() {
           </h1>
           <p className="text-neutral-700 mb-4">
             Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles.
+            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
           </p>
           <p className="text-neutral-600 text-sm mb-6">
             Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.

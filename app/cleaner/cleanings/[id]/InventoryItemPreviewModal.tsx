@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { itemCategoryLabel } from "@/lib/inventory-i18n";
+import { itemCategoryLabel, reportTypeLabel, resolutionLabel } from "@/lib/inventory-i18n";
+import { useState } from "react";
+import HistorySubModal from "@/lib/ui/inventory/HistorySubModal";
 
 interface InventoryLine {
   id: string;
@@ -21,6 +23,17 @@ interface InventoryLine {
   condition?: string | null;
   priority?: string | null;
   notes?: string | null;
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryItemPreviewModalProps {
@@ -28,6 +41,7 @@ interface InventoryItemPreviewModalProps {
   line: InventoryLine | null;
   itemThumbs: Array<string | null>;
   onClose: () => void;
+  tenantId?: string;
 }
 
 export default function InventoryItemPreviewModal({
@@ -35,7 +49,18 @@ export default function InventoryItemPreviewModal({
   line,
   itemThumbs,
   onClose,
+  tenantId,
 }: InventoryItemPreviewModalProps) {
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("es-MX", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(date));
+  };
+
   if (!isOpen || !line) return null;
 
   const getVariantLabel = (variantKey: string | null, variantValue: string | null) => {
@@ -241,6 +266,44 @@ export default function InventoryItemPreviewModal({
               <p className="text-sm text-neutral-600">{line.notes}</p>
             </div>
           )}
+
+          {/* Resumen de Historial */}
+          {line.historyStats && line.historyStats.totalCount > 0 && (
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden shadow-sm">
+              <div className="bg-neutral-100/50 px-4 py-2 border-b border-neutral-200 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Historial del item</span>
+                <span className="text-[10px] font-bold bg-neutral-200 text-neutral-700 px-1.5 py-0.5 rounded">
+                  {line.historyStats.totalCount} {line.historyStats.totalCount === 1 ? 'evento' : 'eventos'}
+                </span>
+              </div>
+              <div className="p-4 space-y-3">
+                {line.historyStats.latestReport && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-neutral-900">Última incidencia:</p>
+                      <span className="text-[10px] text-neutral-400 font-medium">
+                        {formatDate(line.historyStats.latestReport.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-neutral-700">
+                      {reportTypeLabel(line.historyStats.latestReport.type as any)}
+                    </p>
+                    {line.historyStats.latestReport.managerResolution && (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-[11px] font-bold border border-green-100">
+                        Resolución: {resolutionLabel(line.historyStats.latestReport.managerResolution as any)}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  className="w-full py-2 text-xs font-bold text-neutral-700 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors shadow-sm active:scale-[0.98]"
+                >
+                  Ver historial completo
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -252,6 +315,17 @@ export default function InventoryItemPreviewModal({
             Cerrar
           </button>
         </div>
+
+        {/* Modal de historial completo */}
+        {tenantId && line && (
+          <HistorySubModal
+            isOpen={showHistoryModal}
+            onClose={() => setShowHistoryModal(false)}
+            lineId={line.id}
+            tenantId={tenantId}
+            itemName={line.item.name}
+          />
+        )}
       </div>
     </div>
   );

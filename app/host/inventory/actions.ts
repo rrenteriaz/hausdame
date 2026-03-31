@@ -54,16 +54,10 @@ export async function createInventoryLineAction(formData: FormData) {
     throw new Error("No se encontró la propiedad");
   }
 
-  // Validación y sanitización de campos requeridos
-  const areaRaw = formData.get("area")?.toString() || "";
-  const area = areaRaw.trim();
-  
-  if (!area || area.length === 0) {
-    throw new Error("El área es obligatoria");
-  }
-  
-  if (area.length > 80) {
-    throw new Error("El área no puede tener más de 80 caracteres");
+  // Phase 7.1: propertyZoneId es obligatorio — no se acepta area como fallback
+  const propertyZoneId = formData.get("propertyZoneId")?.toString() || null;
+  if (!propertyZoneId) {
+    throw new Error("La zona es obligatoria");
   }
 
   const category = formData.get("category")?.toString() as InventoryCategory | null;
@@ -132,7 +126,7 @@ export async function createInventoryLineAction(formData: FormData) {
 
   try {
     const result = await createInventoryLine(tenantId, propertyId, {
-      area,
+      propertyZoneId,
       category,
       itemId: itemId || undefined,
       itemName: itemName || undefined,
@@ -211,10 +205,9 @@ export async function checkDuplicateInventoryLineAction(formData: FormData) {
     return { exists: false };
   }
 
-  const areaRaw = formData.get("area")?.toString() || "";
-  const area = areaRaw.trim();
-  
-  if (!area || area.length === 0) {
+  // Phase 7.1: propertyZoneId es obligatorio — no se resuelve desde area
+  const propertyZoneId = formData.get("propertyZoneId")?.toString() || null;
+  if (!propertyZoneId) {
     return { exists: false };
   }
 
@@ -269,14 +262,14 @@ export async function checkDuplicateInventoryLineAction(formData: FormData) {
     return { exists: false };
   }
 
-  console.log("[checkDuplicateInventoryLineAction] Verificando duplicado con itemId:", itemId, "área:", area);
+  console.log("[checkDuplicateInventoryLineAction] Verificando duplicado con itemId:", itemId, "zoneId:", propertyZoneId);
 
   const variantKey = formData.get("variantKey")?.toString().trim() || null;
   const variantValue = formData.get("variantValue")?.toString().trim() || null;
 
   try {
     const result = await checkDuplicateInventoryLine(tenantId, propertyId, {
-      area,
+      propertyZoneId,
       itemId,
       variantKey,
       variantValue,
@@ -322,16 +315,16 @@ export async function deleteInventoryAreaAction(formData: FormData) {
   if (!tenantId) throw new Error("Usuario sin tenant asociado");
 
   const propertyId = formData.get("propertyId")?.toString();
-  const area = formData.get("area")?.toString()?.trim();
+  const propertyZoneId = formData.get("propertyZoneId")?.toString();
 
   if (!propertyId) {
     throw new Error("No se encontró la propiedad");
   }
-  if (!area) {
-    throw new Error("El área es obligatoria");
+  if (!propertyZoneId) {
+    throw new Error("La zona es obligatoria");
   }
 
-  const { count } = await deleteInventoryArea(tenantId, propertyId, area);
+  const { count } = await deleteInventoryArea(tenantId, propertyId, propertyZoneId);
   revalidatePath(`/host/properties/${propertyId}/inventory`);
   return { count };
 }
@@ -370,16 +363,10 @@ export async function updateInventoryLineAction(formData: FormData) {
     throw new Error("No se encontró la propiedad");
   }
 
-  // Validación y sanitización de campos
-  const areaRaw = formData.get("area")?.toString() || "";
-  const area = areaRaw.trim();
-  
-  if (!area || area.length === 0) {
-    throw new Error("El área es obligatoria");
-  }
-  
-  if (area.length > 80) {
-    throw new Error("El área no puede tener más de 80 caracteres");
+  // Phase 7.1: propertyZoneId es obligatorio — no se acepta area como fallback
+  const propertyZoneId = formData.get("propertyZoneId")?.toString() || null;
+  if (!propertyZoneId) {
+    throw new Error("La zona es obligatoria");
   }
 
   const expectedQtyStr = formData.get("expectedQty")?.toString();
@@ -432,7 +419,7 @@ export async function updateInventoryLineAction(formData: FormData) {
     const lineVariantValue = clearVariant ? null : (variantValue || undefined);
 
     await updateInventoryLine(tenantId, lineId, {
-      area,
+      propertyZoneId,
       expectedQty,
       condition,
       priority,
@@ -821,13 +808,11 @@ export async function getInventoryLineForEditAction(
     const line = await getInventoryLineById(tenantId, lineId);
     if (!line) return null;
 
-    const { normalizeName } = await import("@/lib/inventory-normalize");
-    const areaNorm =
-      (line as { areaNormalized?: string }).areaNormalized ?? normalizeName(line.area);
+    const zoneId = (line as { propertyZoneId?: string | null }).propertyZoneId ?? "";
 
     const lineVariantKey = (line as { variantKey?: string | null }).variantKey;
     const [siblings, variantGroup, variantGroups] = await Promise.all([
-      listInventorySiblings(tenantId, propertyId, areaNorm, line.item.id),
+      listInventorySiblings(tenantId, propertyId, zoneId, line.item.id),
       getInventoryItemVariantGroupAction(line.item.id, lineVariantKey),
       getInventoryItemVariantGroupsAction(line.item.id),
     ]);
@@ -840,11 +825,11 @@ export async function getInventoryLineForEditAction(
 }
 
 /**
- * Lista líneas hermanas (variantes) para mismo (propertyId, areaNormalized, itemId).
+ * Lista líneas hermanas (variantes) para mismo (propertyId, propertyZoneId, itemId).
  */
 export async function getInventoryLineSiblingsAction(
   propertyId: string,
-  areaNormalized: string,
+  propertyZoneId: string,
   itemId: string
 ) {
   const user = await requireHostUser();
@@ -855,7 +840,7 @@ export async function getInventoryLineSiblingsAction(
     return await listInventorySiblings(
       tenantId,
       propertyId,
-      areaNormalized,
+      propertyZoneId,
       itemId
     );
   } catch (error) {
@@ -1196,7 +1181,35 @@ export async function getFrequentItemsAction() {
 }
 
 /**
+ * Phase 7: Obtiene las zonas OPERATIONAL activas de una propiedad, ordenadas por sortOrder.
+ * Reemplaza getExistingAreas en los formularios de creación/edición.
+ */
+export async function getPropertyZones(propertyId: string) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) return [];
+
+  try {
+    const zones = await prisma.propertyZone.findMany({
+      where: {
+        tenantId,
+        propertyId,
+        zoneType: "OPERATIONAL",
+        isActive: true,
+      },
+      select: { id: true, name: true, sortOrder: true },
+      orderBy: { sortOrder: "asc" },
+    });
+    return zones;
+  } catch (error) {
+    console.error("[getPropertyZones] Error:", error);
+    return [];
+  }
+}
+
+/**
  * Obtiene las áreas existentes para una propiedad (para sugerencias en el modal).
+ * @deprecated Usar getPropertyZones en su lugar.
  */
 export async function getExistingAreas(propertyId: string) {
   const user = await requireHostUser();

@@ -21,7 +21,7 @@ import {
   InventoryReview, 
   InventoryReport, 
   InventoryReviewItemChange,
-  InventoryReportEvidence
+  InventoryEvidenceView
 } from "@/types/inventory";
 import InventoryReviewItemRow from "@/app/host/cleanings/[id]/inventory-review/InventoryReviewItemRow";
 import InventoryReviewReportRow from "@/app/host/cleanings/[id]/inventory-review/InventoryReviewReportRow";
@@ -33,6 +33,8 @@ import InventoryItemDetailModalReport from "@/app/host/cleanings/[id]/inventory-
 interface InventoryLine {
   id: string;
   area: string;
+  // Fase 9: zona física como fuente de identidad para agrupación y orden
+  propertyZone?: { id: string; name: string; sortOrder: number } | null;
   expectedQty: number;
   variantKey: string | null;
   variantValue: string | null;
@@ -42,6 +44,17 @@ interface InventoryLine {
     category: string;
   };
   allLines?: any[];
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryReviewPanelProps {
@@ -50,6 +63,7 @@ interface InventoryReviewPanelProps {
   initialReview: InventoryReview | null;
   inventoryLines: InventoryLine[];
   returnTo?: string;
+  tenantId?: string;
   mode?: "embedded" | "page" | "report";
   onSubmitted?: () => void; // Callback cuando se envía exitosamente (para modo embedded)
 }
@@ -60,6 +74,7 @@ export default function InventoryReviewPanel({
   initialReview,
   inventoryLines,
   returnTo,
+  tenantId,
   mode = "embedded",
   onSubmitted,
 }: InventoryReviewPanelProps) {
@@ -201,6 +216,7 @@ export default function InventoryReviewPanel({
         }
       }
 
+      let finalReportData: InventoryReport | null = null;
       if (payload.report) {
         const { type, severity, description } = payload.report;
         const fd = new FormData();
@@ -214,10 +230,11 @@ export default function InventoryReviewPanel({
         if (description) fd.set("description", description);
         const existingReport = reports.get(lineId);
         if (existingReport?.id) fd.set("reportId", existingReport.id);
+        
+        // 1. Crear/Actualizar reporte base
         const reportResult = await createInventoryReport(fd);
 
-        // Subir nuevas imágenes secuencialmente
-        const uploadedEvidence: Array<{ id: string; asset: { id: string; publicUrl: string | null } | null }> = [];
+        // 2. Subir evidencias SIEMPRE ANTES de actualizar el estado local final
         if (reportImageFiles?.length) {
           for (const file of reportImageFiles) {
             const evFd = new FormData();
@@ -228,22 +245,25 @@ export default function InventoryReviewPanel({
           }
         }
 
-        // Fuente de verdad post-save: el backend retorna el reporte con sus evidencias actuales.
-        // Incluye las nuevas evidencias y ya excluye las eliminadas (borradas antes en este handler).
-        // Usamos esa lista directamente sin acumulación local.
-        const backendEvidence = reportResult.evidence ?? [];
+        // 3. Obtener el estado FINAL HIDRATADO del reporte
+        const fdFinal = new FormData();
+        fdFinal.set("callerContext", "cleaner");
+        fdFinal.set("reviewId", effectiveReviewId);
+        fdFinal.set("cleaningId", cleaningId);
+        fdFinal.set("itemId", itemId);
+        fdFinal.set("inventoryLineId", lineId);
+        fdFinal.set("type", type);
+        fdFinal.set("severity", severity);
+        if (description) fdFinal.set("description", description);
+        fdFinal.set("reportId", reportResult.id);
+        
+        const finalReportResult = await createInventoryReport(fdFinal);
+        finalReportData = finalReportResult;
+      }
 
+      if (finalReportData) {
         const newReports = new Map(reports);
-        newReports.set(lineId, {
-          id: reportResult.id,
-          itemId,
-          inventoryLineId: lineId,
-          type,
-          severity,
-          description: payload.report.description,
-          status: reportResult.status,
-          evidence: backendEvidence,
-        });
+        newReports.set(lineId, finalReportData);
         setReports(newReports);
       }
 
@@ -499,29 +519,37 @@ export default function InventoryReviewPanel({
             </div>
           )}
 
-          {/* Lista de items agrupados por área */}
+          {/* Lista de items agrupados por zona */}
           <div className={isEmbedded ? "space-y-3" : "space-y-4"}>
             {(() => {
-              const linesByArea = new Map<string, InventoryLine[]>();
+              // Fase 9: agrupar por propertyZone.id como clave de identidad; fallback a area para líneas legacy
+              const linesByZone = new Map<string, InventoryLine[]>();
               for (const line of filteredLines) {
-                const area = (line.area || "Sin área").trim();
-                if (!linesByArea.has(area)) {
-                  linesByArea.set(area, []);
+                const key = line.propertyZone?.id ?? (line.area || "Sin área").trim();
+                if (!linesByZone.has(key)) {
+                  linesByZone.set(key, []);
                 }
-                linesByArea.get(area)!.push(line);
+                linesByZone.get(key)!.push(line);
               }
-              const sortedAreas = Array.from(linesByArea.keys()).sort((a, b) =>
-                a.localeCompare(b, "es", { sensitivity: "base" })
-              );
+              // Ordenar por sortOrder ASC; desempate alfabético por nombre de zona
+              const sortedZoneKeys = Array.from(linesByZone.keys()).sort((a, b) => {
+                const aOrder = linesByZone.get(a)![0]?.propertyZone?.sortOrder ?? Infinity;
+                const bOrder = linesByZone.get(b)![0]?.propertyZone?.sortOrder ?? Infinity;
+                if (aOrder !== bOrder) return aOrder - bOrder;
+                const aName = linesByZone.get(a)![0]?.propertyZone?.name ?? linesByZone.get(a)![0]?.area ?? a;
+                const bName = linesByZone.get(b)![0]?.propertyZone?.name ?? linesByZone.get(b)![0]?.area ?? b;
+                return aName.localeCompare(bName, "es", { sensitivity: "base" });
+              });
 
-              return sortedAreas.map((area) => {
-                const areaLines = linesByArea.get(area)!;
+              return sortedZoneKeys.map((zoneKey) => {
+                const areaLines = linesByZone.get(zoneKey)!;
+                const zoneName = (areaLines[0]?.propertyZone?.name ?? areaLines[0]?.area ?? "Sin área").trim();
                 return (
                   <CollapsibleSection
-                    key={area}
-                    title={area}
+                    key={zoneKey}
+                    title={zoneName}
                     count={areaLines.length}
-                    defaultOpen={sortedAreas.length <= 3}
+                    defaultOpen={sortedZoneKeys.length <= 3}
                   >
                     <div className={isEmbedded ? "space-y-2 pt-1" : "space-y-2 pt-2"}>
                       {areaLines.map((line) => {
@@ -567,6 +595,7 @@ export default function InventoryReviewPanel({
                               setShowItemDetailModal(true);
                             }}
                             disabled={isSubmitted}
+                            tenantId={tenantId}
                           />
                         );
                       })}

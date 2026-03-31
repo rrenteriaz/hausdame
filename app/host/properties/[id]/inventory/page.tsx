@@ -12,10 +12,11 @@ import CopyInventoryModal from "./CopyInventoryModal";
 import ApplyTemplateModal from "./ApplyTemplateModal";
 import DeleteAreaButton from "./DeleteAreaButton";
 import { InventoryCategory, InventoryPriority } from "@prisma/client";
-import { getInventoryItemImageThumbsBatch } from "@/lib/media/getInventoryItemImageThumbs";
+import { getInventoryLineImageThumbsBatch } from "@/lib/media/getInventoryLineImageThumbs";
 import InventoryList from "./InventoryList";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
+import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 
 export default async function InventoryPage({
   params,
@@ -95,72 +96,47 @@ export default async function InventoryPage({
     }
   );
 
-  // Agrupar por área (basado en resultados paginados)
-  const groupedByArea = inventoryLines.reduce(
+  // Obtener historial de incidencias (stats) para las líneas mostradas
+  const lineIds = inventoryLines.map(line => line.id);
+  const [historyStatsMap, lineThumbsMap] = await Promise.all([
+    fetchInventoryHistoryStats(lineIds, tenantId),
+    getInventoryLineImageThumbsBatch(inventoryLines.map(l => ({ id: l.id, itemId: l.item.id }))),
+  ]);
+
+  // Enriquecer líneas con stats de historial
+  const enrichedLines = inventoryLines.map(line => ({
+    ...line,
+    historyStats: historyStatsMap.get(line.id) || null
+  }));
+
+  // Agrupar por propertyZoneId (identidad estructural); fallback a area para líneas legacy sin zona
+  const groupedByZone = enrichedLines.reduce(
     (acc, line) => {
-      if (!acc[line.area]) {
-        acc[line.area] = [];
-      }
-      acc[line.area].push(line);
+      const key = line.propertyZone?.id ?? line.area;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(line);
       return acc;
     },
-    {} as Record<string, typeof inventoryLines>
+    {} as Record<string, typeof enrichedLines>
   );
 
-  // Ordenar áreas alfabéticamente
-  const areas = Object.keys(groupedByArea).sort((a, b) => 
-    a.localeCompare(b, "es", { sensitivity: "base" })
+  // Nombre visible para una zona (zone.name > area legacy)
+  const zoneDisplayName = (zoneId: string): string => {
+    const first = groupedByZone[zoneId]?.[0];
+    return first?.propertyZone?.name ?? first?.area ?? zoneId;
+  };
+
+  // Ordenar zonas por nombre visible
+  const zoneIds = Object.keys(groupedByZone).sort((a, b) =>
+    zoneDisplayName(a).localeCompare(zoneDisplayName(b), "es", { sensitivity: "base" })
   );
 
-  // Ordenar líneas dentro de cada área por nombre del item (alfabético, respetando casing)
-  Object.keys(groupedByArea).forEach(area => {
-    groupedByArea[area].sort((a, b) => 
+  // Ordenar líneas dentro de cada zona por nombre del item
+  zoneIds.forEach(zoneId => {
+    groupedByZone[zoneId].sort((a, b) =>
       a.item.name.localeCompare(b.item.name, "es", { sensitivity: "base" })
     );
   });
-
-  // Obtener thumbs de imágenes para todos los items (batch)
-  const itemIds = [...new Set(inventoryLines.map((line) => line.item.id))];
-  const itemThumbsMap = await getInventoryItemImageThumbsBatch(itemIds);
-
-  // Obtener reportes de daño/falla para las líneas mostradas (para etiqueta en inventario)
-  const lineIds = inventoryLines.map((l) => l.id);
-  const reports = lineIds.length > 0
-    ? await (prisma as any).inventoryReport.findMany({
-        where: {
-          tenantId,
-          inventoryLineId: { in: lineIds },
-          type: {
-            in: ["DAMAGED_WORKS", "DAMAGED_NOT_WORKING", "MISSING_PHYSICAL", "REPLACED_DIFFERENT", "DETAILS_MISMATCH", "OTHER"],
-          },
-        },
-        include: {
-          createdBy: { select: { name: true, email: true } },
-          evidence: { include: { asset: { select: { publicUrl: true } } } },
-        },
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
-  const reportsByLineId = new Map<
-    string,
-    { id: string; type: string; severity: string; description: string | null; status: string; createdAt: Date; createdBy: { name: string | null; email: string } | null; evidenceUrls: string[] }
-  >();
-  for (const r of reports) {
-    const lineId = (r as any).inventoryLineId;
-    if (lineId && !reportsByLineId.has(lineId)) {
-      const evidenceUrls = ((r as any).evidence ?? []).map((e: any) => e.asset?.publicUrl).filter(Boolean);
-      reportsByLineId.set(lineId, {
-        id: r.id,
-        type: r.type,
-        severity: r.severity,
-        description: r.description,
-        status: r.status,
-        createdAt: r.createdAt,
-        createdBy: r.createdBy,
-        evidenceUrls,
-      });
-    }
-  }
 
   // Validar returnTo y usar fallback seguro
   // MUST: Fallback siempre a /host/properties (lista), nunca a la misma URL del detalle
@@ -307,25 +283,26 @@ export default async function InventoryPage({
 
               {/* Lista */}
               <div className="space-y-4">
-                {areas.map((area) => (
+                {zoneIds.map((zoneId) => (
                   <CollapsibleSection
-                    key={area}
-                    title={area}
-                    count={groupedByArea[area].length}
+                    key={zoneId}
+                    title={zoneDisplayName(zoneId)}
+                    count={groupedByZone[zoneId].length}
                     defaultOpen={true}
                     headerActions={
                       <DeleteAreaButton
                         propertyId={property.id}
-                        area={area}
-                        itemCount={groupedByArea[area].length}
+                        propertyZoneId={zoneId}
+                        areaName={zoneDisplayName(zoneId)}
+                        itemCount={groupedByZone[zoneId].length}
                       />
                     }
                   >
                     <InventoryList
-                      lines={groupedByArea[area]}
+                      lines={groupedByZone[zoneId]}
                       propertyId={property.id}
-                      itemThumbsMap={itemThumbsMap}
-                      reportsByLineId={reportsByLineId}
+                      lineThumbsMap={lineThumbsMap}
+                      tenantId={tenantId}
                     />
                   </CollapsibleSection>
                 ))}
@@ -356,7 +333,7 @@ export default async function InventoryPage({
                       <input type="hidden" name="page" value={page - 1} />
                       <button
                         type="submit"
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition"
+                        className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition cursor-pointer"
                       >
                         ← Anterior
                       </button>
@@ -384,7 +361,7 @@ export default async function InventoryPage({
                       <input type="hidden" name="page" value={page + 1} />
                       <button
                         type="submit"
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition"
+                        className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition cursor-pointer"
                       >
                         Siguiente →
                       </button>

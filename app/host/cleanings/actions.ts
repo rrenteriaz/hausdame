@@ -12,6 +12,51 @@ import { createOrUpdateInventoryReview } from "@/app/host/inventory-review/actio
 import { InventoryReviewStatus } from "@prisma/client";
 // FASE 5: property-id-helper eliminado, propertyId ahora es el PK directamente
 
+export async function rescheduleCleaning(formData: FormData) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const cleaningId = String(formData.get("cleaningId") || "");
+  const dateStr = String(formData.get("date") || "");
+  const timeStr = String(formData.get("time") || "");
+  const returnTo = formData.get("returnTo")?.toString();
+
+  if (!cleaningId || !dateStr || !timeStr) throw new Error("Datos incompletos");
+
+  // Validar formato
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) throw new Error("Fecha inválida");
+  if (!/^\d{2}:\d{2}$/.test(timeStr)) throw new Error("Hora inválida");
+
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h, min] = timeStr.split(":").map(Number);
+  const newDate = new Date(y, m - 1, d, h, min, 0, 0);
+  if (isNaN(newDate.getTime())) throw new Error("Fecha u hora inválida");
+
+  // Verificar que la limpieza es manual (reservationId === null) y PENDING
+  const cleaning = await (prisma as any).cleaning.findFirst({
+    where: { id: cleaningId, tenantId },
+    select: { id: true, status: true, reservationId: true },
+  });
+
+  if (!cleaning) throw new Error("Limpieza no encontrada");
+  if (cleaning.reservationId !== null) throw new Error("Solo se pueden reprogramar limpiezas manuales");
+  if (cleaning.status !== "PENDING") throw new Error("Solo se pueden reprogramar limpiezas pendientes");
+
+  await (prisma as any).cleaning.update({
+    where: { id: cleaningId },
+    data: {
+      scheduledDate: newDate,
+      scheduledAtPlanned: newDate,
+      scheduledAtOriginal: newDate,
+    },
+  });
+
+  revalidatePath("/host/cleanings");
+  revalidatePath(`/host/cleanings/${cleaningId}`);
+  redirect(`/host/cleanings/${cleaningId}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`);
+}
+
 function redirectBack(formData: FormData) {
   const returnTo = formData.get("returnTo")?.toString();
   // Si viene returnTo y es seguro (solo /host/cleanings...), usarlo

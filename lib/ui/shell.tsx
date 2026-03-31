@@ -30,6 +30,8 @@ export function AppShell({
               width={180}
               height={160}
               className="object-contain"
+              priority
+              style={{ width: "auto", height: "auto" }}
             />
           </Link>
 

@@ -559,6 +559,25 @@ export async function createInventoryReport(formData: FormData) {
     });
   }
 
+  // VALIDACIÓN DE STATUS: Solo permitir si el review está en DRAFT
+  // EXCEPCIÓN: Host puede editar reportes existentes (reportId != null) en estado PENDING incluso si SUBMITTED.
+  if (reviewId) {
+    const review = await prisma.inventoryReview.findFirst({
+      where: { id: reviewId, tenantId },
+      select: { status: true }
+    });
+    
+    if (review?.status === InventoryReviewStatus.SUBMITTED) {
+      if (isCleaner) {
+        throw new Error("No puedes editar reportes una vez completada la limpieza");
+      }
+      if (!existingReport) {
+        throw new Error("No se permite crear reportes nuevos después de completar la limpieza");
+      }
+      // Si llegamos aquí, es Host y tiene existingReport. Se permite si el reporte está PENDING (validado arriba).
+    }
+  }
+
   let report;
   if (existingReport) {
     // Actualizar el reporte existente
@@ -620,16 +639,22 @@ export async function createInventoryReport(formData: FormData) {
         select: {
           id: true,
           assetId: true,
-          asset: { select: { id: true, publicUrl: true, variant: true } },
+          asset: { select: { publicUrl: true, variant: true } },
         },
       },
     },
   });
 
+  if (!fullReport) return report;
+
   return {
-    id: report.id,
-    status: report.status,
-    evidence: fullReport?.evidence ?? [],
+    ...fullReport,
+    evidence: fullReport.evidence.map((ev) => ({
+      id: ev.id,
+      assetId: ev.assetId,
+      url: ev.asset.publicUrl || "",
+      variant: ev.asset.variant as string | null,
+    })),
   };
 }
 
@@ -658,6 +683,7 @@ export async function deleteInventoryReport(
       id: true,
       status: true,
       reviewId: true,
+      review: { select: { status: true } },
       evidence: {
         select: {
           id: true,
@@ -670,6 +696,11 @@ export async function deleteInventoryReport(
 
   if (!report) {
     throw new Error("Reporte no encontrado");
+  }
+
+  // Regla de negocio: si el review ya fue SUBMITTED, no se permite borrar reportes (integridad)
+  if (report.review?.status === InventoryReviewStatus.SUBMITTED) {
+    throw new Error("No se permite eliminar reportes una vez completada la limpieza");
   }
 
   // Regla de negocio: solo se puede eliminar si el Host aún no lo ha procesado (PENDING)
@@ -772,9 +803,19 @@ export async function uploadInventoryReportEvidence(formData: FormData) {
 
   const report = await prisma.inventoryReport.findFirst({
     where: { id: reportId, tenantId },
-    select: { id: true, reviewId: true },
+    select: { id: true, reviewId: true, status: true, review: { select: { status: true } } },
   });
   if (!report) throw new Error("Reporte no encontrado");
+
+  // Si el review está SUBMITTED, solo el Host puede subir evidencia y solo si el reporte está PENDING
+  if (report.review?.status === InventoryReviewStatus.SUBMITTED) {
+    if (isCleaner) {
+      throw new Error("No puedes agregar evidencia una vez completada la limpieza");
+    }
+    if (report.status !== InventoryReportStatus.PENDING) {
+      throw new Error("No puedes agregar evidencia a un reporte ya resuelto");
+    }
+  }
 
   const assetId = createId();
   const ext = file.name.split(".").pop() || "jpg";
@@ -789,7 +830,7 @@ export async function uploadInventoryReportEvidence(formData: FormData) {
     buffer,
   });
 
-  await prisma.$transaction([
+  const [_, evidence] = await prisma.$transaction([
     prisma.asset.create({
       data: {
         id: assetId,
@@ -815,6 +856,11 @@ export async function uploadInventoryReportEvidence(formData: FormData) {
         reportId,
         assetId,
       },
+      select: {
+        id: true,
+        assetId: true,
+        asset: { select: { variant: true } },
+      },
     }),
   ]);
 
@@ -832,7 +878,12 @@ export async function uploadInventoryReportEvidence(formData: FormData) {
     }
   }
 
-  return { assetId, url: publicUrl };
+  return {
+    id: evidence.id,
+    assetId: evidence.assetId,
+    url: publicUrl,
+    variant: evidence.asset?.variant as string | null
+  };
 }
 
 /**
@@ -857,12 +908,20 @@ export async function deleteInventoryReportEvidence(evidenceId: string, options?
     where: { id: evidenceId, tenantId, reportId: { not: null } },
     include: {
       asset: { select: { id: true, bucket: true, key: true } },
-      report: { select: { id: true, reviewId: true, status: true } },
+      report: { select: { id: true, reviewId: true, status: true, review: { select: { status: true } } } },
     },
   });
 
   if (!evidence || !evidence.reportId || !evidence.report) {
     throw new Error("Evidencia no encontrada o no pertenece a un reporte");
+  }
+
+  // Bloqueo post-submission para Cleaner
+  if (evidence.report.review?.status === InventoryReviewStatus.SUBMITTED) {
+    if (isCleaner) {
+      throw new Error("No puedes eliminar evidencias una vez completada la limpieza");
+    }
+    // Host puede eliminar si el reporte está PENDING (validado abajo)
   }
 
   // Regla de negocio: solo se puede eliminar si el Host aún no lo ha procesado (PENDING)

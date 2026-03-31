@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { OfflineInit } from "@/components/offline/OfflineInit";
@@ -57,11 +58,14 @@ export default function CleanerLayoutClient({
       {/* Header desktop (patrón Host) */}
       <header className="hidden sm:block border-b bg-white sticky top-0 z-50">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-          <Link href="/cleaner" className="flex items-center gap-2 shrink-0">
-            <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-base font-bold">
-              H
-            </div>
-            <span className="text-base font-semibold tracking-tight">Hausdame</span>
+          <Link href="/cleaner" className="flex items-center shrink-0">
+            <Image
+              src="/hausdame_SinFondo2.png"
+              alt="Hausdame logo"
+              width={180}
+              height={160}
+              className="object-contain"
+            />
           </Link>
 
           <nav className="flex items-center gap-4 text-base" aria-label="Navegación principal">

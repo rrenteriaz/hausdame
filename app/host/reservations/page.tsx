@@ -10,24 +10,12 @@ import ListRow from "@/lib/ui/ListRow";
 import ListThumb from "@/lib/ui/ListThumb";
 import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
-
-function formatDateRange(start: Date, end: Date): string {
-  const startStr = start.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-  const endStr = end.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  if (startStr === endStr) {
-    return startStr;
-  }
-  return `${startStr} — ${endStr}`;
-}
+import {
+  formatReservationDateRange,
+  getReservationMonthKey,
+  startOfUTCDay,
+  startOfUTCYear,
+} from "@/lib/ui/formatReservationDate";
 
 function formatStatus(status: string): string {
   switch (status) {
@@ -55,7 +43,7 @@ function getStatusBadgeClass(status: string): string {
   }
 }
 
-function getCleaningStatusText(cleanings: Array<{ status: string; needsAttention: boolean }>): {
+function getCleaningStatusText(cleanings: Array<{ status: string; needsAttention: boolean; assignedMembershipId: string | null; assignedMemberId: string | null; attentionReason: string | null }>): {
   text: string;
   hasAttention: boolean;
 } {
@@ -63,7 +51,12 @@ function getCleaningStatusText(cleanings: Array<{ status: string; needsAttention
     return { text: "", hasAttention: false };
   }
 
-  const hasAttention = cleanings.some((c) => c.needsAttention);
+  // Alineado con getCleaningAttentionReasons() línea 188:
+  // Si hay alguien asignado (assignedMembershipId OR assignedMemberId), NO mostrar alerta
+  // (la función canónica no agrega razones cuando la cleaning ya está asignada)
+  const hasAttention = cleanings.some((c) =>
+    c.needsAttention && !c.assignedMembershipId && !c.assignedMemberId
+  );
   const pending = cleanings.filter((c) => c.status === "PENDING" || c.status === "IN_PROGRESS");
   const completed = cleanings.filter((c) => c.status === "COMPLETED");
   const cancelled = cleanings.filter((c) => c.status === "CANCELLED");
@@ -98,16 +91,15 @@ export default async function ReservationsPage({
     orderBy: { name: "asc" },
   });
 
-  // Calcular startOfToday para el filtro de fecha
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Límite UTC para filtros PAST/CURRENT_FUTURE (las fechas de reserva son UTC midnight)
+  const today = startOfUTCDay(new Date());
 
-  // Años disponibles (para chips)
+  // Años disponibles (para chips) — usar UTC para evitar desfase en Jan 1
   const allDates = await prisma.reservation.findMany({
-    where: { tenantId },
+    where: { tenantId, status: { not: "BLOCKED" } },
     select: { startDate: true },
   });
-  const availableYears = [...new Set(allDates.map((r) => r.startDate.getFullYear()))].sort() as number[];
+  const availableYears = [...new Set(allDates.map((r) => r.startDate.getUTCFullYear()))].sort() as number[];
 
   const selectedYear = resolvedSearchParams?.year ? parseInt(resolvedSearchParams.year) : null;
 
@@ -121,18 +113,18 @@ export default async function ReservationsPage({
   // Status: por defecto CONFIRMED
   const statusFilter = resolvedSearchParams?.status;
   if (statusFilter === "all") {
-    // no filter
+    where.status = { notIn: ["BLOCKED"] };
   } else if (statusFilter) {
     where.status = statusFilter;
   } else {
     where.status = "CONFIRMED";
   }
 
-  // Año seleccionado
+  // Año seleccionado — usar UTC para que Jan 1 T00:00Z quede dentro del año correcto
   if (selectedYear) {
     where.startDate = {
-      gte: new Date(selectedYear, 0, 1),
-      lt: new Date(selectedYear + 1, 0, 1),
+      gte: startOfUTCYear(selectedYear),
+      lt: startOfUTCYear(selectedYear + 1),
     };
   }
 
@@ -162,6 +154,9 @@ export default async function ReservationsPage({
           id: true,
           status: true,
           needsAttention: true,
+          assignedMembershipId: true,
+          assignedMemberId: true,
+          attentionReason: true,
         },
       },
     },
@@ -178,13 +173,10 @@ export default async function ReservationsPage({
     }))
   );
 
-  // Agrupar reservas por mes
+  // Agrupar reservas por mes (usando UTC para evitar desfase por offset del servidor)
   const reservationsByMonth = new Map<string, typeof reservations>();
   reservations.forEach((reservation) => {
-    const monthKey = reservation.startDate.toLocaleDateString("es-MX", {
-      year: "numeric",
-      month: "long",
-    });
+    const monthKey = getReservationMonthKey(reservation.startDate);
     if (!reservationsByMonth.has(monthKey)) {
       reservationsByMonth.set(monthKey, []);
     }
@@ -196,16 +188,18 @@ export default async function ReservationsPage({
     .map(([monthKey, monthReservations]) => {
       const firstReservation = monthReservations[0];
       const monthDate = new Date(
-        firstReservation.startDate.getFullYear(),
-        firstReservation.startDate.getMonth(),
-        1
+        Date.UTC(
+          firstReservation.startDate.getUTCFullYear(),
+          firstReservation.startDate.getUTCMonth(),
+          1
+        )
       );
       return { monthKey, monthReservations, monthDate };
     })
     .sort((a, b) => a.monthDate.getTime() - b.monthDate.getTime());
 
-  // Mes actual para abrir por defecto
-  const currentMonthKey = today.toLocaleDateString("es-MX", { year: "numeric", month: "long" });
+  // Mes actual para abrir por defecto (usar UTC para coincidir con getReservationMonthKey)
+  const currentMonthKey = getReservationMonthKey(new Date());
   const hasCurrentMonth = monthGroups.some((g) => g.monthKey === currentMonthKey);
 
   // Función para formatear el mes en español con capitalización
@@ -276,7 +270,7 @@ export default async function ReservationsPage({
                               </h3>
                             </div>
                             <p className="text-xs text-neutral-500 truncate mt-0.5">
-                              {formatDateRange(reservation.startDate, reservation.endDate)}
+                              {formatReservationDateRange(reservation.startDate, reservation.endDate)}
                             </p>
                             <div className="flex flex-wrap items-center gap-2 mt-1.5">
                               <span

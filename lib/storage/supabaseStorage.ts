@@ -20,10 +20,21 @@ if (!supabaseUrl || !supabaseServiceKey) {
  * o anon key (para acceso público)
  */
 function getSupabaseClient() {
-  if (!supabaseUrl || !supabaseServiceKey) {
+  const supabaseUrlRaw = process.env.SUPABASE_URL;
+  const supabaseServiceKeyRaw = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrlRaw || !supabaseServiceKeyRaw) {
     throw new Error("Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (server-only, do not use NEXT_PUBLIC_)");
   }
-  return createClient(supabaseUrl, supabaseServiceKey);
+
+  // Sanitizar: eliminar comillas si existen (común en algunos entornos de Windows/.env)
+  const sanitize = (s: string) => s.replace(/^["']|["']$/g, "").trim();
+  const url = sanitize(supabaseUrlRaw);
+  const key = sanitize(supabaseServiceKeyRaw);
+
+  console.log(`[SupabaseStorage] Initializing client for: ${url.replace(/https:\/\/(.*)\.supabase\.co/, "$1.supabase.co")}`);
+  
+  return createClient(url, key);
 }
 
 export class SupabaseStorageProvider implements StorageProvider {
@@ -57,6 +68,12 @@ export class SupabaseStorageProvider implements StorageProvider {
     }
 
     if (result.error) {
+      console.error("[SupabaseStorage] Upload error:", {
+        message: result.error.message,
+        error: result.error,
+        bucket,
+        key
+      });
       throw new Error(`Failed to upload to Supabase: ${result.error.message}`);
     }
 

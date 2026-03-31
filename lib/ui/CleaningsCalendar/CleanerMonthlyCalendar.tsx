@@ -18,6 +18,7 @@ interface CleanerMonthlyCalendarProps {
   memberCleanings?: CleaningForCalendar[];
   lostCleanings?: CleaningForCalendar[];
   availableCleanings: CleaningForCalendar[];
+  openPastCleanings?: CleaningForCalendar[];
   monthDate: Date;
   buildMonthHref: (date: Date) => string;
   buildDayHref: (date: Date) => string;
@@ -43,6 +44,7 @@ export default function CleanerMonthlyCalendar({
   memberCleanings = [],
   lostCleanings = [],
   availableCleanings,
+  openPastCleanings = [],
   monthDate,
   buildMonthHref,
   buildDayHref,
@@ -90,7 +92,7 @@ export default function CleanerMonthlyCalendar({
 
   // Obtener todas las propiedades únicas de todas las limpiezas
   const allProperties = new Map<string, { id: string; name: string; shortName?: string | null }>();
-  [...myCleanings, ...memberCleanings, ...lostCleanings, ...availableCleanings].forEach((c) => {
+  [...myCleanings, ...memberCleanings, ...lostCleanings, ...availableCleanings, ...openPastCleanings].forEach((c) => {
     if (!allProperties.has(c.property.id)) {
       allProperties.set(c.property.id, c.property);
     }
@@ -106,16 +108,17 @@ export default function CleanerMonthlyCalendar({
   });
 
   // Agrupar limpiezas por día (combinar mías y disponibles, eliminando duplicados)
-  type CalendarEntry = CleaningForCalendar & { __kind: "my" | "member" | "available" | "lost" };
+  type CalendarEntry = CleaningForCalendar & { __kind: "my" | "member" | "available" | "lost" | "open" };
   const cleaningsByDay = new Map<string, CalendarEntry[]>();
   const seenCleaningIds = new Set<string>(); // Para evitar duplicados
 
-  // Orden de prioridad: my > member > available > lost (si hubiera duplicados)
+  // Orden de prioridad: my > member > available > lost > open (si hubiera duplicados)
   const combined: CalendarEntry[] = [
     ...myCleanings.map((c) => ({ ...c, __kind: "my" as const })),
     ...memberCleanings.map((c) => ({ ...c, __kind: "member" as const })),
     ...availableCleanings.map((c) => ({ ...c, __kind: "available" as const })),
     ...lostCleanings.map((c) => ({ ...c, __kind: "lost" as const })),
+    ...openPastCleanings.map((c) => ({ ...c, __kind: "open" as const })),
   ];
 
   combined.forEach((c) => {
@@ -124,9 +127,10 @@ export default function CleanerMonthlyCalendar({
       return;
     }
     seenCleaningIds.add(c.id);
-    
+
     const d = c.scheduledDate;
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
     const list = cleaningsByDay.get(key) ?? [];
     list.push(c);
     cleaningsByDay.set(key, list);
@@ -243,22 +247,25 @@ export default function CleanerMonthlyCalendar({
                       const isMember = c.__kind === "member";
                       const isAvailable = c.__kind === "available";
                       const isLost = c.__kind === "lost";
+                      const isOpen = c.__kind === "open";
 
                       return (
                         <div
                           key={c.id}
                           className={`truncate rounded-full px-0.5 py-[1px] text-[7px] sm:text-[10.5px] leading-none flex items-center gap-0.5 ${
-                            isLost ? "text-neutral-400 line-through" : isAvailable ? "text-neutral-700" : "text-black"
+                            isLost ? "text-neutral-400 line-through" : isOpen ? "text-amber-700" : isAvailable ? "text-neutral-700" : "text-black"
                           }`}
-                          title={`${label} · ${formatStatus(c.status)}`}
+                          title={`${label} · ${formatStatus(c.status)} · Sin asignar`}
                         >
-                          <span 
+                          <span
                             className="w-1.5 h-1.5 sm:w-[9px] sm:h-[9px] rounded-full flex-shrink-0"
                             style={
                               isMember
                                 ? { backgroundColor: "transparent", border: `2px solid ${colorHex}` }
                                 : isLost
                                 ? { backgroundColor: "#9ca3af", opacity: 0.7 }
+                                : isOpen
+                                ? { backgroundColor: "#f59e0b", opacity: 0.6 }
                                 : { backgroundColor: colorHex, opacity: isAvailable ? 0.35 : 1 }
                             }
                           />
@@ -271,6 +278,11 @@ export default function CleanerMonthlyCalendar({
                           {isLost && (
                             <span className="text-[6px] sm:text-[9px] text-neutral-400 ml-0.5">
                               PERDIDA
+                            </span>
+                          )}
+                          {isOpen && (
+                            <span className="text-[6px] sm:text-[9px] text-amber-600 ml-0.5">
+                              S.A.
                             </span>
                           )}
                         </div>

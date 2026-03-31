@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { getInventoryReview, getActiveInventoryLines } from "@/app/host/inventory-review/actions";
+import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import InventoryReviewScreen from "./InventoryReviewScreen";
 
 export default async function InventoryReviewPage({
@@ -35,6 +36,9 @@ export default async function InventoryReviewPage({
   ]);
   console.log(`[InventoryReviewPage] Review found: ${!!review}, Lines count: ${inventoryLines?.length}`);
 
+  const lineIds = (inventoryLines || []).map((l: any) => l.id);
+  const historyStatsMap = await fetchInventoryHistoryStats(lineIds, tenantId);
+
   if (inventoryLines) {
     inventoryLines.forEach((l: any, idx: number) => {
       if (!l.item) {
@@ -62,7 +66,9 @@ export default async function InventoryReviewPage({
           category: line.item?.category || "UNSPECIFIED",
         },
         allLines: line.allLines || [],
+        historyStats: historyStatsMap.get(line.id) || null,
       }))}
+      tenantId={tenantId}
     />
   );
 }

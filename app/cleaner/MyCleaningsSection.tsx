@@ -101,6 +101,9 @@ export default function MyCleaningsSection({
               const propertyName =
                 cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `/cleaner/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
+              const isOverdue =
+                (cleaning.status === "PENDING" || cleaning.status === "IN_PROGRESS") &&
+                new Date(cleaning.scheduledDate) < new Date();
 
               return (
                 <CleanerCleaningLink
@@ -118,9 +121,16 @@ export default function MyCleaningsSection({
                     alt={propertyName}
                   />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-medium text-neutral-900 truncate">
-                      {propertyName}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base font-medium text-neutral-900 truncate">
+                        {propertyName}
+                      </h3>
+                      {isOverdue && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 flex-shrink-0">
+                          Vencida
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
                       {cleaning.scheduledDate.toLocaleString("es-MX", {
                         day: "2-digit",
@@ -145,7 +155,7 @@ export default function MyCleaningsSection({
           </ListContainer>
         )}
 
-        {/* CTA Todas las limpiezas */}
+        {/* CTA Mis limpiezas */}
         <div className="mt-4 pt-4 border-t border-neutral-200">
           <Link
             href={
@@ -156,7 +166,7 @@ export default function MyCleaningsSection({
             className="flex items-center justify-between group py-2 hover:opacity-80 transition-opacity"
           >
             <span className="text-base font-medium text-neutral-900">
-              Todas las limpiezas
+              Mis limpiezas
             </span>
             <svg
               className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors"

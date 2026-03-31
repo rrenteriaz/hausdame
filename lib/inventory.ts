@@ -30,6 +30,14 @@ export interface InventoryLineWithItem {
     defaultSize: string | null;
     defaultVariantKey: string | null;
   };
+  // Fase 5: zona física como source of truth para nombre y orden
+  propertyZone?: {
+    id: string;
+    name: string;
+    normalizedName: string;
+    sortOrder: number | null;
+    zoneType: string;
+  } | null;
 }
 
 /**
@@ -80,6 +88,7 @@ export async function listInventoryByProperty(
     const searchNormalized = normalizeName(options.search);
     where.OR = [
       { areaNormalized: { contains: searchNormalized } },
+      { propertyZone: { normalizedName: { contains: searchNormalized } } }, // Fase 5
       { item: { nameNormalized: { contains: searchNormalized } } },
       { item: { name: { contains: options.search, mode: "insensitive" } } },
       { variantValueNormalized: { contains: searchNormalized } },
@@ -102,9 +111,19 @@ export async function listInventoryByProperty(
             defaultVariantKey: true,
           },
         },
+        // Fase 5: zona física como source of truth para nombre y orden
+        propertyZone: {
+          select: {
+            id: true,
+            name: true,
+            normalizedName: true,
+            sortOrder: true,
+            zoneType: true,
+          },
+        },
       },
       orderBy: [
-        { area: "asc" },
+        { propertyZone: { sortOrder: "asc" } }, // Fase 5: orden por sortOrder de zona
         { item: { name: "asc" } },
       ],
       skip,
@@ -168,13 +187,13 @@ export async function listInventoryCatalogByCategory(
 }
 
 /**
- * Lista líneas hermanas (siblings) para un mismo (propertyId, areaNormalized, itemId).
+ * Lista líneas hermanas (siblings) para un mismo (propertyId, propertyZoneId, itemId).
  * Usado en el editor de inventario para mostrar variantes existentes.
  */
 export async function listInventorySiblings(
   tenantId: string,
   propertyId: string,
-  areaNormalized: string,
+  propertyZoneId: string,
   itemId: string
 ): Promise<
   Array<{
@@ -190,7 +209,7 @@ export async function listInventorySiblings(
     where: {
       tenantId,
       propertyId,
-      areaNormalized,
+      propertyZoneId,
       itemId,
       isActive: true,
     },
@@ -574,7 +593,7 @@ export async function checkDuplicateInventoryLine(
   tenantId: string,
   propertyId: string,
   data: {
-    area: string;
+    propertyZoneId: string;
     itemId: string;
     variantKey?: string | null;
     variantValue?: string | null;
@@ -586,9 +605,8 @@ export async function checkDuplicateInventoryLine(
   quantity?: number;
   variantText?: string;
 } | null> {
-  const { normalizeName, normalizeVariantValue } = await import("./inventory-normalize");
-  
-  const areaNormalized = normalizeName(data.area);
+  const { normalizeVariantValue } = await import("./inventory-normalize");
+
   const variantValueNormalized = data.variantValue
     ? normalizeVariantValue(data.variantValue)
     : null;
@@ -597,7 +615,7 @@ export async function checkDuplicateInventoryLine(
     where: {
       tenantId,
       propertyId,
-      areaNormalized,
+      propertyZoneId: data.propertyZoneId,
       itemId: data.itemId,
       variantKey: data.variantKey || null,
       variantValueNormalized: variantValueNormalized || null,
@@ -639,7 +657,8 @@ export async function createInventoryLine(
   tenantId: string,
   propertyId: string,
   data: {
-    area: string;
+    area?: string; // Fase 7.1: opcional — se ignora cuando propertyZoneId está presente
+    propertyZoneId?: string; // Fase 6+7.1: entrada principal desde Host.
     itemId?: string; // Si no existe, se crea el item
     itemName?: string; // Nombre del item si se crea nuevo
     category: InventoryCategory;
@@ -718,8 +737,45 @@ export async function createInventoryLine(
       throw new Error("Se requiere itemId o itemName");
     }
 
-    // Normalizar área
-    const areaNormalized = normalizeName(data.area);
+    // ─── Fase 6: resolver zona ───────────────────────────────────────────────────
+    // Primary: propertyZoneId explícito. Fallback legacy: lookup por areaNormalized.
+    let resolvedZoneId: string;
+    let resolvedArea: string;
+    let resolvedAreaNormalized: string;
+
+    if (data.propertyZoneId) {
+      const zone = await tx.propertyZone.findUnique({
+        where: { id: data.propertyZoneId },
+        select: { id: true, name: true, normalizedName: true, propertyId: true, isActive: true },
+      });
+      if (!zone) throw new Error(`La zona de inventario no existe: ${data.propertyZoneId}`);
+      if (zone.propertyId !== propertyId) throw new Error("La zona no pertenece a esta propiedad");
+      if (!zone.isActive) throw new Error(`La zona "${zone.name}" está inactiva`);
+      resolvedZoneId = zone.id;
+      resolvedArea = zone.name;
+      resolvedAreaNormalized = zone.normalizedName;
+    } else {
+      // Legacy fallback: buscar zona por (propertyId, areaNormalized)
+      const areaNorm = normalizeName(data.area ?? "");
+      const zone = await tx.propertyZone.findUnique({
+        where: { propertyId_normalizedName: { propertyId, normalizedName: areaNorm } },
+        select: { id: true, name: true, normalizedName: true, isActive: true },
+      });
+      if (!zone) {
+        throw new Error(
+          `No existe zona para el área "${data.area}" en esta propiedad. ` +
+          `Crea la zona primero o usa propertyZoneId.`
+        );
+      }
+      if (!zone.isActive) throw new Error(`La zona "${zone.name}" está inactiva`);
+      resolvedZoneId = zone.id;
+      resolvedArea = zone.name;
+      resolvedAreaNormalized = zone.normalizedName;
+    }
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    // areaNormalized alias para compatibilidad con código posterior
+    const areaNormalized = resolvedAreaNormalized;
 
     // Normalizar variante si existe
     const variantValueNormalized = data.variantValue
@@ -738,12 +794,12 @@ export async function createInventoryLine(
     // Sin embargo, el constraint único en la BD puede bloquear esto.
     // Buscar línea existente ANTES de crear para evitar error P2002 que aborta la transacción.
 
-    // Buscar línea existente (activa o inactiva) ANTES de intentar crear
-    const existingLine = await tx.inventoryLine.findFirst({
+    // Buscar todas las líneas (activas o inactivas) para determinar la versión más alta
+    const existingLines = await tx.inventoryLine.findMany({
       where: {
         tenantId,
         propertyId,
-        areaNormalized,
+        propertyZoneId: resolvedZoneId,
         itemId,
         variantKey: variantKey || null,
         variantValueNormalized: variantValueNormalized || null,
@@ -751,41 +807,21 @@ export async function createInventoryLine(
       select: {
         id: true,
         isActive: true,
+        version: true,
       },
+      orderBy: { version: "desc" },
     });
 
-    if (existingLine) {
-      // Si la línea está inactiva, reactivarla y actualizarla con los nuevos datos
-      if (!existingLine.isActive) {
-        console.log(
-          `[createInventoryLine] Línea inactiva encontrada, reactivando y actualizando: ${existingLine.id}`
-        );
-        const reactivatedLine = await tx.inventoryLine.update({
-          where: { id: existingLine.id },
-          data: {
-            area: data.area.trim(), // Actualizar área (puede haber cambiado)
-            expectedQty: data.expectedQty,
-            condition: data.condition || InventoryCondition.USED_LT_1Y,
-            priority: data.priority ?? InventoryPriority.MEDIUM,
-            brand: data.brand ?? null,
-            model: data.model ?? null,
-            serialNumber: data.serialNumber ?? null,
-            color: data.color ?? null,
-            size: data.size ?? null,
-            notes: data.notes ?? null,
-            variantValue: data.variantValue || null,
-            isActive: true, // Reactivar
-          },
-        });
-        return { id: reactivatedLine.id, isNewItem, itemId };
-      }
+    const activeLine = existingLines.find((l) => l.isActive);
+    const maxVersion = existingLines.length > 0 ? existingLines[0].version : 0;
 
+    if (activeLine) {
       // Si la línea está activa y allowDuplicate es true, retornarla
       if (data.allowDuplicate) {
         console.log(
-          `[createInventoryLine] Duplicado permitido: retornando línea existente ${existingLine.id}`
+          `[createInventoryLine] Duplicado permitido: retornando línea activa existente ${activeLine.id}`
         );
-        return { id: existingLine.id, isNewItem, itemId };
+        return { id: activeLine.id, isNewItem, itemId };
       }
 
       // Si la línea está activa y allowDuplicate es false, lanzar error
@@ -793,109 +829,45 @@ export async function createInventoryLine(
         ? ` con variante ${data.variantValue || variantValueNormalized}`
         : "";
       throw new Error(
-        `Ya existe una línea de inventario activa para este ítem en el área "${data.area}"${variantText}. ` +
-        `El constraint único de la base de datos no permite duplicados exactos. ` +
-        `Si necesitas crear una línea duplicada, considera agregar información distintiva (marca, modelo, notas, etc.).`
+        `Ya existe una línea de inventario activa para este ítem en la zona "${resolvedArea}"${variantText}. ` +
+          `El constraint único de la base de datos no permite duplicados activos exactos. ` +
+          `Si necesitas crear una línea nueva, primero debes dar de baja la anterior.`
       );
     }
 
-    // No existe línea con estos valores únicos, crear nueva
-    // Manejar race condition: si dos requests simultáneos intentan crear la misma línea
-    try {
-      const line = await tx.inventoryLine.create({
-        data: {
-          tenantId,
-          propertyId,
-          area: data.area.trim(), // Mantener original con trim
-          areaNormalized,
-          itemId,
-          expectedQty: data.expectedQty,
-          condition: data.condition || InventoryCondition.USED_LT_1Y,
-          priority: data.priority ?? InventoryPriority.MEDIUM, // Usar ?? para respetar undefined explícito
-          brand: data.brand ?? null,
-          model: data.model ?? null,
-          serialNumber: data.serialNumber ?? null,
-          color: data.color ?? null,
-          size: data.size ?? null,
-          notes: data.notes ?? null,
-          variantKey: variantKey || null,
-          variantValue: data.variantValue || null,
-          variantValueNormalized: variantValueNormalized || null,
-          isActive: true, // Nueva línea siempre activa
-        },
-      });
+    // No hay línea activa. Creamos una nueva instancia con versión incremental.
+    // Esto asegura que NO se herede el historial de versiones anteriores (inactivas).
+    const nextVersion = maxVersion + 1;
+    console.log(
+      `[createInventoryLine] Creando nueva instancia (v${nextVersion}) para item ${itemId} en ${areaNormalized}`
+    );
 
-      return { id: line.id, isNewItem, itemId };
-    } catch (createError: any) {
-      // Manejar race condition: si otro request creó la línea entre la búsqueda y el create
-      if (createError?.code === "P2002") {
-        // Buscar la línea que se creó en el otro request
-        const raceConditionLine = await tx.inventoryLine.findFirst({
-          where: {
-            tenantId,
-            propertyId,
-            areaNormalized,
-            itemId,
-            variantKey: variantKey || null,
-            variantValueNormalized: variantValueNormalized || null,
-          },
-          select: {
-            id: true,
-            isActive: true,
-          },
-        });
+    const newLine = await tx.inventoryLine.create({
+      data: {
+        tenantId,
+        propertyId,
+        propertyZoneId: resolvedZoneId,   // Fase 6: zona como source of truth
+        area: resolvedArea,                // Derivado de zona
+        areaNormalized: resolvedAreaNormalized, // Derivado de zona
+        itemId,
+        expectedQty: data.expectedQty,
+        condition: data.condition || InventoryCondition.USED_LT_1Y,
+        priority: data.priority ?? InventoryPriority.MEDIUM,
+        brand: data.brand ?? null,
+        model: data.model ?? null,
+        serialNumber: data.serialNumber ?? null,
+        color: data.color ?? null,
+        size: data.size ?? null,
+        notes: data.notes ?? null,
+        variantKey: variantKey || null,
+        variantValue: data.variantValue || null,
+        variantValueNormalized: variantValueNormalized || null,
+        version: nextVersion,
+        isActive: true,
+      },
+    });
 
-        if (raceConditionLine) {
-          // Si está inactiva, reactivarla (raro pero posible)
-          if (!raceConditionLine.isActive) {
-            const reactivatedLine = await tx.inventoryLine.update({
-              where: { id: raceConditionLine.id },
-              data: {
-                area: data.area.trim(),
-                expectedQty: data.expectedQty,
-                condition: data.condition || InventoryCondition.USED_LT_1Y,
-                priority: data.priority ?? InventoryPriority.MEDIUM,
-                brand: data.brand ?? null,
-                model: data.model ?? null,
-                serialNumber: data.serialNumber ?? null,
-                color: data.color ?? null,
-                size: data.size ?? null,
-                notes: data.notes ?? null,
-                variantValue: data.variantValue || null,
-                isActive: true,
-              },
-            });
-            return { id: reactivatedLine.id, isNewItem, itemId };
-          }
-
-          // Si está activa y allowDuplicate es true, retornarla
-          if (data.allowDuplicate) {
-            return { id: raceConditionLine.id, isNewItem, itemId };
-          }
-
-          // Si está activa y allowDuplicate es false, lanzar error
-          const variantText = variantValueNormalized
-            ? ` con variante ${data.variantValue || variantValueNormalized}`
-            : "";
-          throw new Error(
-            `Ya existe una línea de inventario activa para este ítem en el área "${data.area}"${variantText}. ` +
-            `El constraint único de la base de datos no permite duplicados exactos. ` +
-            `Si necesitas crear una línea duplicada, considera agregar información distintiva (marca, modelo, notas, etc.).`
-          );
-        }
-
-        // Si no se encontró la línea (no debería pasar), lanzar error genérico
-        const variantText = variantValueNormalized
-          ? ` con variante ${data.variantValue || variantValueNormalized}`
-          : "";
-        throw new Error(
-          `Ya existe una línea de inventario para este ítem en el área "${data.area}"${variantText}. ` +
-          `El constraint único de la base de datos no permite duplicados exactos. ` +
-          `Si necesitas crear una línea duplicada, considera agregar información distintiva (marca, modelo, notas, etc.).`
-        );
-      }
-      throw createError;
-    }
+    return { id: newLine.id, isNewItem, itemId };
   });
 }
 
@@ -924,6 +896,16 @@ export async function getInventoryLineById(
           defaultVariantKey: true,
         },
       },
+      // Fase 5/6: zona física como source of truth para edit flow
+      propertyZone: {
+        select: {
+          id: true,
+          name: true,
+          normalizedName: true,
+          sortOrder: true,
+          zoneType: true,
+        },
+      },
     },
   });
 
@@ -938,6 +920,7 @@ export async function updateInventoryLine(
   lineId: string,
   data: {
     area?: string;
+    propertyZoneId?: string; // Fase 6: entrada principal para cambio de zona
     expectedQty?: number;
     condition?: InventoryCondition;
     priority?: InventoryPriority;
@@ -968,10 +951,35 @@ export async function updateInventoryLine(
     // Preparar datos de actualización
     const updateData: any = {};
 
-    if (data.area !== undefined) {
-      updateData.area = data.area.trim();
-      updateData.areaNormalized = normalizeName(data.area);
+    // ─── Fase 6: resolver zona si cambia el área ────────────────────────────────
+    if (data.propertyZoneId !== undefined) {
+      // Primary: propertyZoneId explícito
+      const zone = await tx.propertyZone.findUnique({
+        where: { id: data.propertyZoneId },
+        select: { id: true, name: true, normalizedName: true, propertyId: true, isActive: true },
+      });
+      if (!zone) throw new Error(`La zona no existe: ${data.propertyZoneId}`);
+      if (zone.propertyId !== existingLine.propertyId) throw new Error("La zona no pertenece a esta propiedad");
+      if (!zone.isActive) throw new Error(`La zona "${zone.name}" está inactiva`);
+      updateData.propertyZoneId = zone.id;
+      updateData.area = zone.name;
+      updateData.areaNormalized = zone.normalizedName;
+    } else if (data.area !== undefined) {
+      // Legacy fallback: buscar zona por (propertyId, areaNormalized)
+      const areaNorm = normalizeName(data.area);
+      const zone = await tx.propertyZone.findUnique({
+        where: { propertyId_normalizedName: { propertyId: existingLine.propertyId, normalizedName: areaNorm } },
+        select: { id: true, name: true, normalizedName: true, isActive: true },
+      });
+      if (!zone) {
+        throw new Error(`No existe zona para el área "${data.area}" en esta propiedad. Crea la zona primero.`);
+      }
+      if (!zone.isActive) throw new Error(`La zona "${zone.name}" está inactiva`);
+      updateData.propertyZoneId = zone.id;
+      updateData.area = zone.name;
+      updateData.areaNormalized = zone.normalizedName;
     }
+    // ─────────────────────────────────────────────────────────────────────────────
 
     if (data.expectedQty !== undefined) {
       updateData.expectedQty = data.expectedQty;
@@ -1047,7 +1055,7 @@ export async function updateInventoryLine(
           where: {
             tenantId,
             propertyId: existingLine.propertyId,
-            areaNormalized: existingLine.areaNormalized,
+            propertyZoneId: existingLine.propertyZoneId,
             itemId: existingLine.itemId,
             variantKey,
             variantValueNormalized,
@@ -1146,34 +1154,24 @@ export async function deleteInventoryLine(
 }
 
 /**
- * Desactiva todas las líneas de inventario en un área para una propiedad.
- * Soft delete: marca isActive=false en todas las líneas del área.
- * Busca por area (exact) y por areaNormalized para soportar datos legacy inconsistentes.
+ * Desactiva todas las líneas de inventario de una zona para una propiedad.
+ * Soft delete: marca isActive=false en todas las líneas con propertyZoneId dado.
  */
 export async function deleteInventoryArea(
   tenantId: string,
   propertyId: string,
-  area: string
+  propertyZoneId: string
 ): Promise<{ count: number }> {
-  const areaTrimmed = area.trim();
-  const areaClean = areaTrimmed.replace(/^"|"$/g, "").trim();
-  if (!areaClean) {
-    throw new Error("El área es obligatoria");
+  if (!propertyZoneId) {
+    throw new Error("La zona es obligatoria");
   }
 
-  const areaNormalized = normalizeName(areaClean);
-
-  const baseWhere = {
-    tenantId,
-    propertyId,
-    isActive: true,
-  };
-
-  // Buscar por area exacta O por areaNormalized. Incluye areaTrimmed por si la BD tiene comillas literales.
   const result = await prisma.inventoryLine.updateMany({
     where: {
-      ...baseWhere,
-      OR: [{ area: areaTrimmed }, { area: areaClean }, { areaNormalized }],
+      tenantId,
+      propertyId,
+      propertyZoneId,
+      isActive: true,
     },
     data: {
       isActive: false,
@@ -1420,6 +1418,7 @@ export async function copyInventoryBetweenProperties({
   created: number;
   updated: number;
   skipped: number;
+  skippedNoZone: number;
   archivedInDestination?: number;
   examples: Array<{ area: string; itemName: string }>;
 }> {
@@ -1450,6 +1449,12 @@ export async function copyInventoryBetweenProperties({
           id: true,
           area: true,
           areaNormalized: true,
+          propertyZoneId: true,
+          propertyZone: {
+            select: {
+              normalizedName: true,
+            },
+          },
           itemId: true,
           expectedQty: true,
           condition: true,
@@ -1472,6 +1477,16 @@ export async function copyInventoryBetweenProperties({
       });
 
       console.log("[copyInventoryBetweenProperties] Líneas activas encontradas en origen:", sourceLines.length);
+
+      // Phase 6: Build destination zone map by normalizedName for zone resolution
+      const destZones = await tx.propertyZone.findMany({
+        where: { tenantId, propertyId: toPropertyId, isActive: true },
+        select: { id: true, name: true, normalizedName: true },
+      });
+      const destZoneByNormalizedName = new Map<string, { id: string; name: string; normalizedName: string }>();
+      for (const z of destZones) {
+        destZoneByNormalizedName.set(z.normalizedName, z);
+      }
 
       let archivedInDestination: number | undefined = undefined;
 
@@ -1500,17 +1515,17 @@ export async function copyInventoryBetweenProperties({
         },
         select: {
           id: true,
-          areaNormalized: true,
+          propertyZoneId: true,
           itemId: true,
           variantKey: true,
           variantValueNormalized: true,
         },
       });
 
-      // Crear un mapa para búsqueda rápida: key = `${areaNormalized}|${itemId}|${variantKey}|${variantValueNormalized}`
+      // Crear un mapa para búsqueda rápida: key = `${propertyZoneId}|${itemId}|${variantKey}|${variantValueNormalized}`
       const destinationMap = new Map<string, { id: string }>();
       for (const destLine of destinationLines) {
-        const key = `${destLine.areaNormalized}|${destLine.itemId}|${destLine.variantKey || null}|${destLine.variantValueNormalized || null}`;
+        const key = `${destLine.propertyZoneId}|${destLine.itemId}|${destLine.variantKey || null}|${destLine.variantValueNormalized || null}`;
         destinationMap.set(key, { id: destLine.id });
       }
 
@@ -1519,12 +1534,13 @@ export async function copyInventoryBetweenProperties({
       let created = 0;
       let updated = 0;
       let skipped = 0;
+      let skippedNoZone = 0;
       const examples: Array<{ area: string; itemName: string }> = [];
 
       // 3) Procesar cada línea del origen
       for (const sourceLine of sourceLines) {
         // Buscar en el mapa en lugar de hacer query individual
-        const key = `${sourceLine.areaNormalized}|${sourceLine.itemId}|${sourceLine.variantKey || null}|${sourceLine.variantValueNormalized || null}`;
+        const key = `${sourceLine.propertyZoneId}|${sourceLine.itemId}|${sourceLine.variantKey || null}|${sourceLine.variantValueNormalized || null}`;
         const existingLine = destinationMap.get(key);
 
       if (existingLine) {
@@ -1568,12 +1584,25 @@ export async function copyInventoryBetweenProperties({
         }
       } else {
         // Línea no existe: crear nueva
+        // Phase 6: resolve destination zone by source normalizedName — skip if no match
+        const srcNormalizedName = sourceLine.propertyZone?.normalizedName ?? sourceLine.areaNormalized;
+        const destZone = destZoneByNormalizedName.get(srcNormalizedName);
+        if (!destZone) {
+          skippedNoZone++;
+          console.warn(
+            `[copyInventoryBetweenProperties] SKIP — no dest zone for normalizedName="${srcNormalizedName}" ` +
+            `(srcArea="${sourceLine.area}", itemId="${sourceLine.itemId}") — line not copied`
+          );
+          continue;
+        }
+
         await tx.inventoryLine.create({
           data: {
             tenantId,
             propertyId: toPropertyId,
-            area: sourceLine.area,
-            areaNormalized: sourceLine.areaNormalized,
+            propertyZoneId: destZone.id,
+            area: destZone.name,
+            areaNormalized: destZone.normalizedName,
             itemId: sourceLine.itemId,
             expectedQty: copyQuantities ? sourceLine.expectedQty : 0,
             condition: sourceLine.condition,
@@ -1605,6 +1634,7 @@ export async function copyInventoryBetweenProperties({
       created,
       updated,
       skipped,
+      skippedNoZone,
       ...(archivedInDestination !== undefined && { archivedInDestination }),
       examples,
     };

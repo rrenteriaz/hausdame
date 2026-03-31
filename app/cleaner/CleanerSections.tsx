@@ -210,14 +210,14 @@ export default function CleanerSections({
             </ListContainer>
           )}
 
-          {/* CTA Todas las limpiezas */}
+          {/* CTA Mis limpiezas */}
           <div className="mt-4 pt-4 border-t border-neutral-200">
             <a
               href={`/cleaner/cleanings/all?scope=all&memberId=${encodeURIComponent(currentMemberId)}`}
               className="flex items-center justify-between group py-2 hover:opacity-80 transition-opacity"
             >
               <span className="text-base font-medium text-neutral-900">
-                Todas las limpiezas
+                Mis limpiezas
               </span>
               <svg
                 className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors"

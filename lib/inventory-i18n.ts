@@ -2,6 +2,7 @@ import {
   InventoryReportType,
   InventoryReportSeverity,
   InventoryReportResolution,
+  InventoryReportStatus,
   InventoryChangeReason,
   InventoryCategory,
 } from "@prisma/client";
@@ -33,16 +34,29 @@ export function reportSeverityLabel(severity: InventoryReportSeverity): string {
 
 export function reportResolutionLabel(resolution: InventoryReportResolution): string {
   const labels: Record<InventoryReportResolution, string> = {
-    REPAIR: "Reparar",
-    KEEP_USING: "Seguir usando",
-    REPLACE_AND_DISCARD: "Reemplazar y descartar",
-    DISCARD: "Descartar",
-    STORE: "Almacenar",
-    MARK_LOST: "Marcar como perdido",
-    UPDATE_ITEM_TO_NEW: "Actualizar item a nuevo",
-    MARK_TO_REPLACE: "Marcar para reemplazar",
+    [InventoryReportResolution.REPAIR]: "Reparar",
+    [InventoryReportResolution.DEEP_CLEAN]: "Limpieza profunda",
+    [InventoryReportResolution.KEEP_USING]: "Seguir usando",
+    [InventoryReportResolution.REPLACE_AND_DISCARD]: "Reemplazar y descartar",
+    [InventoryReportResolution.DISCARD]: "Descartar",
+    [InventoryReportResolution.STORE]: "Almacenar",
+    [InventoryReportResolution.MARK_LOST]: "Marcar como perdido",
+    [InventoryReportResolution.UPDATE_ITEM_TO_NEW]: "Actualizar item a nuevo",
+    [InventoryReportResolution.MARK_TO_REPLACE]: "Marcar para reemplazar",
   };
   return labels[resolution] || "Desconocido";
+}
+
+export const resolutionLabel = reportResolutionLabel;
+
+export function reportStatusLabel(status: InventoryReportStatus): string {
+  const labels: Record<InventoryReportStatus, string> = {
+    PENDING: "Pendiente",
+    ACKNOWLEDGED: "En atención",
+    RESOLVED: "Resuelto",
+    REJECTED: "Rechazado",
+  };
+  return labels[status] || "Desconocido";
 }
 
 export function changeReasonLabel(reason: InventoryChangeReason): string {

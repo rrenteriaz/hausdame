@@ -17,7 +17,6 @@ function calculateCleaningDate(
   endDate: Date,
   checkOutTime: string | null | undefined
 ): Date {
-  const cleaningDate = new Date(endDate);
   let hours = 11;
   let minutes = 0;
   if (checkOutTime) {
@@ -25,8 +24,29 @@ function calculateCleaningDate(
     if (!isNaN(h)) hours = h;
     if (!isNaN(m)) minutes = m;
   }
-  cleaningDate.setHours(hours, minutes, 0, 0);
-  return cleaningDate;
+  // endDate es UTC midnight (VALUE=DATE). Extraer el día en UTC para construir
+  // la fecha de limpieza en hora local sobre ese día calendario correcto.
+  return new Date(
+    endDate.getUTCFullYear(),
+    endDate.getUTCMonth(),
+    endDate.getUTCDate(),
+    hours,
+    minutes,
+    0,
+    0
+  );
+}
+
+/**
+ * Compara dos fechas por día UTC (año/mes/día).
+ * Usado para fechas VALUE=DATE que pueden estar en T00:00Z (nuevo) o T06:00Z (histórico).
+ */
+function sameUTCDay(a: Date, b: Date): boolean {
+  return (
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
+  );
 }
 
 function sanitizeError(msg: string): string {
@@ -124,9 +144,10 @@ async function executeSyncCore(
       const existing: any = existingByUid.get(parsed.calendarUid);
 
       if (existing) {
+        // Comparar fechas por día UTC para tolerar datos históricos en T06:00Z
         const needsUpdate =
-          existing.startDate.getTime() !== parsed.startDate.getTime() ||
-          existing.endDate.getTime() !== parsed.endDate.getTime() ||
+          !sameUTCDay(existing.startDate, parsed.startDate) ||
+          !sameUTCDay(existing.endDate, parsed.endDate) ||
           existing.status !== parsed.status ||
           existing.reservationCodeCalendar !== parsed.reservationCodeCalendar ||
           existing.guestPhoneLast4 !== parsed.guestPhoneLast4;
@@ -145,7 +166,7 @@ async function executeSyncCore(
           });
 
           if (
-            existing.endDate.getTime() !== parsed.endDate.getTime() &&
+            !sameUTCDay(existing.endDate, parsed.endDate) &&
             parsed.status === "CONFIRMED"
           ) {
             const cleaning = await (prisma as any).cleaning.findFirst({

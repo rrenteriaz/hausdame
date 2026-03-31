@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface AllCleaningsFiltersProps {
   monthParam: string;
@@ -29,12 +29,36 @@ export default function AllCleaningsFilters({
   const [selectedProperty, setSelectedProperty] = useState(propertyId || "");
   const [selectedStatus, setSelectedStatus] = useState(status || "");
   const [selectedScope, setSelectedScope] = useState(scope);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const monthPickerRef = useRef<HTMLDivElement>(null);
+  const monthListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSelectedMonth(monthParam);
     setSelectedProperty(propertyId || "");
     setSelectedStatus(status || "");
   }, [monthParam, propertyId, status, scope]);
+
+  // Cerrar el picker al hacer click fuera
+  useEffect(() => {
+    if (!monthPickerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(e.target as Node)) {
+        setMonthPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [monthPickerOpen]);
+
+  // Al abrir el picker, hacer scroll al mes seleccionado
+  useEffect(() => {
+    if (!monthPickerOpen || !monthListRef.current) return;
+    const targetEl = monthListRef.current.querySelector(`[data-value="${selectedMonth}"]`) as HTMLElement | null;
+    if (targetEl) {
+      monthListRef.current.scrollTop = targetEl.offsetTop;
+    }
+  }, [monthPickerOpen]);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newMonth = e.target.value;
@@ -68,11 +92,11 @@ export default function AllCleaningsFilters({
     router.push(`/cleaner/cleanings/all?${params.toString()}`);
   };
 
-  // Generar opciones de mes (últimos 12 meses + próximos 3)
+  // Generar opciones de mes (24 meses pasados + mes actual + 12 futuros)
   const today = new Date();
   const monthOptions: Array<{ value: string; label: string }> = [];
-  
-  for (let i = -12; i <= 3; i++) {
+
+  for (let i = -24; i <= 12; i++) {
     const date = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     const label = date.toLocaleDateString("es-MX", {
@@ -84,6 +108,8 @@ export default function AllCleaningsFilters({
       label: label.charAt(0).toUpperCase() + label.slice(1),
     });
   }
+
+  const selectedMonthLabel = monthOptions.find((o) => o.value === selectedMonth)?.label ?? selectedMonth;
 
   const statusOptions =
     selectedScope === "history"
@@ -130,22 +156,55 @@ export default function AllCleaningsFilters({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Filtro por mes */}
-        <div>
+        {/* Filtro por mes — picker personalizado con 5 meses visibles */}
+        <div ref={monthPickerRef} className="relative">
           <label className="block text-xs font-medium text-neutral-700 mb-1.5">
             Mes
           </label>
-          <select
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+          <button
+            type="button"
+            onClick={() => setMonthPickerOpen((v) => !v)}
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
           >
-            {monthOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <span>{selectedMonthLabel}</span>
+            <svg className="w-4 h-4 text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={monthPickerOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+            </svg>
+          </button>
+          {monthPickerOpen && (
+            <div
+              ref={monthListRef}
+              className="absolute z-50 w-full mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg overflow-y-auto"
+              style={{ maxHeight: "calc(5 * 2.5rem)" }}
+            >
+              {monthOptions.map((option) => {
+                const isSelected = option.value === selectedMonth;
+                const isCurrent = option.value === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    data-value={option.value}
+                    onClick={() => {
+                      setSelectedMonth(option.value);
+                      updateUrl(selectedScope, option.value, selectedProperty, selectedStatus);
+                      setMonthPickerOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-base transition ${
+                      isSelected
+                        ? "bg-neutral-900 text-white"
+                        : isCurrent
+                        ? "font-medium text-neutral-900 hover:bg-neutral-100"
+                        : "text-neutral-700 hover:bg-neutral-100"
+                    }`}
+                    style={{ height: "2.5rem" }}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Filtro por propiedad */}

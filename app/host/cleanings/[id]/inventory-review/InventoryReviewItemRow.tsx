@@ -2,6 +2,7 @@
 
 import { InventoryChangeReason, InventoryReportType, InventoryReportSeverity } from "@prisma/client";
 import { changeReasonLabel } from "@/lib/inventory-i18n";
+import { InventoryReviewItemChange, InventoryReport } from "@/types/inventory";
 
 interface InventoryLine {
   id: string;
@@ -15,25 +16,17 @@ interface InventoryLine {
     category: string;
   };
   allLines?: any[];
-}
-
-import { 
-  InventoryReviewItemChange, 
-  InventoryReport 
-} from "@/types/inventory";
-
-interface InventoryLine {
-  id: string;
-  area: string;
-  expectedQty: number;
-  variantKey: string | null;
-  variantValue: string | null;
-  item: {
-    id: string;
-    name: string;
-    category: string;
-  };
-  allLines?: any[];
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryReviewItemRowProps {
@@ -45,6 +38,7 @@ interface InventoryReviewItemRowProps {
   onReportClick: () => void;
   onItemClick?: () => void;
   disabled?: boolean;
+  tenantId?: string;
 }
 
 export default function InventoryReviewItemRow({
@@ -56,6 +50,7 @@ export default function InventoryReviewItemRow({
   onReportClick,
   onItemClick,
   disabled = false,
+  tenantId,
 }: InventoryReviewItemRowProps) {
   const hasQuantityChange = currentQuantity !== originalQuantity;
   const hasReport = !!report;
@@ -143,6 +138,20 @@ export default function InventoryReviewItemRow({
               </svg>
               {hasQuantityChange || hasReport ? "Editar incidencia" : "Reportar incidencia"}
             </button>
+            {line.historyStats && line.historyStats.totalCount > 0 && (
+              <div className="flex gap-1 ml-1">
+                {line.historyStats.activeCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">
+                    {line.historyStats.activeCount} activo
+                  </span>
+                )}
+                {line.historyStats.resolvedCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-[10px] border border-neutral-200">
+                    {line.historyStats.resolvedCount} previas
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Desktop: variante en línea aparte si existe */}
@@ -190,6 +199,20 @@ export default function InventoryReviewItemRow({
             </svg>
             {hasQuantityChange || hasReport ? "Editar incidencia" : "Reportar incidencia"}
           </button>
+          {line.historyStats && line.historyStats.totalCount > 0 && (
+            <div className="flex flex-col items-end gap-1 mt-1">
+              {line.historyStats.activeCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">
+                  {line.historyStats.activeCount} incidente activo
+                </span>
+              )}
+              {line.historyStats.resolvedCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-[10px] border border-neutral-200">
+                  {line.historyStats.resolvedCount} resoluciones previas
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

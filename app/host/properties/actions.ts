@@ -6,7 +6,7 @@ import { requireHostUser } from "@/lib/auth/requireUser";
 import { getOrCreateDefaultOwner } from "@/lib/users";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
+import { Prisma, PropertyZoneType, PropertyZoneVirtualKind } from "@prisma/client";
 import storageProvider from "@/lib/storage";
 import { generateThumbnail, getOutputMimeType } from "@/lib/media/thumbnail";
 import { randomUUID } from "crypto";
@@ -358,7 +358,8 @@ export async function createProperty(formData: FormData) {
   const owner = await getOrCreateDefaultOwner(tenantId);
 
   try {
-    // Usar relaciones anidadas que Prisma acepta en runtime
+    // Usar relaciones anidadas que Prisma acepta en runtime.
+    // Las 2 zonas virtuales canónicas se crean en la misma operación (atómicas).
     await prisma.property.create({
       data: {
         tenant: {
@@ -371,6 +372,28 @@ export async function createProperty(formData: FormData) {
         shortName, // Ahora es obligatorio
         address: address ?? undefined,
         icalUrl: icalUrl ?? undefined,
+        propertyZones: {
+          create: [
+            {
+              tenantId,
+              name: "Almacén",
+              normalizedName: "almacen",
+              zoneType: PropertyZoneType.VIRTUAL,
+              virtualKind: PropertyZoneVirtualKind.STORAGE,
+              sortOrder: 100,
+              isActive: true,
+            },
+            {
+              tenantId,
+              name: "Dañados / Baja",
+              normalizedName: "danados / baja",
+              zoneType: PropertyZoneType.VIRTUAL,
+              virtualKind: PropertyZoneVirtualKind.DAMAGED,
+              sortOrder: 110,
+              isActive: true,
+            },
+          ],
+        },
       },
     });
   } catch (error: any) {

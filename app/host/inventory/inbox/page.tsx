@@ -92,6 +92,7 @@ export default async function InventoryInboxPage({
           severity,
           dateRange: dateRange || "all",
         }}
+        tenantId={tenantId}
       />
     </Page>
   );

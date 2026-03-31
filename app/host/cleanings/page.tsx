@@ -106,8 +106,9 @@ export default async function CleaningsPage({
       orderBy: { name: "asc" },
     }),
     (prisma as any).cleaning.findMany({
-      where: { 
+      where: {
         tenantId,
+        status: { not: "CANCELLED" },
         scheduledDate: {
           gte: rangeStart,
           lt: rangeEndExclusive,
@@ -880,8 +881,11 @@ function DailyCleaningsView({
     })
     // Ordenar: las que requieren atención primero
     .sort((a, b) => {
-      const aNeedsAttention = (a as any).needsAttention ? 1 : 0;
-      const bNeedsAttention = (b as any).needsAttention ? 1 : 0;
+      // Alineado con getCleaningAttentionReasons(): asignada = no mostrar alerta
+      const aEffective = (a as any).needsAttention && !(a as any).assignedMembershipId && !(a as any).assignedMemberId;
+      const bEffective = (b as any).needsAttention && !(b as any).assignedMembershipId && !(b as any).assignedMemberId;
+      const aNeedsAttention = aEffective ? 1 : 0;
+      const bNeedsAttention = bEffective ? 1 : 0;
       if (aNeedsAttention !== bNeedsAttention) {
         return bNeedsAttention - aNeedsAttention; // Las que requieren atención primero
       }
@@ -979,7 +983,7 @@ function DailyCleaningsView({
                         style={{ backgroundColor: colorHex }}
                       />
                       {c.property.shortName || c.property.name}
-                      {(c as any).needsAttention && (
+                      {(c as any).needsAttention && !(c as any).assignedMembershipId && !(c as any).assignedMemberId && (
                         <span className="ml-2 text-amber-600" title="Requiere atención">
                           ⚠️
                         </span>

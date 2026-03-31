@@ -16,9 +16,11 @@ import InventoryProblemsCard from "./InventoryProblemsCard";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import { createChecklistSnapshotForCleaning } from "@/lib/checklist-snapshot";
 import { fetchActiveInventoryLines, fetchInventoryReview } from "@/lib/inventory-review-queries";
+import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import Page from "@/lib/ui/Page";
 import { getActiveMembershipsForUser } from "@/lib/cleaner/getActiveMembershipsForUser";
 import { getChecklistItemThumbsByProperty } from "@/lib/media/getChecklistItemThumbsByProperty";
+import { getInventoryLineImageThumbsBatch } from "@/lib/media/getInventoryLineImageThumbs";
 
 function safeReturnTo(input?: string, memberId?: string): string {
   const baseUrl = memberId ? `/cleaner?memberId=${encodeURIComponent(memberId)}` : "/cleaner";
@@ -301,6 +303,25 @@ export default async function CleanerCleaningDetailPage({
     fetchInventoryReview(cleaning.id, tenantId),
   ]);
 
+  // Obtener estadísticas de historial y thumbnails para las líneas mostradas
+  const lineIds = inventoryLines.map(l => l.id);
+  const [historyStatsMap, lineThumbsBatchMap] = await Promise.all([
+    fetchInventoryHistoryStats(lineIds, tenantId),
+    getInventoryLineImageThumbsBatch(inventoryLines.map(l => ({ id: l.id, itemId: l.item.id }))),
+  ]);
+
+  // Convertir Map a Record para props del cliente
+  const lineThumbs: Record<string, Array<string | null>> = {};
+  for (const [lineId, thumbs] of lineThumbsBatchMap) {
+    lineThumbs[lineId] = thumbs;
+  }
+
+  // Aumentar líneas con estadísticas de historial
+  const linesWithHistory = inventoryLines.map(line => ({
+    ...line,
+    historyStats: historyStatsMap.get(line.id) || null,
+  }));
+
   // Nota: No calculamos attentionReasons en cleaner - es exclusivo de Host
   
   return (
@@ -528,8 +549,12 @@ export default async function CleanerCleaningDetailPage({
         {cleaning.status === "PENDING" && inventoryLines.length > 0 && (
           <>
             <InventoryProblemsCard cleaningId={cleaning.id} returnTo={returnTo} />
-            <InventoryPreviewCard itemsCount={inventoryLines.length}>
-              <InventoryPreviewList lines={inventoryLines as any} itemThumbs={{}} />
+            <InventoryPreviewCard itemsCount={linesWithHistory.length}>
+              <InventoryPreviewList
+                lines={linesWithHistory as any}
+                lineThumbs={lineThumbs}
+                tenantId={tenantId}
+              />
             </InventoryPreviewCard>
           </>
         )}
@@ -594,7 +619,8 @@ export default async function CleanerCleaningDetailPage({
             cleaningId={cleaning.id}
             propertyId={cleaning.property.id}
             review={inventoryReview}
-            inventoryLines={inventoryLines}
+            inventoryLines={linesWithHistory as any}
+            tenantId={tenantId}
             checklistItems={
               cleaningChecklistItems?.map((item: any) => ({
                 id: item.id,

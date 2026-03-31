@@ -6,7 +6,7 @@ import {
   createInventoryLineAction,
   updateInventoryLineAction,
   getCatalogByCategory,
-  getExistingAreas,
+  getPropertyZones,
   getInventoryLineForEditAction,
   getInventoryLineSiblingsAction,
   getInventoryItemVariantGroupAction,
@@ -24,7 +24,6 @@ import {
 } from "@prisma/client";
 import {
   INVENTORY_SUGGESTIONS,
-  AREA_SUGGESTIONS,
   getCategoryLabel,
   getVariantLabel,
   BED_SIZE_VARIANT,
@@ -37,7 +36,9 @@ import { normalizeName, normalizeVariantValue } from "@/lib/inventory-normalize"
 import CreateCustomItemModal from "./CreateCustomItemModal";
 import EditCatalogItemModal from "./EditCatalogItemModal";
 import InventoryItemImageSlots from "./InventoryItemImageSlots";
+import InventoryLineImageSlots from "./InventoryLineImageSlots";
 import { getInventoryItemThumbsAction } from "@/app/host/inventory/actions";
+import { getInventoryLineImageThumbsAction } from "@/app/host/inventory/line-image-actions";
 import AddItemPhotosModal from "./AddItemPhotosModal";
 import DuplicateItemWarningModal from "./DuplicateItemWarningModal";
 import CreateVariantGroupModal from "./CreateVariantGroupModal";
@@ -82,8 +83,9 @@ export default function AddInventoryItemModal({
   const [step, setStep] = useState<WizardStep>("AREA");
   const [keepAddingInSameArea, setKeepAddingInSameArea] = useState(true);
 
-  // Estado del formulario
-  const [area, setArea] = useState("");
+  // Estado del formulario — Phase 7: zone replaces area
+  const [propertyZoneId, setPropertyZoneId] = useState("");
+  const [zoneName, setZoneName] = useState(""); // display name derivado de la zona
   const [category, setCategory] = useState<InventoryCategory | "">("");
   const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [customItemName, setCustomItemName] = useState("");
@@ -200,8 +202,8 @@ export default function AddInventoryItemModal({
   const selectedVariantNormalized =
     pendingVariantNormalized ?? activeVariantLine?.variantValueNormalized ?? null;
 
-  // Áreas existentes y sugerencias
-  const [existingAreas, setExistingAreas] = useState<string[]>([]);
+  // Phase 7: zonas OPERATIONAL de la propiedad
+  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null }[]>([]);
   const [loadingAreas, setLoadingAreas] = useState(false);
 
   // Catálogo existente por categoría (cacheado por categoría)
@@ -222,22 +224,22 @@ export default function AddInventoryItemModal({
   }>>);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
 
-  // Cargar áreas existentes cuando se abre el modal
+  // Phase 7: Cargar zonas OPERATIONAL cuando se abre el modal
   useEffect(() => {
-    if (isOpen && existingAreas.length === 0) {
+    if (isOpen && propertyZones.length === 0) {
       setLoadingAreas(true);
-      getExistingAreas(propertyId)
-        .then((areas) => {
-          setExistingAreas(areas);
+      getPropertyZones(propertyId)
+        .then((zones) => {
+          setPropertyZones(zones);
         })
         .catch((error) => {
-          console.error("Error loading areas:", error);
+          console.error("Error loading zones:", error);
         })
         .finally(() => {
           setLoadingAreas(false);
         });
     }
-  }, [isOpen, propertyId, existingAreas.length]);
+  }, [isOpen, propertyId, propertyZones.length]);
 
   // Cargar catálogo cuando cambia la categoría (on-demand)
   useEffect(() => {
@@ -263,10 +265,10 @@ export default function AddInventoryItemModal({
     }
   }, [category, catalogCache]);
 
-  // Cargar catálogo de todas las categorías permitidas para el área cuando hay área seleccionada
+  // Phase 7: Cargar catálogo de categorías permitidas para la zona cuando hay zona seleccionada
   useEffect(() => {
-    if (area && area.trim().length > 0) {
-      const allowedCategories = getAllowedCategoriesForArea(area);
+    if (zoneName && zoneName.trim().length > 0) {
+      const allowedCategories = getAllowedCategoriesForArea(zoneName);
       if (allowedCategories && allowedCategories.length > 0) {
         // Cargar catálogo de todas las categorías permitidas que aún no estén en cache
         const categoriesToLoad = allowedCategories.filter(
@@ -299,7 +301,7 @@ export default function AddInventoryItemModal({
         }
       }
     }
-  }, [area, catalogCache]);
+  }, [zoneName, catalogCache]);
 
   // Obtener items del catálogo: 
   // - Si showAllCatalogItems está OFF: mostrar solo categoría seleccionada (comportamiento original)
@@ -310,9 +312,9 @@ export default function AddInventoryItemModal({
       return isValidCategory(category) ? catalogCache[category] || [] : [];
     }
 
-    // Si el toggle está ON, mostrar items filtrados por área (si hay área)
-    if (area && area.trim().length > 0) {
-      const allowedCategories = getAllowedCategoriesForArea(area);
+    // Si el toggle está ON, mostrar items filtrados por zona (si hay zona)
+    if (zoneName && zoneName.trim().length > 0) {
+      const allowedCategories = getAllowedCategoriesForArea(zoneName);
       if (allowedCategories && allowedCategories.length > 0) {
         // Combinar items de todas las categorías permitidas para el área
         const allItems: Array<{
@@ -342,10 +344,7 @@ export default function AddInventoryItemModal({
     return isValidCategory(category) ? catalogCache[category] || [] : [];
   })();
 
-  // Combinar áreas existentes con sugerencias hardcodeadas
-  const allAreaSuggestions = [
-    ...new Set([...existingAreas, ...AREA_SUGGESTIONS]),
-  ].sort();
+  // Phase 7: zona display — propertyZones ya viene ordenado por sortOrder desde el servidor
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -362,7 +361,10 @@ export default function AddInventoryItemModal({
     const line = data.line;
     const { siblings: loadedSiblings, variantGroup: loadedGroup, variantGroups: loadedGroups } = data;
     setEditingItemName(line.item.name);
-    setArea(line.area);
+    // Phase 7: set zone from line
+    const lineTypedZone = line as { propertyZoneId?: string | null; propertyZone?: { name: string } | null };
+    setPropertyZoneId(lineTypedZone.propertyZoneId ?? "");
+    setZoneName(lineTypedZone.propertyZone?.name ?? line.area);
     setCategory(line.item.category);
     setSelectedItemId(line.item.id);
     setCustomItemName("");
@@ -377,7 +379,8 @@ export default function AddInventoryItemModal({
     setPriority(line.priority || ("MEDIUM" as InventoryPriority));
 
     setLoadingThumbs(true);
-    getInventoryItemThumbsAction(line.item.id)
+    // Fase 11: en modo edición cargar imágenes de la línea (con fallback al item)
+    getInventoryLineImageThumbsAction(line.id)
       .then((thumbs) => setItemThumbs(thumbs))
       .catch(() => setItemThumbs([null, null, null]))
       .finally(() => setLoadingThumbs(false));
@@ -474,7 +477,8 @@ export default function AddInventoryItemModal({
   };
 
   const resetForm = () => {
-    setArea("");
+    setPropertyZoneId("");
+    setZoneName("");
     setCategory("");
     setSelectedItemId("");
     setCustomItemName("");
@@ -528,7 +532,7 @@ export default function AddInventoryItemModal({
   const handleNext = () => {
     // Validaciones por paso
     if (step === "AREA") {
-      if (!area.trim()) {
+      if (!propertyZoneId) {
         setError("Selecciona un área");
         return;
       }
@@ -745,8 +749,8 @@ export default function AddInventoryItemModal({
     e.preventDefault();
     setError(null);
 
-    // Validación completa antes de enviar
-    if (!area.trim()) {
+    // Validación completa antes de enviar — Phase 7: zone required
+    if (!propertyZoneId) {
       setError("El área es obligatoria");
       return;
     }
@@ -843,7 +847,7 @@ export default function AddInventoryItemModal({
             // Guardar información del duplicado y el formData pendiente
             setDuplicateInfo({
               itemName: duplicateCheck.itemName || customItemName || selectedCatalogItem?.name || "este item",
-              area: area,
+              area: zoneName, // Phase 7: display zone name
               variantText: duplicateCheck.variantText,
               quantity: duplicateCheck.quantity,
             });
@@ -952,7 +956,7 @@ export default function AddInventoryItemModal({
                 console.log("[AddInventoryItemModal] Mostrando modal de advertencia de duplicado");
                 setDuplicateInfo({
                   itemName: duplicateCheck.itemName || customItemName || selectedCatalogItem?.name || "este item",
-                  area: areaMatch ? areaMatch[1] : area,
+                  area: areaMatch ? areaMatch[1] : zoneName,
                   variantText: duplicateCheck.variantText,
                   quantity: duplicateCheck.quantity,
                 });
@@ -1046,7 +1050,7 @@ export default function AddInventoryItemModal({
     : catalogItems;
 
   const canProceed = () => {
-    if (step === "AREA") return area.trim().length > 0;
+    if (step === "AREA") return !!propertyZoneId; // Phase 7: zone required
     if (step === "CATEGORY") return category !== "";
     if (step === "ITEM") return selectedItemId !== "" || customItemName.trim().length > 0;
     if (step === "DETAILS") {
@@ -1055,7 +1059,7 @@ export default function AddInventoryItemModal({
         return false;
       }
       return (
-        area.trim().length > 0 &&
+        !!propertyZoneId && // Phase 7: zone required
         category !== "" &&
         (selectedItemId !== "" || customItemName.trim().length > 0) &&
         expectedQty > 0 &&
@@ -1230,7 +1234,7 @@ export default function AddInventoryItemModal({
                   </div>
                 )}
 
-                {/* Paso 1: Área (solo en modo creación, no en edición) */}
+                {/* Paso 1: Área (solo en modo creación, no en edición) — Phase 7: zones */}
                 {!isEditMode && step === "AREA" ? (
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-3">
@@ -1240,55 +1244,31 @@ export default function AddInventoryItemModal({
                       <p className="text-xs text-neutral-500 mb-2">Cargando áreas...</p>
                     )}
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {allAreaSuggestions.map((suggestedArea) => (
+                      {propertyZones.map((zone) => (
                         <button
-                          key={suggestedArea}
+                          key={zone.id}
                           type="button"
                           onClick={() => {
-                            setArea(suggestedArea);
-                            // Avanzar automáticamente a la siguiente sección
+                            setPropertyZoneId(zone.id);
+                            setZoneName(zone.name);
                             setTimeout(() => {
                               goToStep("CATEGORY");
                             }, 100);
                           }}
                           className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                            area === suggestedArea
+                            propertyZoneId === zone.id
                               ? "bg-neutral-900 text-white border-neutral-900"
                               : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
                           }`}
                         >
-                          {suggestedArea}
+                          {zone.name}
                         </button>
                       ))}
                     </div>
-                    <div className="mt-2">
-                      <label className="block text-xs text-neutral-500 mb-1">
-                        O escribe otra área:
-                      </label>
-                      <input
-                        type="text"
-                        value={area}
-                        onChange={(e) => setArea(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && area.trim()) {
-                            e.preventDefault();
-                            goToStep("CATEGORY");
-                          }
-                        }}
-                        onBlur={() => {
-                          if (area.trim() && step === "AREA") {
-                            goToStep("CATEGORY");
-                          }
-                        }}
-                        placeholder="Ej: Terraza, Balcón, Estudio..."
-                        maxLength={80}
-                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                      />
-                    </div>
-                    {area && <input type="hidden" name="area" value={area} />}
+                    {propertyZoneId && <input type="hidden" name="propertyZoneId" value={propertyZoneId} />}
                   </div>
                 ) : (
-                  area && <input type="hidden" name="area" value={area} />
+                  propertyZoneId && <input type="hidden" name="propertyZoneId" value={propertyZoneId} />
                 )}
 
                 {/* Paso 2: Categoría (solo en modo creación) */}
@@ -1695,7 +1675,7 @@ export default function AddInventoryItemModal({
                       <div className="bg-neutral-50 rounded-lg p-3 space-y-2 border border-neutral-200">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-neutral-500">Área:</span>
-                          <span className="text-sm font-medium text-neutral-900">{area}</span>
+                          <span className="text-sm font-medium text-neutral-900">{zoneName}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-neutral-500">Categoría:</span>
@@ -1718,7 +1698,7 @@ export default function AddInventoryItemModal({
                       </div>
                     )}
 
-                    {/* Área (solo en modo edición, para poder editarla) */}
+                    {/* Área (solo en modo edición) — Phase 7: zones */}
                     {isEditMode && (
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-3">
@@ -1728,35 +1708,25 @@ export default function AddInventoryItemModal({
                           <p className="text-xs text-neutral-500 mb-2">Cargando áreas...</p>
                         )}
                         <div className="flex flex-wrap gap-2 mb-3">
-                          {allAreaSuggestions.map((suggestedArea) => (
+                          {propertyZones.map((zone) => (
                             <button
-                              key={suggestedArea}
+                              key={zone.id}
                               type="button"
-                              onClick={() => setArea(suggestedArea)}
+                              onClick={() => {
+                                setPropertyZoneId(zone.id);
+                                setZoneName(zone.name);
+                              }}
                               className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                                area === suggestedArea
+                                propertyZoneId === zone.id
                                   ? "bg-neutral-900 text-white border-neutral-900"
                                   : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
                               }`}
                             >
-                              {suggestedArea}
+                              {zone.name}
                             </button>
                           ))}
                         </div>
-                        <div className="mt-2">
-                          <label className="block text-xs text-neutral-500 mb-1">
-                            O escribe otra área:
-                          </label>
-                          <input
-                            type="text"
-                            value={area}
-                            onChange={(e) => setArea(e.target.value)}
-                            placeholder="Ej: Terraza, Balcón, Estudio..."
-                            maxLength={80}
-                            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                          />
-                        </div>
-                        {area && <input type="hidden" name="area" value={area} />}
+                        {propertyZoneId && <input type="hidden" name="propertyZoneId" value={propertyZoneId} />}
                       </div>
                     )}
 
@@ -2249,11 +2219,18 @@ export default function AddInventoryItemModal({
                       )}
                     </div>
 
-                    {/* Sección de Fotos (solo en modo edición, cuando hay itemId seleccionado) */}
+                    {/* Sección de Fotos (solo en modo edición) */}
+                    {/* Fase 11: si hay lineId → imágenes por línea (fallback al item incluido) */}
                     {isEditMode && selectedItemId && (
                       <div className="pt-3 border-t border-neutral-200">
                         {loadingThumbs ? (
                           <p className="text-xs text-neutral-500">Cargando fotos...</p>
+                        ) : lineId ? (
+                          <InventoryLineImageSlots
+                            lineId={lineId}
+                            initialThumbs={itemThumbs}
+                            onThumbsChange={setItemThumbs}
+                          />
                         ) : (
                           <InventoryItemImageSlots
                             itemId={selectedItemId}

@@ -39,28 +39,48 @@ export interface CleaningNeedsAttention {
  * 1. No tiene cleaner asignado (assignedMemberId IS NULL)
  * 2. Tiene cleaner asignado pero no está disponible en el horario programado
  */
+/**
+ * Regla de negocio: ventana de días hacia atrás para mostrar limpiezas vencidas al Host.
+ */
+export const HOST_OVERDUE_WINDOW_DAYS = 45;
+
+/**
+ * Obtiene las limpiezas que requieren atención por problemas de asignación de cleaner.
+ * 
+ * Una limpieza requiere atención si:
+ * 1. Está vencida (scheduledDate < hoy) y sigue OPEN o IN_PROGRESS sin asignar.
+ * 2. No tiene cleaner asignado (assignedMemberId IS NULL)
+ * 3. Tiene inconsistencias críticas de asignación
+ */
 export async function getCleaningsNeedingAttention(
   tenantId: string,
   onlyFuture: boolean = true
 ): Promise<CleaningNeedsAttention[]> {
   const now = new Date();
   
-  // Obtener todas las limpiezas activas (no canceladas ni completadas)
+  // Calcular el inicio de la ventana operativa (45 días atrás)
+  const overdueStart = new Date(now);
+  overdueStart.setDate(now.getDate() - HOST_OVERDUE_WINDOW_DAYS);
+  overdueStart.setHours(0, 0, 0, 0);
+
+  // Obtener todas las limpiezas activas (excluir canceladas y completadas)
   const cleanings = await (prisma as any).cleaning.findMany({
     where: {
       tenantId,
-      status: { not: "CANCELLED" },
-      ...(onlyFuture ? { scheduledDate: { gte: now } } : {}),
+      status: { notIn: ["CANCELLED", "COMPLETED"] },
+      scheduledDate: { 
+        gte: onlyFuture ? now : overdueStart 
+      },
     },
-      include: {
-        property: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-            coverAssetGroupId: true,
-          },
+    include: {
+      property: {
+        select: {
+          id: true,
+          name: true,
+          shortName: true,
+          coverAssetGroupId: true,
         },
+      },
       assignedMember: {
         include: {
           team: {
@@ -82,6 +102,7 @@ export async function getCleaningsNeedingAttention(
   const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
   const propertyTeamsCountMap = new Map<string, number>();
 
+  // ... (bloque de conteo de equipos se mantiene igual)
   if (propertyIds.length > 0 && useWorkGroupReads) {
     const uniquePropertyIds: string[] = Array.from(new Set(propertyIds)) as string[];
     const links = await prisma.hostWorkGroupProperty.findMany({
@@ -149,10 +170,6 @@ export async function getCleaningsNeedingAttention(
     }
   }
 
-  // Fallback WGE: para propiedades con PropertyTeam count=0, verificar cobertura operativa
-  // real vía hostWorkGroupProperty + workGroupExecutor ACTIVE.
-  // Evita el falso positivo NO_ASSIGNED_TEAM cuando WORKGROUP_READS_ENABLED no está activo
-  // pero la propiedad sí tiene cobertura real por WorkGroups.
   const wgeCoveredPropertyIds = new Set<string>();
   if (propertyIds.length > 0) {
     const uniquePropertyIds = Array.from(new Set(propertyIds)) as string[];
@@ -183,20 +200,26 @@ export async function getCleaningsNeedingAttention(
   for (const cleaning of cleanings) {
     let reason: CleaningNeedsAttentionReason | null = null;
     const propertyTeamsCount = propertyTeamsCountMap.get(cleaning.propertyId) ?? 0;
+    const isOverdue = new Date(cleaning.scheduledDate) < now;
+    const isUnassigned = !cleaning.assignedMemberId && !cleaning.assignedMembershipId;
 
-    // Caso 0: Sin equipo asignado (prioridad más alta).
-    // Solo aplica si tampoco existe cobertura operativa real vía WGE (fallback defensivo).
-    if (propertyTeamsCount === 0 && !wgeCoveredPropertyIds.has(cleaning.propertyId)) {
-      reason = "NO_ASSIGNED_TEAM";
-    } else if (!cleaning.assignedMemberId && !cleaning.assignedMembershipId) {
-      // Caso 1: Sin cleaner asignado
+    // Regla de inclusión:
+    // 1. PENDING: seguir lógica de atención existente (sin equipo o sin cleaner).
+    // 2. IN_PROGRESS: incluir SOLO si está totalmente sin asignar (OPEN pasadas que se marcaron IN_PROGRESS por error o manualmente).
+    // 3. OVERDUE: incluir si es OPEN (sin asignar) incluso si no tiene flag de atención explícito.
+
+    if (cleaning.status === "PENDING") {
+      if (propertyTeamsCount === 0 && !wgeCoveredPropertyIds.has(cleaning.propertyId)) {
+        reason = "NO_ASSIGNED_TEAM";
+      } else if (isUnassigned) {
+        reason = "NO_ASSIGNED_MEMBER";
+      }
+    } else if (cleaning.status === "IN_PROGRESS" && isUnassigned) {
+      // Caso crítico: En progreso pero nadie la tiene asignada
       reason = "NO_ASSIGNED_MEMBER";
     }
-    // Caso 2 eliminado: MEMBER_NOT_AVAILABLE ya no clasifica una limpieza como sin confirmar.
-    // Una limpieza con cleaner asignado (assignedMemberId o assignedMembershipId) está confirmada,
-    // independientemente del horario configurado en TeamMemberScheduleDay.
 
-    // Si tiene razón, agregar a la lista
+    // Si tiene razón para atención, agregar a la lista
     if (reason) {
       cleaningsNeedingAttention.push({
         id: cleaning.id,
@@ -213,7 +236,24 @@ export async function getCleaningsNeedingAttention(
     }
   }
 
-  return cleaningsNeedingAttention;
+  // Ordenación dual:
+  // 1. Overdue primero: más recientes primero (DESC)
+  // 2. Futuras después: más próximas primero (ASC)
+  return cleaningsNeedingAttention.sort((a, b) => {
+    const isAOverdue = a.scheduledDate < now;
+    const isBOverdue = b.scheduledDate < now;
+
+    if (isAOverdue && !isBOverdue) return -1;
+    if (!isAOverdue && isBOverdue) return 1;
+
+    if (isAOverdue && isBOverdue) {
+      // Overdue: DESC (más reciente arriba)
+      return b.scheduledDate.getTime() - a.scheduledDate.getTime();
+    }
+
+    // Futuras: ASC (más próximas arriba)
+    return a.scheduledDate.getTime() - b.scheduledDate.getTime();
+  });
 }
 
 /**
@@ -222,7 +262,7 @@ export async function getCleaningsNeedingAttention(
 export async function getCleaningsNeedingAttentionCount(
   tenantId: string
 ): Promise<number> {
-  const cleanings = await getCleaningsNeedingAttention(tenantId, true);
+  const cleanings = await getCleaningsNeedingAttention(tenantId, false);
   return cleanings.length;
 }
 

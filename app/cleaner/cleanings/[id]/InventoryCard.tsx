@@ -18,6 +18,17 @@ interface InventoryLine {
     category: string;
   };
   allLines?: any[];
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
 }
 
 interface InventoryReview {
@@ -34,6 +45,7 @@ interface InventoryCardProps {
   inventoryLines: InventoryLine[];
   returnTo?: string;
   memberId?: string;
+  tenantId: string;
 }
 
 export interface InventoryCardRef {
@@ -41,7 +53,7 @@ export interface InventoryCardRef {
 }
 
 const InventoryCard = forwardRef<InventoryCardRef, InventoryCardProps>(
-  ({ cleaningId, propertyId, review, inventoryLines, returnTo, memberId }, ref) => {
+  ({ cleaningId, propertyId, review, inventoryLines, returnTo, memberId, tenantId }, ref) => {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -126,6 +138,7 @@ const InventoryCard = forwardRef<InventoryCardRef, InventoryCardProps>(
               initialReview={fullReview}
               inventoryLines={inventoryLines}
               returnTo={returnTo}
+              tenantId={tenantId}
               mode="embedded"
               onSubmitted={() => {
                 // Refrescar para actualizar el estado

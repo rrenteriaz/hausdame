@@ -218,8 +218,7 @@ export default async function AllCleaningsPage({
   } else if (scope === "history") {
     queryScope = "history";
   } else {
-    // "all" puede incluir asignadas o todas según el contexto
-    // Por defecto, mostrar asignadas a mí
+    // "all" muestra solo las limpiezas asignadas al cleaner
     queryScope = "assigned";
   }
 
@@ -261,7 +260,7 @@ export default async function AllCleaningsPage({
           ? "Próximas limpiezas"
           : scope === "history"
           ? "Historial de limpiezas"
-          : "Todas las limpiezas"
+          : "Mis limpiezas"
       }
       subtitle={
         scope === "upcoming"
@@ -305,6 +304,10 @@ export default async function AllCleaningsPage({
               const detailsHref = `/cleaner/cleanings/${cleaning.id}?memberId=${encodeURIComponent(
                 memberIdParam || currentMemberId
               )}&returnTo=${encodeURIComponent(returnTo)}`;
+              const isAssigned = cleaning.assignedMembershipId != null || cleaning.assignedMemberId != null;
+              const isOverdue =
+                (cleaning.status === "PENDING" || cleaning.status === "IN_PROGRESS") &&
+                new Date(cleaning.scheduledDate) < now;
 
               return (
                 <ListRow
@@ -318,9 +321,16 @@ export default async function AllCleaningsPage({
                     alt={propertyName}
                   />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-medium text-neutral-900 truncate">
-                      {propertyName}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base font-medium text-neutral-900 truncate">
+                        {propertyName}
+                      </h3>
+                      {isOverdue && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 flex-shrink-0">
+                          Vencida
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
                       {cleaning.scheduledDate.toLocaleString("es-MX", {
                         day: "2-digit",
@@ -332,6 +342,9 @@ export default async function AllCleaningsPage({
                     </p>
                     <p className="text-xs text-neutral-500 mt-1">
                       Estado: {formatCleaningStatus(cleaning.status)}
+                      {!isAssigned && (
+                        <span className="ml-1 text-amber-600">(Sin asignar)</span>
+                      )}
                     </p>
                     {cleaning.notes && (
                       <p className="text-xs text-neutral-500 line-clamp-2 mt-1">

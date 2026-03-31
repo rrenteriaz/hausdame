@@ -41,6 +41,7 @@ interface CleaningDetailClientProps {
   returnTo: string;
   memberId?: string;
   cleaningStatus: string;
+  tenantId: string;
 }
 
 export default function CleaningDetailClient({
@@ -52,6 +53,7 @@ export default function CleaningDetailClient({
   returnTo,
   memberId,
   cleaningStatus,
+  tenantId,
 }: CleaningDetailClientProps) {
   const inventoryCardRef = useRef<InventoryCardRef>(null);
 
@@ -69,6 +71,7 @@ export default function CleaningDetailClient({
             inventoryLines={inventoryLines}
             returnTo={returnTo}
             memberId={memberId}
+            tenantId={tenantId}
           />
         </>
       )}

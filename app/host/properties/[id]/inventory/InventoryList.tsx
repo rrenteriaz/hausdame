@@ -15,7 +15,7 @@ import DeleteInventoryItemButton from "./DeleteInventoryItemButton";
 import ViewInventoryItemModal from "./ViewInventoryItemModal";
 import ViewInventoryReportModal from "./ViewInventoryReportModal";
 import AddInventoryItemModal from "./AddInventoryItemModal";
-import AddItemPhotosModal from "./AddItemPhotosModal";
+import AddLinePhotosModal from "./AddLinePhotosModal";
 
 export type ReportForLine = {
   id: string;
@@ -28,26 +28,42 @@ export type ReportForLine = {
   evidenceUrls?: string[];
 };
 
+interface InventoryLineWithHistory extends InventoryLineWithItem {
+  historyStats?: {
+    totalCount: number;
+    activeCount: number;
+    resolvedCount: number;
+    latestReport: {
+      type: string;
+      createdAt: Date;
+      status: string;
+      managerResolution: string | null;
+    } | null;
+  } | null;
+}
+
 interface InventoryListProps {
-  lines: InventoryLineWithItem[];
+  lines: InventoryLineWithHistory[];
   propertyId: string;
-  itemThumbsMap: Map<string, Array<string | null>>;
+  lineThumbsMap: Map<string, Array<string | null>>;
   reportsByLineId?: Map<string, ReportForLine>;
+  tenantId?: string;
 }
 
 export default function InventoryList({
   lines,
   propertyId,
-  itemThumbsMap,
+  lineThumbsMap,
   reportsByLineId = new Map(),
+  tenantId,
 }: InventoryListProps) {
-  const [selectedLine, setSelectedLine] = useState<InventoryLineWithItem | null>(null);
+  const [selectedLine, setSelectedLine] = useState<InventoryLineWithHistory | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editLineId, setEditLineId] = useState<string | null>(null);
   const [initialEditData, setInitialEditData] = useState<EditData | null>(null);
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
-  const [photosItemId, setPhotosItemId] = useState<string | null>(null);
+  const [photosLineId, setPhotosLineId] = useState<string | null>(null);
   const [photosItemName, setPhotosItemName] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ReportForLine | null>(null);
@@ -71,8 +87,8 @@ export default function InventoryList({
     <>
       <ListContainer>
         {lines.map((line, index) => {
-          const itemThumbs = itemThumbsMap.get(line.item.id) || [null, null, null];
-          const firstThumb = itemThumbs[0];
+          const lineThumbs = lineThumbsMap.get(line.id) || [null, null, null];
+          const firstThumb = lineThumbs[0];
 
           return (
             <div
@@ -114,13 +130,13 @@ export default function InventoryList({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setPhotosItemId(line.item.id);
+                      setPhotosLineId(line.id);
                       setPhotosItemName(line.item.name);
                       setIsPhotosModalOpen(true);
                     }}
                     className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors rounded"
-                    aria-label={itemThumbs.some(thumb => thumb !== null) ? "Gestionar fotos" : "Agregar fotos"}
-                    title={itemThumbs.some(thumb => thumb !== null) ? "Gestionar fotos" : "Agregar fotos"}
+                    aria-label={lineThumbs.some(thumb => thumb !== null) ? "Gestionar fotos" : "Agregar fotos"}
+                    title={lineThumbs.some(thumb => thumb !== null) ? "Gestionar fotos" : "Agregar fotos"}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -135,6 +151,10 @@ export default function InventoryList({
                   <p className="text-xs text-neutral-500">
                     {getCategoryLabel(line.item.category)}
                   </p>
+                  <span className="text-xs text-neutral-400">·</span>
+                  <span className="text-xs leading-none">
+                    {line.priority === "HIGH" ? "🟥" : line.priority === "MEDIUM" ? "🟨" : "🟩"}
+                  </span>
                   {reportsByLineId.has(line.id) && (
                     <>
                       <span className="text-xs text-neutral-400">·</span>
@@ -151,6 +171,20 @@ export default function InventoryList({
                         Incidencia reportada
                       </button>
                     </>
+                  )}
+                  {line.historyStats && line.historyStats.totalCount > 0 && (
+                    <div className="flex gap-1">
+                      {line.historyStats.activeCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold border border-red-200">
+                          {line.historyStats.activeCount} activo
+                        </span>
+                      )}
+                      {line.historyStats.resolvedCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-[10px] border border-neutral-200">
+                          {line.historyStats.resolvedCount} previas
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -179,6 +213,7 @@ export default function InventoryList({
             setIsModalOpen(false);
             setSelectedLine(null);
           }}
+          tenantId={tenantId}
           onEdit={async () => {
             if (!selectedLine) return;
             const cached = editInventoryCache.get(propertyId, selectedLine.id);
@@ -218,14 +253,14 @@ export default function InventoryList({
         />
       )}
 
-      {isPhotosModalOpen && photosItemId && (
-        <AddItemPhotosModal
+      {isPhotosModalOpen && photosLineId && (
+        <AddLinePhotosModal
           isOpen={isPhotosModalOpen}
-          itemId={photosItemId}
+          lineId={photosLineId}
           itemName={photosItemName || undefined}
           onClose={() => {
             setIsPhotosModalOpen(false);
-            setPhotosItemId(null);
+            setPhotosLineId(null);
             setPhotosItemName(null);
           }}
         />
