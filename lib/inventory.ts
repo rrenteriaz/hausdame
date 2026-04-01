@@ -1182,6 +1182,108 @@ export async function deleteInventoryArea(
 }
 
 /**
+ * Phase 13: Copia líneas de inventario de una zona origen a una zona destino.
+ * - Solo zonas OPERATIONAL activas de la misma propiedad.
+ * - Omite duplicados silenciosamente (mismo itemId + variantKey + variantValueNormalized en destino).
+ * - NO copia historial, incidencias, ni imágenes de línea.
+ * - Operación atómica en transacción.
+ */
+export async function copyInventoryBetweenZones(
+  tenantId: string,
+  propertyId: string,
+  sourceZoneId: string,
+  targetZoneId: string
+): Promise<{ copied: number; skipped: number }> {
+  if (sourceZoneId === targetZoneId) {
+    throw new Error("La zona origen y destino deben ser diferentes");
+  }
+
+  const [sourceZone, targetZone] = await Promise.all([
+    prisma.propertyZone.findFirst({
+      where: { id: sourceZoneId, tenantId, propertyId, zoneType: "OPERATIONAL", isActive: true },
+      select: { id: true, name: true, normalizedName: true },
+    }),
+    prisma.propertyZone.findFirst({
+      where: { id: targetZoneId, tenantId, propertyId, zoneType: "OPERATIONAL", isActive: true },
+      select: { id: true, name: true, normalizedName: true },
+    }),
+  ]);
+
+  if (!sourceZone) throw new Error("Zona origen no encontrada o no está activa");
+  if (!targetZone) throw new Error("Zona destino no encontrada o no está activa");
+
+  return prisma.$transaction(async (tx) => {
+    const [sourceLines, targetLines] = await Promise.all([
+      tx.inventoryLine.findMany({
+        where: { tenantId, propertyId, propertyZoneId: sourceZoneId, isActive: true },
+        select: {
+          itemId: true,
+          expectedQty: true,
+          condition: true,
+          priority: true,
+          brand: true,
+          model: true,
+          serialNumber: true,
+          color: true,
+          size: true,
+          notes: true,
+          variantKey: true,
+          variantValue: true,
+          variantValueNormalized: true,
+        },
+        orderBy: [{ item: { name: "asc" } }],
+      }),
+      tx.inventoryLine.findMany({
+        where: { tenantId, propertyId, propertyZoneId: targetZoneId, isActive: true },
+        select: { itemId: true, variantKey: true, variantValueNormalized: true },
+      }),
+    ]);
+
+    const existingSet = new Set(
+      targetLines.map((l) => `${l.itemId}|${l.variantKey ?? ""}|${l.variantValueNormalized ?? ""}`)
+    );
+
+    const toCreate = sourceLines.filter(
+      (l) => !existingSet.has(`${l.itemId}|${l.variantKey ?? ""}|${l.variantValueNormalized ?? ""}`)
+    );
+
+    const createResult =
+      toCreate.length > 0
+        ? await tx.inventoryLine.createMany({
+            data: toCreate.map((l) => ({
+              tenantId,
+              propertyId,
+              area: targetZone.name,
+              areaNormalized: targetZone.normalizedName,
+              itemId: l.itemId,
+              expectedQty: l.expectedQty,
+              condition: l.condition,
+              priority: l.priority,
+              brand: l.brand,
+              model: l.model,
+              serialNumber: l.serialNumber,
+              color: l.color,
+              size: l.size,
+              notes: l.notes,
+              variantKey: l.variantKey,
+              variantValue: l.variantValue,
+              variantValueNormalized: l.variantValueNormalized,
+              propertyZoneId: targetZoneId,
+              isActive: true,
+              version: 1,
+            })),
+            skipDuplicates: true,
+          })
+        : { count: 0 };
+
+    return {
+      copied: createResult.count,
+      skipped: sourceLines.length - createResult.count,
+    };
+  });
+}
+
+/**
  * Phase 12: Desactiva una zona vacía (sin InventoryLines activas).
  * Lanza error si la zona tiene líneas activas.
  */

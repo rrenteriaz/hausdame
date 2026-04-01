@@ -1213,7 +1213,7 @@ export async function getPropertyZones(propertyId: string) {
 // ─────────────────────────────────────────────────────────────
 
 import { normalizeName as _normalizeName } from "@/lib/inventory-normalize";
-import { deactivatePropertyZone } from "@/lib/inventory";
+import { deactivatePropertyZone, copyInventoryBetweenZones } from "@/lib/inventory";
 import type { PropertyZoneOperationalCategory } from "@prisma/client";
 
 /**
@@ -1488,6 +1488,29 @@ export async function getInventoryItemThumbsAction(itemId: string): Promise<Arra
   }
 
   return await getInventoryItemImageThumbs(itemId);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Phase 13: Copiar inventario entre zonas (PropertyZone → PropertyZone)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Phase 13: Copia líneas de inventario de sourceZone a targetZone dentro de la misma propiedad.
+ * Omite duplicados silenciosamente. No copia historial, incidencias ni imágenes de línea.
+ * Returns: { copied, skipped }
+ */
+export async function copyInventoryBetweenZonesAction(
+  propertyId: string,
+  sourceZoneId: string,
+  targetZoneId: string
+): Promise<{ copied: number; skipped: number }> {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  const result = await copyInventoryBetweenZones(tenantId, propertyId, sourceZoneId, targetZoneId);
+  revalidatePath(`/host/properties/${propertyId}/inventory`);
+  return result;
 }
 
 

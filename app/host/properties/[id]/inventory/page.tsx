@@ -18,6 +18,7 @@ import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import ZonesManagementSection from "./ZonesManagementSection";
+import CopyZoneInventoryModal from "./CopyZoneInventoryModal";
 
 export default async function InventoryPage({
   params,
@@ -130,10 +131,21 @@ export default async function InventoryPage({
     {} as Record<string, typeof enrichedLines>
   );
 
-  // Nombre visible para una zona (zone.name > area legacy)
+  // Phase 13: incluir zonas vacías cuando no hay filtros activos
+  const hasActiveFilter = !!(searchTerm || areaFilter || categoryFilter || priorityFilter);
+  if (!hasActiveFilter) {
+    propertyZones.forEach((pz) => {
+      if (!groupedByZone[pz.id]) groupedByZone[pz.id] = [];
+    });
+  }
+
+  // Mapa rápido de id → zona (para nombre/sort en zonas vacías)
+  const propertyZoneMap = new Map(propertyZones.map((z) => [z.id, z]));
+
+  // Nombre visible para una zona (zone.name > propertyZoneMap > area legacy)
   const zoneDisplayName = (zoneId: string): string => {
     const first = groupedByZone[zoneId]?.[0];
-    return first?.propertyZone?.name ?? first?.area ?? zoneId;
+    return first?.propertyZone?.name ?? propertyZoneMap.get(zoneId)?.name ?? first?.area ?? zoneId;
   };
 
   // Mapa de sortOrder por zoneId (para zonas con PropertyZone)
@@ -308,29 +320,60 @@ export default async function InventoryPage({
 
               {/* Lista */}
               <div className="space-y-4">
-                {zoneIds.map((zoneId, idx) => (
-                  <CollapsibleSection
-                    key={zoneId}
-                    title={zoneDisplayName(zoneId)}
-                    count={groupedByZone[zoneId].length}
-                    defaultOpen={idx === 0}
-                    headerActions={
-                      <DeleteAreaButton
-                        propertyId={property.id}
-                        propertyZoneId={zoneId}
-                        areaName={zoneDisplayName(zoneId)}
-                        itemCount={groupedByZone[zoneId].length}
-                      />
-                    }
-                  >
-                    <InventoryList
-                      lines={groupedByZone[zoneId]}
-                      propertyId={property.id}
-                      lineThumbsMap={lineThumbsMap}
-                      tenantId={tenantId}
-                    />
-                  </CollapsibleSection>
-                ))}
+                {zoneIds.map((zoneId, idx) => {
+                  const zoneLines = groupedByZone[zoneId];
+                  const isEmpty = zoneLines.length === 0;
+                  // Zonas disponibles como origen (solo las que tienen items)
+                  const zonesForModal = propertyZones.map((z) => ({
+                    id: z.id,
+                    name: z.name,
+                    operationalCategory: z.operationalCategory,
+                  }));
+                  return (
+                    <CollapsibleSection
+                      key={zoneId}
+                      title={zoneDisplayName(zoneId)}
+                      count={zoneLines.length}
+                      defaultOpen={idx === 0}
+                      headerActions={
+                        <div className="flex items-center gap-0.5">
+                          {!isEmpty && (
+                            <CopyZoneInventoryModal
+                              propertyId={property.id}
+                              targetZoneId={zoneId}
+                              targetZoneName={zoneDisplayName(zoneId)}
+                              zones={zonesForModal}
+                              variant="header-button"
+                            />
+                          )}
+                          <DeleteAreaButton
+                            propertyId={property.id}
+                            propertyZoneId={zoneId}
+                            areaName={zoneDisplayName(zoneId)}
+                            itemCount={zoneLines.length}
+                          />
+                        </div>
+                      }
+                    >
+                      {isEmpty ? (
+                        <CopyZoneInventoryModal
+                          propertyId={property.id}
+                          targetZoneId={zoneId}
+                          targetZoneName={zoneDisplayName(zoneId)}
+                          zones={zonesForModal}
+                          variant="cta"
+                        />
+                      ) : (
+                        <InventoryList
+                          lines={zoneLines}
+                          propertyId={property.id}
+                          lineThumbsMap={lineThumbsMap}
+                          tenantId={tenantId}
+                        />
+                      )}
+                    </CollapsibleSection>
+                  );
+                })}
               </div>
 
             </>
