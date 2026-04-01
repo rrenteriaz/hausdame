@@ -253,15 +253,11 @@ export default async function InventoryPage({
                       availableProperties={availableProperties}
                     />
                   )}
-                  <ZonesManagementSection
-                    propertyId={property.id}
-                    initialZones={propertyZones}
-                  />
                 </div>
               </div>
 
-              {/* Filtros de prioridad (Alta, Media, Baja) */}
-              <div className="flex flex-wrap gap-2">
+              {/* Filtros de prioridad + Gestión de áreas */}
+              <div className="flex flex-wrap items-center gap-2">
                 {(["ALL", "HIGH", "MEDIUM", "LOW"] as const).map((p) => {
                   const isActive = p === "ALL" ? !priorityFilter : priorityFilter === p;
                   const params = new URLSearchParams();
@@ -292,6 +288,10 @@ export default async function InventoryPage({
                     </a>
                   );
                 })}
+                <ZonesManagementSection
+                  propertyId={property.id}
+                  initialZones={propertyZones}
+                />
               </div>
 
               {/* Info de resultados */}
