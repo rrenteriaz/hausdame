@@ -257,7 +257,8 @@ export default async function InventoryPage({
               </div>
 
               {/* Filtros de prioridad + Gestión de áreas */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                 {(["ALL", "HIGH", "MEDIUM", "LOW"] as const).map((p) => {
                   const isActive = p === "ALL" ? !priorityFilter : priorityFilter === p;
                   const params = new URLSearchParams();
@@ -288,6 +289,7 @@ export default async function InventoryPage({
                     </a>
                   );
                 })}
+                </div>
                 <ZonesManagementSection
                   propertyId={property.id}
                   initialZones={propertyZones}
