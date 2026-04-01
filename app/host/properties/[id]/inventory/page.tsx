@@ -29,7 +29,6 @@ export default async function InventoryPage({
     area?: string;
     category?: string;
     priority?: string;
-    page?: string;
     returnTo?: string;
   }>;
 }) {
@@ -69,7 +68,7 @@ export default async function InventoryPage({
     orderBy: { shortName: "asc" },
   });
 
-  // Obtener parámetros de filtrado y paginación
+  // Obtener parámetros de filtrado
   const searchTerm = resolvedSearchParams?.q || "";
   const areaFilter = resolvedSearchParams?.area || undefined;
   const categoryFilter = resolvedSearchParams?.category
@@ -80,11 +79,9 @@ export default async function InventoryPage({
   )
     ? (resolvedSearchParams?.priority as InventoryPriority)
     : undefined;
-  const page = parseInt(resolvedSearchParams?.page || "1", 10);
-  const pageSize = 50;
 
-  // Obtener inventario con filtros y paginación server-side
-  const { lines: inventoryLines, total, hasMore } = await listInventoryByProperty(
+  // Obtener todo el inventario sin paginación
+  const { lines: inventoryLines, total } = await listInventoryByProperty(
     tenantId,
     property.id,
     {
@@ -92,8 +89,7 @@ export default async function InventoryPage({
       area: areaFilter,
       category: categoryFilter,
       priority: priorityFilter,
-      page,
-      pageSize,
+      pageSize: 9999,
     }
   );
 
@@ -265,7 +261,6 @@ export default async function InventoryPage({
                   if (searchTerm) params.set("q", searchTerm);
                   if (areaFilter) params.set("area", areaFilter);
                   if (categoryFilter) params.set("category", categoryFilter);
-                  if (page > 1) params.set("page", String(page));
                   if (p !== "ALL") params.set("priority", p);
                   const href = `/host/properties/${property.id}/inventory${params.toString() ? `?${params.toString()}` : ""}`;
                   const label =
@@ -293,9 +288,9 @@ export default async function InventoryPage({
               </div>
 
               {/* Info de resultados */}
-              {total > 0 && (
+              {total > 0 && (searchTerm || priorityFilter) && (
                 <p className="text-xs text-neutral-500">
-                  Mostrando {inventoryLines.length} de {total} items
+                  {total} item{total !== 1 ? "s" : ""}
                   {searchTerm && ` para "${searchTerm}"`}
                   {priorityFilter &&
                     ` · Prioridad ${priorityFilter === "HIGH" ? "alta" : priorityFilter === "MEDIUM" ? "media" : "baja"}`}
@@ -304,12 +299,12 @@ export default async function InventoryPage({
 
               {/* Lista */}
               <div className="space-y-4">
-                {zoneIds.map((zoneId) => (
+                {zoneIds.map((zoneId, idx) => (
                   <CollapsibleSection
                     key={zoneId}
                     title={zoneDisplayName(zoneId)}
                     count={groupedByZone[zoneId].length}
-                    defaultOpen={true}
+                    defaultOpen={idx === 0}
                     headerActions={
                       <DeleteAreaButton
                         propertyId={property.id}
@@ -334,68 +329,6 @@ export default async function InventoryPage({
                 propertyId={property.id}
                 initialZones={propertyZones}
               />
-
-              {/* Paginación */}
-              {(hasMore || page > 1) && (
-                <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
-                  {page > 1 && (
-                    <form
-                      method="get"
-                      action={`/host/properties/${property.id}/inventory`}
-                    >
-                      <input type="hidden" name="q" value={searchTerm} />
-                      {areaFilter && (
-                        <input type="hidden" name="area" value={areaFilter} />
-                      )}
-                      {categoryFilter && (
-                        <input
-                          type="hidden"
-                          name="category"
-                          value={categoryFilter}
-                        />
-                      )}
-                      {priorityFilter && (
-                        <input type="hidden" name="priority" value={priorityFilter} />
-                      )}
-                      <input type="hidden" name="page" value={page - 1} />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition cursor-pointer"
-                      >
-                        ← Anterior
-                      </button>
-                    </form>
-                  )}
-                  {hasMore && (
-                    <form
-                      method="get"
-                      action={`/host/properties/${property.id}/inventory`}
-                    >
-                      <input type="hidden" name="q" value={searchTerm} />
-                      {areaFilter && (
-                        <input type="hidden" name="area" value={areaFilter} />
-                      )}
-                      {categoryFilter && (
-                        <input
-                          type="hidden"
-                          name="category"
-                          value={categoryFilter}
-                        />
-                      )}
-                      {priorityFilter && (
-                        <input type="hidden" name="priority" value={priorityFilter} />
-                      )}
-                      <input type="hidden" name="page" value={page + 1} />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition cursor-pointer"
-                      >
-                        Siguiente →
-                      </button>
-                    </form>
-                  )}
-                </div>
-              )}
             </>
           )}
         </div>
