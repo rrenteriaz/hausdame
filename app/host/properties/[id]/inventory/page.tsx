@@ -172,31 +172,28 @@ export default async function InventoryPage({
         <div className="space-y-6">
           {/* Lista agrupada por área */}
           {inventoryLines.length === 0 ? (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
-                <p className="text-base text-neutral-700 font-medium mb-4">
-                  Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad.
-                </p>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
-                  <AddInventoryItemButton propertyId={property.id} />
-                  <ApplyTemplateModal
+            <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
+              <p className="text-base text-neutral-700 font-medium mb-4">
+                Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad.
+              </p>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
+                <AddInventoryItemButton propertyId={property.id} />
+                <ApplyTemplateModal
+                  propertyId={property.id}
+                  hasExistingInventory={false}
+                />
+                {availableProperties.length > 0 && (
+                  <CopyInventoryModal
                     propertyId={property.id}
-                    hasExistingInventory={false}
+                    propertyName={property.shortName || property.name}
+                    availableProperties={availableProperties}
                   />
-                  {availableProperties.length > 0 && (
-                    <CopyInventoryModal
-                      propertyId={property.id}
-                      propertyName={property.shortName || property.name}
-                      availableProperties={availableProperties}
-                    />
-                  )}
-                </div>
+                )}
+                <ZonesManagementSection
+                  propertyId={property.id}
+                  initialZones={propertyZones}
+                />
               </div>
-              {/* Phase 12: Gestión de zonas también disponible en propiedad vacía */}
-              <ZonesManagementSection
-                propertyId={property.id}
-                initialZones={propertyZones}
-              />
             </div>
           ) : (
             <>
@@ -256,6 +253,10 @@ export default async function InventoryPage({
                       availableProperties={availableProperties}
                     />
                   )}
+                  <ZonesManagementSection
+                    propertyId={property.id}
+                    initialZones={propertyZones}
+                  />
                 </div>
               </div>
 
@@ -330,11 +331,6 @@ export default async function InventoryPage({
                 ))}
               </div>
 
-              {/* Phase 12: Gestión de zonas */}
-              <ZonesManagementSection
-                propertyId={property.id}
-                initialZones={propertyZones}
-              />
             </>
           )}
         </div>

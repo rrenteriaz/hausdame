@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Phase 12: Gestión manual de zonas (PropertyZone) para Host.
- * Reordenamiento por drag-and-drop (@dnd-kit).
+ * Phase 12: Gestión de zonas — botón que abre un modal lateral.
+ * Drag-and-drop con @dnd-kit para reordenar.
  */
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -42,7 +42,7 @@ interface Zone {
   _count: { inventoryLines: number };
 }
 
-// ── Fila sortable individual ──────────────────────────────────
+// ── Fila sortable ─────────────────────────────────────────────
 function SortableZoneRow({
   zone,
   renamingId,
@@ -172,8 +172,12 @@ export default function ZonesManagementSection({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [animateIn, setAnimateIn] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [zones, setZones] = useState<Zone[]>(initialZones);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   // Crear
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -192,33 +196,56 @@ export default function ZonesManagementSection({
 
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // DnD sensors — activación con 8px de desplazamiento para no interferir con clicks
+  // ── Animación del modal ───────────────────────────────────
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimateIn(true)));
+    } else {
+      setAnimateIn(false);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setMounted(false), 300);
+    }
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [isOpen]);
+
+  // Escape para cerrar
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && isOpen) setIsOpen(false); };
+    if (isOpen) document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
+  // Bloquear scroll del body
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isOpen]);
+
+  // ── DnD ──────────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  // ── Drag end ──────────────────────────────────────────────
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = zones.findIndex((z) => z.id === active.id);
     const newIndex = zones.findIndex((z) => z.id === over.id);
     const reordered = arrayMove(zones, oldIndex, newIndex);
     setZones(reordered);
-
     startTransition(async () => {
       try {
         await reorderPropertyZonesAction(propertyId, reordered.map((z) => z.id));
         router.refresh();
       } catch {
         setActionError("Error al guardar el orden. Recarga la página.");
-        setZones(zones); // revert
+        setZones(zones);
       }
     });
   };
 
-  // ── Crear ─────────────────────────────────────────────────
+  // ── Crear ────────────────────────────────────────────────
   const handleCreate = () => {
     const trimmed = newZoneName.trim();
     if (!trimmed) { setCreateError("El nombre es obligatorio"); return; }
@@ -237,7 +264,7 @@ export default function ZonesManagementSection({
     });
   };
 
-  // ── Renombrar ─────────────────────────────────────────────
+  // ── Renombrar ────────────────────────────────────────────
   const handleRename = (zoneId: string) => {
     setRenameError(null);
     startTransition(async () => {
@@ -252,7 +279,7 @@ export default function ZonesManagementSection({
     });
   };
 
-  // ── Desactivar ────────────────────────────────────────────
+  // ── Desactivar ───────────────────────────────────────────
   const handleDeactivate = (zoneId: string) => {
     setDeactivateError(null);
     startTransition(async () => {
@@ -268,105 +295,138 @@ export default function ZonesManagementSection({
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-      {/* Header colapsable */}
+    <>
+      {/* Botón trigger */}
       <button
         type="button"
-        onClick={() => setIsExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-neutral-50 transition"
+        onClick={() => setIsOpen(true)}
+        className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"
       >
-        <div>
-          <span className="text-base font-semibold text-neutral-900">Gestión de áreas</span>
-          <span className="ml-2 text-sm text-neutral-500">({zones.length} zonas)</span>
-        </div>
-        <svg
-          className={`w-5 h-5 text-neutral-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        Gestión de áreas
       </button>
 
-      {isExpanded && (
-        <div className="border-t border-neutral-200 px-5 py-4 space-y-4">
-          {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+      {/* Panel lateral (drawer) */}
+      {mounted && (
+        <div
+          className="fixed inset-0 z-[60] flex items-stretch justify-end"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsOpen(false); }}
+        >
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 transition-opacity"
+            style={{ opacity: animateIn ? 1 : 0, transitionDuration: "300ms" }}
+          />
 
-          {/* Lista sortable */}
-          {zones.length === 0 ? (
-            <p className="text-sm text-neutral-500">No hay áreas configuradas para esta propiedad.</p>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={zones.map((z) => z.id)} strategy={verticalListSortingStrategy}>
-                <ul className="space-y-2">
-                  {zones.map((zone) => (
-                    <SortableZoneRow
-                      key={zone.id}
-                      zone={zone}
-                      renamingId={renamingId}
-                      renameValue={renameValue}
-                      renameError={renameError}
-                      isPending={isPending}
-                      onStartRename={(z) => { setRenamingId(z.id); setRenameValue(z.name); setRenameError(null); }}
-                      onRenameChange={setRenameValue}
-                      onRenameKeyDown={(e, id) => {
-                        if (e.key === "Enter") handleRename(id);
-                        if (e.key === "Escape") setRenamingId(null);
-                      }}
-                      onRenameSave={handleRename}
-                      onRenameCancel={() => { setRenamingId(null); setRenameError(null); }}
-                      onDeactivate={(id) => { setDeactivateConfirmId(id); setDeactivateError(null); }}
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            </DndContext>
-          )}
-
-          {/* Crear nueva zona */}
-          {!showCreateForm ? (
-            <button
-              type="button"
-              onClick={() => { setShowCreateForm(true); setCreateError(null); }}
-              className="w-full rounded-lg border-2 border-dashed border-neutral-300 py-2.5 text-sm font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition"
-            >
-              + Nueva área
-            </button>
-          ) : (
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
-              <p className="text-sm font-semibold text-neutral-800">Nueva área</p>
-              <input
-                type="text"
-                value={newZoneName}
-                onChange={(e) => setNewZoneName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") setShowCreateForm(false); }}
-                placeholder="Ej. Baño principal"
-                autoFocus
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
-              />
-              <select
-                value={newZoneCategory}
-                onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
-              >
-                <option value="">Categoría (opcional)</option>
-                {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              {createError && <p className="text-xs text-red-600">{createError}</p>}
-              <div className="flex gap-2">
-                <button type="button" onClick={handleCreate} disabled={isPending}
-                  className="flex-1 py-2 text-sm font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition">
-                  {isPending ? "Guardando..." : "Crear área"}
-                </button>
-                <button type="button"
-                  onClick={() => { setShowCreateForm(false); setNewZoneName(""); setNewZoneCategory(""); setCreateError(null); }}
-                  className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
-                  Cancelar
-                </button>
+          {/* Panel */}
+          <div
+            className="relative w-[420px] max-w-full h-full bg-white shadow-2xl flex flex-col rounded-tl-2xl rounded-bl-2xl transform transition-transform ease-out"
+            style={{
+              transform: animateIn ? "translateX(0)" : "translateX(100%)",
+              transitionDuration: "300ms",
+              willChange: "transform",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 shrink-0">
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-900">Gestión de áreas</h2>
+                <p className="text-sm text-neutral-500">{zones.length} zona{zones.length !== 1 ? "s" : ""}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-2 -mr-2 text-neutral-500 hover:text-neutral-900 transition rounded-full hover:bg-neutral-100"
+                aria-label="Cerrar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          )}
+
+            {/* Contenido scrollable */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+
+              {/* Lista sortable */}
+              {zones.length === 0 ? (
+                <p className="text-sm text-neutral-500">No hay áreas configuradas para esta propiedad.</p>
+              ) : (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={zones.map((z) => z.id)} strategy={verticalListSortingStrategy}>
+                    <ul className="space-y-2">
+                      {zones.map((zone) => (
+                        <SortableZoneRow
+                          key={zone.id}
+                          zone={zone}
+                          renamingId={renamingId}
+                          renameValue={renameValue}
+                          renameError={renameError}
+                          isPending={isPending}
+                          onStartRename={(z) => { setRenamingId(z.id); setRenameValue(z.name); setRenameError(null); }}
+                          onRenameChange={setRenameValue}
+                          onRenameKeyDown={(e, id) => {
+                            if (e.key === "Enter") handleRename(id);
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                          onRenameSave={handleRename}
+                          onRenameCancel={() => { setRenamingId(null); setRenameError(null); }}
+                          onDeactivate={(id) => { setDeactivateConfirmId(id); setDeactivateError(null); }}
+                        />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              )}
+
+              {/* Crear nueva zona */}
+              {!showCreateForm ? (
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateForm(true); setCreateError(null); }}
+                  className="w-full rounded-lg border-2 border-dashed border-neutral-300 py-2.5 text-sm font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition"
+                >
+                  + Nueva área
+                </button>
+              ) : (
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+                  <p className="text-sm font-semibold text-neutral-800">Nueva área</p>
+                  <input
+                    type="text"
+                    value={newZoneName}
+                    onChange={(e) => setNewZoneName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") setShowCreateForm(false); }}
+                    placeholder="Ej. Baño principal"
+                    autoFocus
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                  />
+                  <select
+                    value={newZoneCategory}
+                    onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="">Categoría (opcional)</option>
+                    {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  {createError && <p className="text-xs text-red-600">{createError}</p>}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleCreate} disabled={isPending}
+                      className="flex-1 py-2 text-sm font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition">
+                      {isPending ? "Guardando..." : "Crear área"}
+                    </button>
+                    <button type="button"
+                      onClick={() => { setShowCreateForm(false); setNewZoneName(""); setNewZoneCategory(""); setCreateError(null); }}
+                      className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -375,7 +435,7 @@ export default function ZonesManagementSection({
         const zone = zones.find((z) => z.id === deactivateConfirmId);
         if (!zone) return null;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50"
             onClick={() => !isPending && setDeactivateConfirmId(null)}>
             <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4"
               onClick={(e) => e.stopPropagation()}>
@@ -410,6 +470,6 @@ export default function ZonesManagementSection({
           </div>
         );
       })()}
-    </div>
+    </>
   );
 }
