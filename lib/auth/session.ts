@@ -1,8 +1,7 @@
 // lib/auth/session.ts
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-
-const SESSION_COOKIE_NAME = "hausdame_session";
+import { SESSION_COOKIE_NAME } from "./session-cookie-name";
 
 /**
  * Crea una sesión para el usuario y establece la cookie httpOnly
@@ -111,8 +110,7 @@ export async function getCurrentUser() {
   return user;
 }
 
-/**
- * Nombre de la cookie de sesión (para uso en middleware)
- */
-export const SESSION_COOKIE_NAME_EXPORT = SESSION_COOKIE_NAME;
+// Re-export para compatibilidad con routes que ya usan SESSION_COOKIE_NAME_EXPORT.
+// El middleware debe importar desde session-cookie-name.ts directamente (edge-safe).
+export { SESSION_COOKIE_NAME as SESSION_COOKIE_NAME_EXPORT } from "./session-cookie-name";
 

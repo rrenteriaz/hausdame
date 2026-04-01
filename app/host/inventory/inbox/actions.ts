@@ -405,6 +405,11 @@ export async function getInventoryInboxItems(filters: InboxFilters = {}): Promis
       if (!areaByKey.has(key)) areaByKey.set(key, line.propertyZone?.name ?? line.area);
     }
     for (const item of items) {
+      if (!item.area && item.propertyId) {
+        const key = `${item.itemId}-${item.propertyId}`;
+        const fallbackArea = areaByKey.get(key);
+        if (fallbackArea) item.area = fallbackArea;
+      }
     }
   }
 

@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE_NAME_EXPORT } from "@/lib/auth/session";
+import { SESSION_COOKIE_NAME as SESSION_COOKIE_NAME_EXPORT } from "@/lib/auth/session-cookie-name";
 
 const CLEANER_MEMBER_COOKIE = "hd_cleaner_member_id";
 

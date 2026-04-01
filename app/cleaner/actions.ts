@@ -132,6 +132,7 @@ export async function acceptCleaning(formData: FormData) {
         propertyId: true,
         tenantId: true,
         scheduledDate: true,
+        status: true,
         assignmentStatus: true,
         assignedMemberId: true,
         assignedMembershipId: true,
@@ -180,7 +181,7 @@ export async function acceptCleaning(formData: FormData) {
       cleaning.assignmentStatus === "OPEN" &&
       cleaning.assignedMembershipId === null &&
       cleaning.assignedMemberId === null &&
-      (cleaning as any).status === "PENDING"; // Solo PENDING (no IN_PROGRESS)
+      cleaning.status === "PENDING"; // Solo PENDING (no IN_PROGRESS)
 
     const { start: startDate, end } = getAvailabilityWindow(now, { includePastOpen: true });
     const isInAllowedWindow =
@@ -498,21 +499,9 @@ export async function declineCleaning(formData: FormData) {
 
     // Transacción para declinar
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Marcar CleaningAssignee como DECLINED
-      if (currentMemberId) {
-        await tx.cleaningAssignee.updateMany({
-          where: {
-            cleaningId: cleaningId,
-            memberId: currentMemberId,
-            status: "ASSIGNED",
-          },
-          data: {
-            status: "DECLINED",
-          },
-        });
-      }
-
       // Actualizar cleaning: volver a OPEN y marcar atención requerida
+      // IMPORTANTE: verificar ANTES de tocar CleaningAssignee para evitar
+      // inconsistencia si el cleaning ya está IN_PROGRESS (no declinable)
       const result = await tx.cleaning.updateMany({
         where: {
           id: cleaningId,
@@ -534,6 +523,20 @@ export async function declineCleaning(formData: FormData) {
       });
       if (result.count === 0) {
         return;
+      }
+
+      // Marcar CleaningAssignee como DECLINED (solo si el cleaning fue reseteado)
+      if (currentMemberId) {
+        await tx.cleaningAssignee.updateMany({
+          where: {
+            cleaningId: cleaningId,
+            memberId: currentMemberId,
+            status: "ASSIGNED",
+          },
+          data: {
+            status: "DECLINED",
+          },
+        });
       }
     });
 
