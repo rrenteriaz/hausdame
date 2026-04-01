@@ -136,10 +136,16 @@ export default async function InventoryPage({
     return first?.propertyZone?.name ?? first?.area ?? zoneId;
   };
 
-  // Ordenar zonas por nombre visible
-  const zoneIds = Object.keys(groupedByZone).sort((a, b) =>
-    zoneDisplayName(a).localeCompare(zoneDisplayName(b), "es", { sensitivity: "base" })
-  );
+  // Mapa de sortOrder por zoneId (para zonas con PropertyZone)
+  const sortOrderMap = new Map(propertyZones.map((z) => [z.id, z.sortOrder ?? 9999]));
+
+  // Ordenar zonas: primero por sortOrder (zonas estructuradas), luego alfabético (legacy sin zona)
+  const zoneIds = Object.keys(groupedByZone).sort((a, b) => {
+    const orderA = sortOrderMap.get(a) ?? 9999;
+    const orderB = sortOrderMap.get(b) ?? 9999;
+    if (orderA !== orderB) return orderA - orderB;
+    return zoneDisplayName(a).localeCompare(zoneDisplayName(b), "es", { sensitivity: "base" });
+  });
 
   // Ordenar líneas dentro de cada zona por nombre del item
   zoneIds.forEach(zoneId => {
