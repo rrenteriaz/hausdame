@@ -1183,6 +1183,7 @@ export async function getFrequentItemsAction() {
 /**
  * Phase 7: Obtiene las zonas OPERATIONAL activas de una propiedad, ordenadas por sortOrder.
  * Reemplaza getExistingAreas en los formularios de creación/edición.
+ * Phase 12: Incluye operationalCategory.
  */
 export async function getPropertyZones(propertyId: string) {
   const user = await requireHostUser();
@@ -1197,7 +1198,7 @@ export async function getPropertyZones(propertyId: string) {
         zoneType: "OPERATIONAL",
         isActive: true,
       },
-      select: { id: true, name: true, sortOrder: true },
+      select: { id: true, name: true, sortOrder: true, operationalCategory: true },
       orderBy: { sortOrder: "asc" },
     });
     return zones;
@@ -1205,6 +1206,136 @@ export async function getPropertyZones(propertyId: string) {
     console.error("[getPropertyZones] Error:", error);
     return [];
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Phase 12: Gestión manual de zonas (PropertyZone)
+// ─────────────────────────────────────────────────────────────
+
+import { normalizeName as _normalizeName } from "@/lib/inventory-normalize";
+import { deactivatePropertyZone } from "@/lib/inventory";
+import type { PropertyZoneOperationalCategory } from "@prisma/client";
+
+/**
+ * Phase 12: Crea una nueva zona OPERATIONAL para una propiedad.
+ * sortOrder = max(sortOrder existente) + 10, o 10 si no hay zonas.
+ */
+export async function createPropertyZoneAction(
+  propertyId: string,
+  name: string,
+  operationalCategory: PropertyZoneOperationalCategory | null
+) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("El nombre del área es obligatorio");
+
+  const normalizedName = _normalizeName(trimmed);
+
+  // Calcular sortOrder
+  const existing = await prisma.propertyZone.findFirst({
+    where: { tenantId, propertyId, zoneType: "OPERATIONAL" },
+    select: { sortOrder: true },
+    orderBy: { sortOrder: "desc" },
+  });
+  const sortOrder = (existing?.sortOrder ?? 0) + 10;
+
+  try {
+    const zone = await prisma.propertyZone.create({
+      data: {
+        tenantId,
+        propertyId,
+        name: trimmed,
+        normalizedName,
+        zoneType: "OPERATIONAL",
+        virtualKind: null,
+        operationalCategory: operationalCategory ?? null,
+        sortOrder,
+        isActive: true,
+      },
+      select: { id: true, name: true, sortOrder: true, operationalCategory: true },
+    });
+    return zone;
+  } catch (error: any) {
+    if (error?.code === "P2002") {
+      throw new Error(`Ya existe un área con el nombre "${trimmed}"`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Phase 12: Renombra una zona. Valida colisión de normalizedName antes de actualizar.
+ */
+export async function renamePropertyZoneAction(zoneId: string, newName: string) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  const trimmed = newName.trim();
+  if (!trimmed) throw new Error("El nombre es obligatorio");
+
+  const zone = await prisma.propertyZone.findFirst({
+    where: { id: zoneId, tenantId },
+    select: { propertyId: true },
+  });
+  if (!zone) throw new Error("Zona no encontrada");
+
+  const normalizedName = _normalizeName(trimmed);
+
+  // Verificar colisión (ignorando la zona actual)
+  const collision = await prisma.propertyZone.findFirst({
+    where: {
+      propertyId: zone.propertyId,
+      normalizedName,
+      id: { not: zoneId },
+    },
+  });
+  if (collision) throw new Error(`Ya existe un área con el nombre "${trimmed}"`);
+
+  return prisma.propertyZone.update({
+    where: { id: zoneId },
+    data: { name: trimmed, normalizedName },
+    select: { id: true, name: true },
+  });
+}
+
+/**
+ * Phase 12: Reordena las zonas de una propiedad actualizando sortOrder en bloque.
+ * orderedZoneIds: array de IDs en el orden deseado (primero = sortOrder 10, luego 20, etc.).
+ */
+export async function reorderPropertyZonesAction(
+  propertyId: string,
+  orderedZoneIds: string[]
+) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  await prisma.$transaction(
+    orderedZoneIds.map((id, index) =>
+      prisma.propertyZone.updateMany({
+        where: { id, tenantId, propertyId },
+        data: { sortOrder: (index + 1) * 10 },
+      })
+    )
+  );
+
+  return { count: orderedZoneIds.length };
+}
+
+/**
+ * Phase 12: Desactiva una zona solo si no tiene InventoryLines activas.
+ */
+export async function deactivatePropertyZoneAction(zoneId: string) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  await deactivatePropertyZone(tenantId, zoneId);
+  return { success: true as const };
 }
 
 /**

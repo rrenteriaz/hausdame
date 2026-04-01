@@ -20,7 +20,12 @@ import {
   getFrequentItemsAction,
   getPropertyZones,
   checkDuplicateInventoryLineAction,
+  createPropertyZoneAction,
 } from "@/app/host/inventory/actions";
+import {
+  OPERATIONAL_CATEGORY_OPTIONS,
+} from "@/lib/inventory-zone-labels";
+import type { PropertyZoneOperationalCategory } from "@prisma/client";
 import { InventoryPriority } from "@prisma/client";
 import { inferInventoryData, type AttentionLevel } from "@/lib/inventory-inference";
 import { isBedSizeVariantable, getBedSizeVariantConfig, BED_SIZE_VARIANT } from "@/lib/inventory-suggestions";
@@ -86,8 +91,15 @@ export default function AddInventoryItemWizard({
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [frequentItems, setFrequentItems] = useState<CatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null }[]>([]); // Phase 7
-  
+  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null; operationalCategory: PropertyZoneOperationalCategory | null }[]>([]); // Phase 7
+
+  // Phase 12: inline zone creation sub-form
+  const [showNewZoneForm, setShowNewZoneForm] = useState(false);
+  const [newZoneName, setNewZoneName] = useState("");
+  const [newZoneCategory, setNewZoneCategory] = useState<PropertyZoneOperationalCategory | "">("");
+  const [isCreatingZone, setIsCreatingZone] = useState(false);
+  const [newZoneError, setNewZoneError] = useState<string | null>(null);
+
   // Ref para evitar respuestas fuera de orden
   const requestIdRef = useRef(0);
   
@@ -357,6 +369,32 @@ export default function AddInventoryItemWizard({
     setLastUsedZoneId(zoneId);
     setPersistedZoneId(zoneId);
     // El avance a ATTENTION se maneja en el onClick del botón de zona
+  };
+
+  // Phase 12: crear zona inline desde el AREA step
+  const handleCreateZone = async () => {
+    const trimmed = newZoneName.trim();
+    if (!trimmed) { setNewZoneError("El nombre es obligatorio"); return; }
+    setNewZoneError(null);
+    setIsCreatingZone(true);
+    try {
+      const zone = await createPropertyZoneAction(propertyId, trimmed, newZoneCategory || null);
+      setPropertyZones((prev) => [...prev, zone]);
+      handleAreaSelect(zone.id, zone.name);
+      setShowNewZoneForm(false);
+      setNewZoneName("");
+      setNewZoneCategory("");
+      // Auto-advance if zone is the only requirement (not variantable or variant already set)
+      const isVariantableItem = selectedItemVariantKey === "bed_size" ||
+        (itemName && isBedSizeVariantable(itemName, selectedItemVariantKey));
+      if (!isVariantableItem || variantValue) {
+        setStep("ATTENTION");
+      }
+    } catch (err) {
+      setNewZoneError(err instanceof Error ? err.message : "Error al crear el área");
+    } finally {
+      setIsCreatingZone(false);
+    }
   };
 
   // Paso 3: Confirmar y crear
@@ -707,6 +745,58 @@ export default function AddInventoryItemWizard({
                 </button>
               ))}
             </div>
+
+            {/* Phase 12: Crear nueva zona inline */}
+            {!showNewZoneForm ? (
+              <button
+                type="button"
+                onClick={() => { setShowNewZoneForm(true); setNewZoneError(null); }}
+                className="w-full p-3 rounded-lg border-2 border-dashed border-neutral-300 text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition text-sm font-medium"
+              >
+                + Nueva área
+              </button>
+            ) : (
+              <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+                <p className="text-sm font-semibold text-neutral-800">Nueva área</p>
+                <input
+                  type="text"
+                  value={newZoneName}
+                  onChange={(e) => setNewZoneName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateZone(); if (e.key === "Escape") setShowNewZoneForm(false); }}
+                  placeholder="Ej. Baño principal"
+                  autoFocus
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                />
+                <select
+                  value={newZoneCategory}
+                  onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">Categoría (opcional)</option>
+                  {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+                {newZoneError && <p className="text-xs text-red-600">{newZoneError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCreateZone}
+                    disabled={isCreatingZone}
+                    className="flex-1 py-2 text-sm font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition"
+                  >
+                    {isCreatingZone ? "Guardando..." : "Crear área"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setNewZoneError(null); }}
+                    className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded-lg transition"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Selector de variante (solo si el item es variantable) */}
             {isVariantable && bedSizeConfig && (

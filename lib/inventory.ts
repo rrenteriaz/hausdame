@@ -1154,8 +1154,9 @@ export async function deleteInventoryLine(
 }
 
 /**
- * Desactiva todas las líneas de inventario de una zona para una propiedad.
- * Soft delete: marca isActive=false en todas las líneas con propertyZoneId dado.
+ * Desactiva todas las líneas de inventario de una zona y la zona en sí.
+ * Soft delete: isActive=false en líneas y en PropertyZone.
+ * Operación atómica en transacción.
  */
 export async function deleteInventoryArea(
   tenantId: string,
@@ -1166,19 +1167,40 @@ export async function deleteInventoryArea(
     throw new Error("La zona es obligatoria");
   }
 
-  const result = await prisma.inventoryLine.updateMany({
-    where: {
-      tenantId,
-      propertyId,
-      propertyZoneId,
-      isActive: true,
-    },
-    data: {
-      isActive: false,
-    },
+  const [linesResult] = await prisma.$transaction([
+    prisma.inventoryLine.updateMany({
+      where: { tenantId, propertyId, propertyZoneId, isActive: true },
+      data: { isActive: false },
+    }),
+    prisma.propertyZone.updateMany({
+      where: { id: propertyZoneId, tenantId },
+      data: { isActive: false },
+    }),
+  ]);
+
+  return { count: linesResult.count };
+}
+
+/**
+ * Phase 12: Desactiva una zona vacía (sin InventoryLines activas).
+ * Lanza error si la zona tiene líneas activas.
+ */
+export async function deactivatePropertyZone(
+  tenantId: string,
+  zoneId: string
+): Promise<void> {
+  const activeCount = await prisma.inventoryLine.count({
+    where: { tenantId, propertyZoneId: zoneId, isActive: true },
   });
 
-  return { count: result.count };
+  if (activeCount > 0) {
+    throw new Error(`El área tiene ${activeCount} item${activeCount !== 1 ? "s" : ""} activo${activeCount !== 1 ? "s" : ""}. Elimínalos primero o usa "Eliminar área" para vaciarla.`);
+  }
+
+  await prisma.propertyZone.update({
+    where: { id: zoneId },
+    data: { isActive: false },
+  });
 }
 
 /**

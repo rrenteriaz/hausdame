@@ -1248,9 +1248,10 @@ model PropertyZone {
   propertyId     String
   name           String
   normalizedName String
-  zoneType       PropertyZoneType
-  virtualKind    PropertyZoneVirtualKind?
-  sortOrder      Int?
+  zoneType              PropertyZoneType
+  virtualKind           PropertyZoneVirtualKind?
+  operationalCategory   PropertyZoneOperationalCategory?
+  sortOrder             Int?
   isActive       Boolean                  @default(true)
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
@@ -1788,6 +1789,19 @@ enum PropertyZoneType {
 enum PropertyZoneVirtualKind {
   STORAGE
   DAMAGED
+}
+
+enum PropertyZoneOperationalCategory {
+  BEDROOM
+  BATHROOM
+  KITCHEN
+  SOCIAL
+  DINING
+  ENTRY
+  LAUNDRY
+  OUTDOOR
+  STORAGE
+  OTHER
 }
 
 enum InventoryLogType {

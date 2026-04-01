@@ -16,7 +16,12 @@ import {
   createInventoryItemAction,
   deleteInventoryItemAction,
   checkDuplicateInventoryLineAction,
+  createPropertyZoneAction,
 } from "@/app/host/inventory/actions";
+import {
+  OPERATIONAL_CATEGORY_OPTIONS,
+} from "@/lib/inventory-zone-labels";
+import type { PropertyZoneOperationalCategory } from "@prisma/client";
 import {
   InventoryCategory,
   InventoryCondition,
@@ -203,8 +208,15 @@ export default function AddInventoryItemModal({
     pendingVariantNormalized ?? activeVariantLine?.variantValueNormalized ?? null;
 
   // Phase 7: zonas OPERATIONAL de la propiedad
-  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null }[]>([]);
+  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null; operationalCategory: PropertyZoneOperationalCategory | null }[]>([]);
   const [loadingAreas, setLoadingAreas] = useState(false);
+
+  // Phase 12: inline zone creation sub-form
+  const [showNewZoneForm, setShowNewZoneForm] = useState(false);
+  const [newZoneName, setNewZoneName] = useState("");
+  const [newZoneCategory, setNewZoneCategory] = useState<PropertyZoneOperationalCategory | "">("");
+  const [isCreatingZone, setIsCreatingZone] = useState(false);
+  const [newZoneError, setNewZoneError] = useState<string | null>(null);
 
   // Catálogo existente por categoría (cacheado por categoría)
   const [catalogCache, setCatalogCache] = useState<
@@ -561,6 +573,28 @@ export default function AddInventoryItemModal({
       goToStep("CATEGORY");
     } else if (step === "DETAILS") {
       goToStep("ITEM");
+    }
+  };
+
+  // Phase 12: crear zona inline desde el AREA step
+  const handleCreateZone = async () => {
+    const trimmed = newZoneName.trim();
+    if (!trimmed) { setNewZoneError("El nombre es obligatorio"); return; }
+    setNewZoneError(null);
+    setIsCreatingZone(true);
+    try {
+      const zone = await createPropertyZoneAction(propertyId, trimmed, newZoneCategory || null);
+      setPropertyZones((prev) => [...prev, zone]);
+      setPropertyZoneId(zone.id);
+      setZoneName(zone.name);
+      setShowNewZoneForm(false);
+      setNewZoneName("");
+      setNewZoneCategory("");
+      setTimeout(() => goToStep("CATEGORY"), 100);
+    } catch (err) {
+      setNewZoneError(err instanceof Error ? err.message : "Error al crear el área");
+    } finally {
+      setIsCreatingZone(false);
     }
   };
 
@@ -1265,6 +1299,50 @@ export default function AddInventoryItemModal({
                         </button>
                       ))}
                     </div>
+                    {/* Phase 12: crear nueva zona inline */}
+                    {!showNewZoneForm ? (
+                      <button
+                        type="button"
+                        onClick={() => { setShowNewZoneForm(true); setNewZoneError(null); }}
+                        className="w-full rounded-lg border-2 border-dashed border-neutral-300 py-2 text-sm font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition"
+                      >
+                        + Nueva área
+                      </button>
+                    ) : (
+                      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 space-y-2 mt-2">
+                        <p className="text-xs font-semibold text-neutral-800">Nueva área</p>
+                        <input
+                          type="text"
+                          value={newZoneName}
+                          onChange={(e) => setNewZoneName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleCreateZone(); if (e.key === "Escape") setShowNewZoneForm(false); }}
+                          placeholder="Ej. Baño principal"
+                          autoFocus
+                          className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                        />
+                        <select
+                          value={newZoneCategory}
+                          onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
+                          className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
+                        >
+                          <option value="">Categoría (opcional)</option>
+                          {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                        {newZoneError && <p className="text-xs text-red-600">{newZoneError}</p>}
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleCreateZone} disabled={isCreatingZone}
+                            className="flex-1 py-1.5 text-xs font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition">
+                            {isCreatingZone ? "Guardando..." : "Crear área"}
+                          </button>
+                          <button type="button" onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setNewZoneError(null); }}
+                            className="px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {propertyZoneId && <input type="hidden" name="propertyZoneId" value={propertyZoneId} />}
                   </div>
                 ) : (
@@ -1726,6 +1804,39 @@ export default function AddInventoryItemModal({
                             </button>
                           ))}
                         </div>
+                        {/* Phase 12: crear nueva zona inline (edit mode) */}
+                        {!showNewZoneForm ? (
+                          <button type="button" onClick={() => { setShowNewZoneForm(true); setNewZoneError(null); }}
+                            className="w-full rounded-lg border-2 border-dashed border-neutral-300 py-2 text-sm font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition mb-2">
+                            + Nueva área
+                          </button>
+                        ) : (
+                          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 space-y-2 mb-2">
+                            <p className="text-xs font-semibold text-neutral-800">Nueva área</p>
+                            <input type="text" value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") handleCreateZone(); if (e.key === "Escape") setShowNewZoneForm(false); }}
+                              placeholder="Ej. Baño principal" autoFocus
+                              className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400" />
+                            <select value={newZoneCategory} onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
+                              className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white">
+                              <option value="">Categoría (opcional)</option>
+                              {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                              ))}
+                            </select>
+                            {newZoneError && <p className="text-xs text-red-600">{newZoneError}</p>}
+                            <div className="flex gap-2">
+                              <button type="button" onClick={handleCreateZone} disabled={isCreatingZone}
+                                className="flex-1 py-1.5 text-xs font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition">
+                                {isCreatingZone ? "Guardando..." : "Crear área"}
+                              </button>
+                              <button type="button" onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setNewZoneError(null); }}
+                                className="px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         {propertyZoneId && <input type="hidden" name="propertyZoneId" value={propertyZoneId} />}
                       </div>
                     )}

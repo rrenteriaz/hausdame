@@ -17,6 +17,7 @@ import InventoryList from "./InventoryList";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
+import ZonesManagementSection from "./ZonesManagementSection";
 
 export default async function InventoryPage({
   params,
@@ -96,6 +97,19 @@ export default async function InventoryPage({
     }
   );
 
+  // Phase 12: Cargar zonas OPERATIONAL activas con conteo de items (para ZonesManagementSection)
+  const propertyZones = await prisma.propertyZone.findMany({
+    where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL", isActive: true },
+    select: {
+      id: true,
+      name: true,
+      sortOrder: true,
+      operationalCategory: true,
+      _count: { select: { inventoryLines: { where: { isActive: true } } } },
+    },
+    orderBy: { sortOrder: "asc" },
+  });
+
   // Obtener historial de incidencias (stats) para las líneas mostradas
   const lineIds = inventoryLines.map(line => line.id);
   const [historyStatsMap, lineThumbsMap] = await Promise.all([
@@ -156,24 +170,31 @@ export default async function InventoryPage({
         <div className="space-y-6">
           {/* Lista agrupada por área */}
           {inventoryLines.length === 0 ? (
-            <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
-              <p className="text-base text-neutral-700 font-medium mb-4">
-                Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad.
-              </p>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
-                <AddInventoryItemButton propertyId={property.id} />
-                <ApplyTemplateModal
-                  propertyId={property.id}
-                  hasExistingInventory={false}
-                />
-                {availableProperties.length > 0 && (
-                  <CopyInventoryModal
+            <div className="space-y-4">
+              <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
+                <p className="text-base text-neutral-700 font-medium mb-4">
+                  Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad.
+                </p>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
+                  <AddInventoryItemButton propertyId={property.id} />
+                  <ApplyTemplateModal
                     propertyId={property.id}
-                    propertyName={property.shortName || property.name}
-                    availableProperties={availableProperties}
+                    hasExistingInventory={false}
                   />
-                )}
+                  {availableProperties.length > 0 && (
+                    <CopyInventoryModal
+                      propertyId={property.id}
+                      propertyName={property.shortName || property.name}
+                      availableProperties={availableProperties}
+                    />
+                  )}
+                </div>
               </div>
+              {/* Phase 12: Gestión de zonas también disponible en propiedad vacía */}
+              <ZonesManagementSection
+                propertyId={property.id}
+                initialZones={propertyZones}
+              />
             </div>
           ) : (
             <>
@@ -307,6 +328,12 @@ export default async function InventoryPage({
                   </CollapsibleSection>
                 ))}
               </div>
+
+              {/* Phase 12: Gestión de zonas */}
+              <ZonesManagementSection
+                propertyId={property.id}
+                initialZones={propertyZones}
+              />
 
               {/* Paginación */}
               {(hasMore || page > 1) && (
