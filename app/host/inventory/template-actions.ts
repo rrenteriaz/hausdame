@@ -333,11 +333,10 @@ export async function applyInventoryTemplateToProperty(
         }
 
         // Releer todos los items requeridos (existentes + recién creados) para obtener IDs
-        // Buscar solo por nameNormalized (sin category)
+        // Buscar por nameNormalized incluyendo archivados (pueden haber sido saltados por skipDuplicates)
         const allItems = await tx.inventoryItem.findMany({
           where: {
             tenantId: tenantId,
-            archivedAt: null,
             nameNormalized: {
               in: uniqueNameNormalized,
             },
@@ -346,6 +345,7 @@ export async function applyInventoryTemplateToProperty(
             id: true,
             category: true,
             nameNormalized: true,
+            archivedAt: true,
             createdAt: true, // Necesario para ordenamiento determinístico
           },
           orderBy: [
@@ -372,6 +372,17 @@ export async function applyInventoryTemplateToProperty(
               `[applyInventoryTemplateToProperty] DATA_CORRUPTION: Duplicate catalog item detected after createMany: tenantId=${tenantId}, nameNormalized="${item.nameNormalized}"`
             );
           }
+        }
+
+        // Reactivar items archivados que la plantilla reutiliza
+        const archivedItemIds = allItems
+          .filter((i) => i.archivedAt !== null && itemIdsUsed.has(i.id))
+          .map((i) => i.id);
+        if (archivedItemIds.length > 0) {
+          await tx.inventoryItem.updateMany({
+            where: { id: { in: archivedItemIds }, tenantId },
+            data: { archivedAt: null },
+          });
         }
 
         // 4.1.5. Eliminar imágenes personalizadas de los items usados en la plantilla
