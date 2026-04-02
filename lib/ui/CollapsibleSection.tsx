@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 interface CollapsibleSectionProps {
-  title: string;
+  title?: string;
   count?: number;
   children: React.ReactNode;
   defaultOpen?: boolean;
@@ -43,7 +43,7 @@ export default function CollapsibleSection({
           className="flex-1 flex items-center justify-between min-w-0 group"
         >
           <h2 className="text-base font-semibold text-neutral-800 truncate">
-            {title}{count !== undefined ? ` (${count})` : ""}
+            {title ? `${title}${count !== undefined ? ` (${count})` : ""}` : count !== undefined ? `(${count})` : ""}
           </h2>
           <svg
             className={`flex-shrink-0 w-5 h-5 text-neutral-400 transition-transform duration-200 ${

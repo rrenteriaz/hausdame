@@ -3,9 +3,9 @@
 
 import CleanerCleaningLink from "@/lib/ui/CleanerCleaningLink";
 import { acceptCleaning } from "@/app/cleaner/actions";
-import { formatCleaningStatus } from "@/lib/cleaning-ui";
 import ListContainer from "@/lib/ui/ListContainer";
 import ListThumb from "@/lib/ui/ListThumb";
+import { getCleanerVisual } from "@/lib/ui/cleaning-visual-state";
 
 type CleaningForCalendar = {
   id: string;
@@ -26,12 +26,20 @@ interface CleanerDailyCalendarProps {
   lostCleanings?: CleaningForCalendar[];
   availableCleanings: CleaningForCalendar[];
   referenceDate: Date;
-  dateParam?: string; // YYYY-MM-DD desde URL, para evitar desfase timezone servidor/cliente
-  basePath: string; // ej: "/cleaner"
+  dateParam?: string;
+  basePath: string;
   currentMemberId: string;
   returnTo: string;
   myThumbUrls: Map<string, string | null>;
   availableThumbUrls: Map<string, string | null>;
+}
+
+function StatusBadge({ bg, text, label }: { bg: string; text: string; label: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 ${bg} ${text}`}>
+      {label}
+    </span>
+  );
 }
 
 export default function CleanerDailyCalendar({
@@ -47,7 +55,6 @@ export default function CleanerDailyCalendar({
   myThumbUrls,
   availableThumbUrls,
 }: CleanerDailyCalendarProps) {
-  // Parsear dateParam (YYYY-MM-DD) en zona local para evitar desfase servidor/cliente
   const [y, m, d] = (dateParam || "").split("-").map(Number);
   const localRefDate =
     y && m && d
@@ -61,57 +68,47 @@ export default function CleanerDailyCalendar({
     day: "2-digit",
     month: "short",
   });
+  const isToday = localRefDate.toDateString() === new Date().toDateString();
 
-  const isToday =
-    localRefDate.toDateString() === new Date().toDateString();
-
-  // Filtrar limpiezas para el día específico
   const dayKey = `${localRefDate.getFullYear()}-${localRefDate.getMonth()}-${localRefDate.getDate()}`;
-  
-  const dayMyCleanings = myCleanings.filter((c) => {
-    const d = c.scheduledDate;
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    return key === dayKey;
-  });
 
-  const dayAvailableCleanings = availableCleanings.filter((c) => {
-    const d = c.scheduledDate;
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    return key === dayKey;
-  });
+  const filterByDay = (list: CleaningForCalendar[]) =>
+    list.filter((c) => {
+      const dd = c.scheduledDate;
+      return `${dd.getFullYear()}-${dd.getMonth()}-${dd.getDate()}` === dayKey;
+    });
 
-  const dayMemberCleanings = memberCleanings.filter((c) => {
-    const d = c.scheduledDate;
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    return key === dayKey;
-  });
+  const dayMyCleanings       = filterByDay(myCleanings);
+  const dayAvailableCleanings = filterByDay(availableCleanings);
+  const dayMemberCleanings    = filterByDay(memberCleanings);
+  const dayLostCleanings      = filterByDay(lostCleanings);
 
-  const dayLostCleanings = lostCleanings.filter((c) => {
-    const d = c.scheduledDate;
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    return key === dayKey;
-  });
+  const now = new Date();
 
-  const linkBaseClass = "flex w-full items-center gap-3 py-3 px-3 sm:px-4 hover:bg-neutral-50 active:opacity-95 transition-colors touch-manipulation cursor-pointer";
+  const linkBase = "flex w-full items-center gap-3 py-3 px-3 sm:px-4 hover:bg-neutral-50 active:opacity-95 transition-colors touch-manipulation cursor-pointer";
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4 space-y-4 relative z-[1]">
+    <div className="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4 space-y-5 relative z-[1]">
       <div className="flex items-center justify-between">
         <p className="text-xs text-neutral-600">
           {isToday ? "Hoy · " : ""}{dayLabel}
         </p>
-        <p className="text-xs text-neutral-500">
-          Vista diaria{isToday ? " (hoy)" : ""}
-        </p>
+        <p className="text-xs text-neutral-500">Vista diaria{isToday ? " (hoy)" : ""}</p>
       </div>
 
-      {/* Sección "Mías hoy" */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-neutral-800">
-          Mías {isToday ? "hoy" : ""} ({dayMyCleanings.length})
-        </h3>
+      {/* ── MIS LIMPIEZAS ── */}
+      <section className="space-y-2">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-neutral-800">
+            {isToday ? "Mías hoy" : "Mías"} ({dayMyCleanings.length})
+          </h3>
+          {dayMyCleanings.some((c) => c.status === "IN_PROGRESS") && (
+            <StatusBadge bg="bg-blue-600" text="text-white" label="En progreso" />
+          )}
+        </div>
+
         {dayMyCleanings.length === 0 ? (
-          <p className="text-base text-neutral-500">
+          <p className="text-sm text-neutral-500">
             {isToday ? "No tienes limpiezas hoy." : "No tienes limpiezas en este día."}
           </p>
         ) : (
@@ -120,31 +117,38 @@ export default function CleanerDailyCalendar({
               const isLast = index === dayMyCleanings.length - 1;
               const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
+              const isInProgress = cleaning.status === "IN_PROGRESS";
+              const visual = getCleanerVisual(isInProgress ? "mine_inprogress" : "mine_pending");
+              const isOverdue = !isInProgress && cleaning.scheduledDate < now;
 
               return (
                 <CleanerCleaningLink
                   key={cleaning.id}
                   href={detailsHref}
-                  aria-label={`Ver detalles de limpieza ${propertyName}`}
-                  className={`${linkBaseClass} min-h-[44px] ${!isLast ? "border-b border-neutral-200" : ""}`}
+                  aria-label={`Ver detalles ${propertyName}`}
+                  className={`
+                    ${linkBase} min-h-[44px]
+                    border-l-4 ${visual.accentBorder}
+                    ${visual.cardBg}
+                    ${!isLast ? "border-b border-neutral-200" : ""}
+                  `.trim()}
                 >
                   <ListThumb src={myThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-base font-medium text-neutral-900 truncate">
-                      {propertyName}
-                    </h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className={`text-base font-medium truncate ${visual.cardText}`}>
+                        {propertyName}
+                      </h4>
+                      <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
+                      {isOverdue && (
+                        <StatusBadge bg="bg-amber-100" text="text-amber-700" label="Atrasada" />
+                      )}
+                    </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {" · "}
-                      {formatCleaningStatus(cleaning.status)}
+                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
                     </p>
                     {cleaning.notes && (
-                      <p className="text-xs text-neutral-500 line-clamp-1 mt-1">
-                        {cleaning.notes}
-                      </p>
+                      <p className="text-xs text-neutral-500 line-clamp-1 mt-1">{cleaning.notes}</p>
                     )}
                   </div>
                 </CleanerCleaningLink>
@@ -152,15 +156,21 @@ export default function CleanerDailyCalendar({
             })}
           </ListContainer>
         )}
-      </div>
+      </section>
 
-      {/* Sección "Disponibles hoy" */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-neutral-800">
-          Disponibles {isToday ? "hoy" : ""} ({dayAvailableCleanings.length})
-        </h3>
+      {/* ── DISPONIBLES ── */}
+      <section className="space-y-2">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-neutral-800">
+            {isToday ? "Disponibles hoy" : "Disponibles"} ({dayAvailableCleanings.length})
+          </h3>
+          {dayAvailableCleanings.length > 0 && (
+            <StatusBadge bg="bg-emerald-100" text="text-emerald-700" label="Reclamables" />
+          )}
+        </div>
+
         {dayAvailableCleanings.length === 0 ? (
-          <p className="text-base text-neutral-500">
+          <p className="text-sm text-neutral-500">
             {isToday ? "No hay limpiezas disponibles hoy." : "No hay limpiezas disponibles en este día."}
           </p>
         ) : (
@@ -169,45 +179,44 @@ export default function CleanerDailyCalendar({
               const isLast = index === dayAvailableCleanings.length - 1;
               const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
+              const isOverdue = cleaning.scheduledDate < now;
+              const visual = getCleanerVisual(isOverdue ? "available_overdue" : "available");
 
               return (
-                <div
-                  key={cleaning.id}
-                  className={`relative ${!isLast ? "border-b border-neutral-200" : ""}`}
-                >
+                <div key={cleaning.id} className={`relative ${!isLast ? "border-b border-neutral-200" : ""}`}>
                   <CleanerCleaningLink
                     href={detailsHref}
-                    aria-label={`Ver detalles de limpieza ${propertyName}`}
-                    className={`${linkBaseClass} pr-24 min-h-[44px]`}
+                    aria-label={`Ver detalles ${propertyName}`}
+                    className={`
+                      ${linkBase} pr-24 min-h-[44px]
+                      border-l-4 ${visual.accentBorder}
+                      ${visual.cardBg}
+                    `.trim()}
                   >
                     <ListThumb src={availableThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-base font-medium text-neutral-900 truncate">
-                        {propertyName}
-                      </h4>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className={`text-base font-medium truncate ${visual.cardText}`}>
+                          {propertyName}
+                        </h4>
+                        <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
+                      </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
-                        {cleaning.scheduledDate.toLocaleTimeString("es-MX", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                       {cleaning.notes && (
-                        <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
-                        {cleaning.notes}
-                      </p>
-                    )}
+                        <p className="text-xs text-neutral-500 line-clamp-1 mt-1">{cleaning.notes}</p>
+                      )}
                     </div>
                   </CleanerCleaningLink>
-                  <div
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
-                  >
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
                     <form action={acceptCleaning} className="pointer-events-auto">
                       <input type="hidden" name="cleaningId" value={cleaning.id} />
                       <input type="hidden" name="memberId" value={currentMemberId} />
                       <input type="hidden" name="returnTo" value={returnTo} />
                       <button
                         type="submit"
-                        className="rounded-lg bg-black px-4 py-2 text-base font-medium text-white hover:bg-neutral-800 active:scale-[0.99] transition"
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.99] transition"
                       >
                         Aceptar
                       </button>
@@ -218,111 +227,107 @@ export default function CleanerDailyCalendar({
             })}
           </ListContainer>
         )}
-      </div>
+      </section>
 
-      {/* Sección "Perdidas" (pasadas sin asignar) */}
+      {/* ── NO DISPONIBLES (perdidas) ── */}
       {dayLostCleanings.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-neutral-800">
-            Perdidas {isToday ? "hoy" : ""} ({dayLostCleanings.length})
-          </h3>
-          <p className="text-xs text-neutral-500">
-            Estas limpiezas ya pasaron y no fueron asignadas. Se muestran solo como referencia.
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-neutral-500">
+              No disponibles ({dayLostCleanings.length})
+            </h3>
+            <StatusBadge bg="bg-neutral-100" text="text-neutral-400" label="Fuera de rango" />
+          </div>
+          <p className="text-xs text-neutral-400">
+            Estas limpiezas ya no son reclamables.
           </p>
           <ListContainer>
             {dayLostCleanings.map((cleaning, index) => {
               const isLast = index === dayLostCleanings.length - 1;
               const propertyName = cleaning.property.shortName || cleaning.property.name;
-              const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(
-                currentMemberId
-              )}&returnTo=${encodeURIComponent(returnTo)}`;
+              const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
+              const visual = getCleanerVisual("lost");
 
               return (
                 <CleanerCleaningLink
                   key={cleaning.id}
                   href={detailsHref}
-                  aria-label={`Ver detalles de limpieza ${propertyName}`}
-                  className={`${linkBaseClass} min-h-[44px] ${!isLast ? "border-b border-neutral-200" : ""}`}
+                  aria-label={`Ver detalles ${propertyName}`}
+                  className={`
+                    ${linkBase} min-h-[44px] opacity-60
+                    border-l-4 ${visual.accentBorder}
+                    ${!isLast ? "border-b border-neutral-200" : ""}
+                  `.trim()}
                 >
                   <ListThumb src={availableThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <h4 className="text-base font-medium text-neutral-500 truncate line-through">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-base font-medium text-neutral-400 truncate line-through">
                         {propertyName}
                       </h4>
-                      <span className="shrink-0 text-[10px] font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full">
-                        PERDIDA
-                      </span>
+                      <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
                     </div>
-                    <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {" · "}
-                      {formatCleaningStatus(cleaning.status)}
+                    <p className="text-xs text-neutral-400 truncate mt-0.5">
+                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
                     </p>
-                    {cleaning.notes && (
-                      <p className="text-xs text-neutral-500 line-clamp-1 mt-1">
-                        {cleaning.notes}
-                      </p>
-                    )}
                   </div>
                 </CleanerCleaningLink>
               );
             })}
           </ListContainer>
-        </div>
+        </section>
       )}
 
-      {/* Sección "Equipo" (solo TL) */}
+      {/* ── EQUIPO (otros cleaners) ── */}
       {dayMemberCleanings.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-neutral-800">
-            Del equipo {isToday ? "hoy" : ""} ({dayMemberCleanings.length})
-          </h3>
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-neutral-600">
+              Del equipo ({dayMemberCleanings.length})
+            </h3>
+            <StatusBadge bg="bg-neutral-200" text="text-neutral-500" label="Otro cleaner" />
+          </div>
           <ListContainer>
             {dayMemberCleanings.map((cleaning, index) => {
               const isLast = index === dayMemberCleanings.length - 1;
               const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
+              const visual = getCleanerVisual("other_member");
 
               return (
                 <CleanerCleaningLink
                   key={cleaning.id}
                   href={detailsHref}
-                  aria-label={`Ver detalles de limpieza ${propertyName}`}
-                  className={`${linkBaseClass} min-h-[44px] ${!isLast ? "border-b border-neutral-200" : ""}`}
+                  aria-label={`Ver detalles ${propertyName}`}
+                  className={`
+                    ${linkBase} min-h-[44px] opacity-75
+                    border-l-4 ${visual.accentBorder}
+                    ${visual.cardBg}
+                    ${!isLast ? "border-b border-neutral-200" : ""}
+                  `.trim()}
                 >
                   <ListThumb src={myThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <h4 className="text-base font-medium text-neutral-900 truncate">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-base font-medium text-neutral-600 truncate">
                         {propertyName}
                       </h4>
-                      <span className="shrink-0 text-[10px] font-semibold text-indigo-900 bg-indigo-100 px-2 py-0.5 rounded-full">
-                        EQUIPO
-                      </span>
+                      <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
                     </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
                       {" · "}
-                      {formatCleaningStatus(cleaning.status)}
+                      {cleaning.status === "IN_PROGRESS" ? "En progreso" : "Pendiente"}
                     </p>
                     {cleaning.notes && (
-                      <p className="text-xs text-neutral-500 line-clamp-1 mt-1">
-                        {cleaning.notes}
-                      </p>
+                      <p className="text-xs text-neutral-400 line-clamp-1 mt-1">{cleaning.notes}</p>
                     )}
                   </div>
                 </CleanerCleaningLink>
               );
             })}
           </ListContainer>
-        </div>
+        </section>
       )}
     </div>
   );

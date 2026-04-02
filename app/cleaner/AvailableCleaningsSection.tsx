@@ -5,6 +5,7 @@ import CleanerCleaningLink from "@/lib/ui/CleanerCleaningLink";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import ListContainer from "@/lib/ui/ListContainer";
 import ListThumb from "@/lib/ui/ListThumb";
+import { getCleanerVisual } from "@/lib/ui/cleaning-visual-state";
 import { acceptCleaning } from "./actions";
 
 interface Cleaning {
@@ -37,20 +38,14 @@ export default function AvailableCleaningsSection({
 }: AvailableCleaningsSectionProps) {
   const [availableOpen, setAvailableOpen] = useState(false);
   const [highlightAvailable, setHighlightAvailable] = useState(false);
-
   const availableSectionRef = useRef<HTMLDivElement>(null);
+  const now = new Date();
 
-  // Hacer scroll automáticamente cuando se despliega la sección
   useEffect(() => {
     if (availableOpen && availableSectionRef.current) {
-      // Esperar a que se renderice el contenido antes de hacer scroll
       requestAnimationFrame(() => {
         setTimeout(() => {
-          availableSectionRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-          // Activar highlight temporal para indicar visualmente
+          availableSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
           setHighlightAvailable(true);
           setTimeout(() => setHighlightAvailable(false), 400);
         }, 100);
@@ -62,35 +57,30 @@ export default function AvailableCleaningsSection({
     <div
       ref={availableSectionRef}
       className={`pt-6 pb-12 transition-all duration-300 ${
-        highlightAvailable
-          ? "bg-amber-50/50 rounded-xl -mx-2 px-2 py-2"
-          : ""
+        highlightAvailable ? "bg-emerald-50/50 rounded-xl -mx-2 px-2 py-2" : ""
       }`}
     >
       <CollapsibleSection
-        title="Disponibles"
         count={availableCount}
         open={availableOpen}
         onOpenChange={setAvailableOpen}
       >
         {eligibleCleanings.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-sm text-neutral-600">
             No hay limpiezas disponibles en este momento.
           </div>
         ) : (
           <ListContainer>
-            {eligibleCleanings.map((cleaning, index: number) => {
+            {eligibleCleanings.map((cleaning, index) => {
               const isLast = index === eligibleCleanings.length - 1;
-              const propertyName =
-                cleaning.property.shortName || cleaning.property.name;
-              const isOverdue = new Date(cleaning.scheduledDate) < new Date();
+              const propertyName = cleaning.property.shortName || cleaning.property.name;
+              const isOverdue = new Date(cleaning.scheduledDate) < now;
+              const visual = getCleanerVisual(isOverdue ? "available_overdue" : "available");
 
               return (
                 <div
                   key={cleaning.id}
-                  className={`relative ${
-                    !isLast ? "border-b border-neutral-200" : ""
-                  } ${isOverdue ? "bg-amber-50/30" : ""}`}
+                  className={`relative ${!isLast ? "border-b border-neutral-200" : ""}`}
                 >
                   <CleanerCleaningLink
                     href={`/cleaner/cleanings/${cleaning.id}?returnTo=${encodeURIComponent(returnTo)}`}
@@ -98,8 +88,9 @@ export default function AvailableCleaningsSection({
                     className={`
                       flex items-center gap-3
                       py-3 px-3 sm:px-4 pr-24 min-h-[44px]
-                      hover:bg-neutral-50 active:opacity-95
-                      transition-colors touch-manipulation
+                      hover:brightness-95 active:opacity-95
+                      transition-all touch-manipulation
+                      border-l-4 ${visual.accentBorder} ${visual.cardBg}
                     `.trim()}
                   >
                     <ListThumb
@@ -107,15 +98,13 @@ export default function AvailableCleaningsSection({
                       alt={propertyName}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-medium text-neutral-900 truncate">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className={`text-base font-medium truncate ${visual.cardText}`}>
                           {propertyName}
                         </h3>
-                        {isOverdue && (
-                          <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 border border-amber-200">
-                            Atrasada
-                          </span>
-                        )}
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 ${visual.badgeBg} ${visual.badgeTextColor}`}>
+                          {visual.badgeFull}
+                        </span>
                       </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
                         {cleaning.scheduledDate.toLocaleString("es-MX", {
@@ -127,12 +116,14 @@ export default function AvailableCleaningsSection({
                         })}
                       </p>
                       {cleaning.notes && (
-                        <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
+                        <p className="text-xs text-neutral-400 line-clamp-2 mt-1">
                           {cleaning.notes}
                         </p>
                       )}
                     </div>
                   </CleanerCleaningLink>
+
+                  {/* Botón Aceptar */}
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
                     <form action={acceptCleaning}>
                       <input type="hidden" name="cleaningId" value={cleaning.id} />
@@ -140,7 +131,7 @@ export default function AvailableCleaningsSection({
                       <input type="hidden" name="returnTo" value={returnTo} />
                       <button
                         type="submit"
-                        className="rounded-lg bg-black px-4 py-2 text-base font-medium text-white hover:bg-neutral-800 active:scale-[0.99] transition"
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.99] transition"
                       >
                         Aceptar
                       </button>
@@ -155,4 +146,3 @@ export default function AvailableCleaningsSection({
     </div>
   );
 }
-

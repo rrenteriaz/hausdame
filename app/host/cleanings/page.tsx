@@ -5,6 +5,7 @@ import { requireHostUser } from "@/lib/auth/requireUser";
 import { CleaningStatus, Cleaning, Property } from "@prisma/client";
 import Link from "next/link";
 import { getCleaningUi, getPropertyColor } from "@/lib/cleaning-ui";
+import { getHostVisual, hostKindFromCleaning, HOST_LEGEND, firstNameOf, truncateBadge } from "@/lib/ui/cleaning-visual-state";
 import { startCleaning, completeCleaning, cancelCleaning, reopenCleaning } from "./actions";
 import DailyCleaningsViewWithModal from "./DailyCleaningsViewWithModal";
 import CreateCleaningForm from "./CreateCleaningForm";
@@ -363,26 +364,37 @@ export default async function CleaningsPage({
                             </StopPropagationLink>
                           )}
                         </div>
-                        <p className="text-xs text-neutral-500 mt-1">
-                          Estado: {formatStatus(c.status)}
-                          {(c as any).assignedMember && (
-                            <span className="text-neutral-600">
-                              {" "}· {(c as any).assignedMember.name} ({(c as any).assignedMember.team.name})
-                            </span>
-                          )}
-                          {(c as any).assignmentStatus === "OPEN" && !(c as any).assignedMember && (
-                            <>
-                              <span className="text-amber-600">
-                                {" "}· Disponible
+                        {/* Estado visual */}
+                        {(() => {
+                          const kind = hostKindFromCleaning({
+                            status: c.status,
+                            assignmentStatus: (c as any).assignmentStatus,
+                            assignedMemberId: (c as any).assignedMemberId,
+                            assignedMembershipId: (c as any).assignedMembershipId,
+                          });
+                          const visual = getHostVisual(kind);
+                          const assignedMember = (c as any).assignedMember;
+                          const needsAttention = (c as any).needsAttention;
+                          return (
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${visual.badgeBg} ${visual.badgeTextColor}`}>
+                                {kind === "assigned_pending" && assignedMember?.name
+                                  ? `👤 ${firstNameOf(assignedMember.name) ?? assignedMember.name}`
+                                  : visual.badgeFull}
                               </span>
-                              {(c as any).viewsCount > 0 && (
-                                <span className="text-xs text-neutral-500 ml-1">
+                              {(c as any).viewsCount > 0 && kind === "unassigned" && (
+                                <span className="text-xs text-neutral-400">
                                   👁 {(c as any).viewsCount}
                                 </span>
                               )}
-                            </>
-                          )}
-                        </p>
+                              {needsAttention && (
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700">
+                                  ⚠ Atención
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {c.notes && (
                           <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
                             {c.notes}
@@ -651,6 +663,28 @@ function MonthlyCleaningsCalendar({
               date.getMonth() === today.getMonth() &&
               date.getDate() === today.getDate();
 
+            // ── Estilo de celda y chips por prioridad de cada limpieza ──
+            const hasCritical = dayCleanings.some(c => (c as any).needsAttention);
+            const hasWarning = dayCleanings.some(c =>
+              hostKindFromCleaning({
+                status: c.status,
+                assignmentStatus: (c as any).assignmentStatus,
+                assignedMemberId: (c as any).assignedMemberId,
+                assignedMembershipId: (c as any).assignedMembershipId,
+              }) === "unassigned"
+            );
+            const cellBorder = isToday
+              ? "border-black"
+              : hasCritical
+                ? "border-amber-300"
+                : hasWarning
+                  ? "border-orange-200"
+                  : "border-neutral-200";
+
+            const MAX_CHIPS = 4;
+            const visible = dayCleanings.slice(0, MAX_CHIPS);
+            const overflow = dayCleanings.length - MAX_CHIPS;
+
             return (
               <Link
                 key={`${wi}-${di}`}
@@ -658,47 +692,49 @@ function MonthlyCleaningsCalendar({
                 className="block focus:outline-none"
               >
                 <div
-                  className={`h-16 sm:h-20 rounded-xl border ${
-                    isToday ? "border-black" : "border-neutral-200"
-                  } bg-neutral-50 p-1 flex flex-col gap-1 hover:border-black/70 transition`}
+                  className={`h-16 sm:h-20 rounded-xl border ${cellBorder} bg-white p-1 flex flex-col gap-[2px] hover:border-neutral-400 transition`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium text-neutral-700">
-                      {date.getDate()}
-                    </span>
-                  </div>
+                  {/* Número del día */}
+                  <span className={`text-[10px] font-medium leading-none self-start ${isToday ? "bg-black text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px]" : "text-neutral-700"}`}>
+                    {date.getDate()}
+                  </span>
 
-                  <div className="flex-1 space-y-0 overflow-hidden">
-                    {dayCleanings.slice(0, 3).map((c) => {
-                      // Validación de seguridad para evitar errores si property no existe
-                      if (!c.property) return null;
-                      
-                      // FASE 4: propertyId ahora apunta directamente a Property.id
-                      const propertyIdForColor = c.propertyId;
-                      const color =
-                        propertyColorMap.get(propertyIdForColor) ?? "bg-neutral-400";
-                      const colorHex = propertyColorHexMap.get(propertyIdForColor) ?? "#64748b";
-                      const label = c.property.shortName || c.property.name;
-                      const ui = getCleaningUi(c.status, color);
-
+                  {/* Chips de propiedades */}
+                  <div className="flex-1 flex flex-col gap-[2px] overflow-hidden">
+                    {visible.map((c) => {
+                      const kind = hostKindFromCleaning({
+                        status: c.status,
+                        assignmentStatus: (c as any).assignmentStatus,
+                        assignedMemberId: (c as any).assignedMemberId,
+                        assignedMembershipId: (c as any).assignedMembershipId,
+                      });
+                      const attention = (c as any).needsAttention;
+                      const chipStyle = attention
+                        ? "bg-amber-200 text-amber-900"
+                        : kind === "unassigned"
+                          ? "bg-orange-200 text-orange-900"
+                          : kind === "in_progress"
+                            ? "bg-blue-300 text-blue-900"
+                            : kind === "assigned_pending"
+                              ? "bg-violet-100 text-violet-800"
+                              : kind === "completed"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-neutral-100 text-neutral-400";
+                      const name = c.property.shortName || c.property.name;
                       return (
-                        <div
+                        <span
                           key={c.id}
-                          className="truncate rounded-full text-black px-0.5 py-[1px] text-[7px] sm:text-[10.5px] leading-none flex items-center gap-0.5"
-                          title={`${label} · ${formatStatus(c.status)}`}
+                          className={`rounded px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate block ${chipStyle}`}
+                          title={name}
                         >
-                          <span 
-                            className="w-1.5 h-1.5 sm:w-[9px] sm:h-[9px] rounded-full flex-shrink-0"
-                            style={{ backgroundColor: colorHex }}
-                          />
-                          {label}
-                        </div>
+                          {name}
+                        </span>
                       );
-                    }).filter(Boolean)}
-                    {dayCleanings.length > 3 && (
-                      <div className="text-[9px] sm:text-[13.5px] text-neutral-600">
-                        +{dayCleanings.length - 3} más
-                      </div>
+                    })}
+                    {overflow > 0 && (
+                      <span className="text-[7px] text-neutral-400 leading-none pl-0.5">
+                        +{overflow}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -708,6 +744,24 @@ function MonthlyCleaningsCalendar({
         )}
       </div>
 
+      {/* Leyenda de chips */}
+      <div className="border-t border-neutral-100 pt-3 mt-1">
+        <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">Leyenda</p>
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+          {[
+            { chip: "bg-amber-200 text-amber-900",   label: "Requiere atención" },
+            { chip: "bg-orange-200 text-orange-900",  label: "Sin cleaner" },
+            { chip: "bg-blue-300 text-blue-900",      label: "En progreso" },
+            { chip: "bg-violet-100 text-violet-800",  label: "Asignada" },
+            { chip: "bg-emerald-100 text-emerald-700",label: "Completada" },
+          ].map(({ chip, label }) => (
+            <div key={label} className="flex items-center gap-1">
+              <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${chip}`}>Abc</span>
+              <span className="text-[9px] text-neutral-500">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -812,31 +866,39 @@ function WeeklyCleaningsView({
               ) : (
                 <ul className="space-y-1 mt-1">
                   {dayCleanings.map((c) => {
-                    // FASE 4: propertyId ahora apunta directamente a Property.id
                     const propertyIdForColor = c.propertyId;
-                    const color = propertyColorMap.get(propertyIdForColor) ?? "bg-neutral-400";
                     const colorHex = propertyColorHexMap.get(propertyIdForColor) ?? "#64748b";
-                    const ui = getCleaningUi(c.status, color);
-                    
+                    const label = c.property.shortName || c.property.name;
+                    const kind = hostKindFromCleaning({
+                      status: c.status,
+                      assignmentStatus: (c as any).assignmentStatus,
+                      assignedMemberId: (c as any).assignedMemberId,
+                      assignedMembershipId: (c as any).assignedMembershipId,
+                    });
+                    const visual = getHostVisual(kind);
+                    const assigneeName =
+                      firstNameOf((c as any).assignedMember?.name ?? (c as any).TeamMembership?.User?.name);
+                    const badgeLabel =
+                      kind === "assigned_pending" && assigneeName
+                        ? truncateBadge(assigneeName)
+                        : visual.badgeShort;
+                    const tooltipText = `${label} · ${
+                      kind === "assigned_pending" && assigneeName ? assigneeName : visual.badgeFull
+                    }`;
+
                     return (
                       <li
                         key={c.id}
-                        className={`text-[10px] text-neutral-700 ${ui.titleClass || ""}`}
-                        title={`${c.property.shortName || c.property.name} · ${formatStatus(c.status)}`}
+                        className={`rounded px-1 py-[2px] text-[10px] flex items-center gap-1 ${visual.pillBg} ${visual.pillText} ${visual.strikethrough ? "line-through" : ""}`}
+                        title={tooltipText}
                       >
-                        <span className="font-medium flex items-center gap-1">
-                          <span 
-                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: colorHex }}
-                          />
-                          {c.property.shortName || c.property.name}
-                        </span>
-                        <span className="text-neutral-500">
-                          {" "}
-                          · {c.scheduledDate.toLocaleTimeString("es-MX", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                        <span
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: colorHex }}
+                        />
+                        <span className="truncate font-medium">{label}</span>
+                        <span className={`shrink-0 rounded px-[3px] py-[1px] text-[8px] font-semibold leading-none ${visual.badgeBg} ${visual.badgeTextColor}`}>
+                          {badgeLabel}
                         </span>
                       </li>
                     );

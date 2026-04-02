@@ -12,9 +12,11 @@ import CleanerMenu from "@/lib/ui/CleanerMenu";
 export default function CleanerLayoutClient({
   children,
   menuUser,
+  inProgressCleanings = [],
 }: {
   children: React.ReactNode;
   menuUser: { email: string; nickname: string | null; fullName: string | null };
+  inProgressCleanings?: { id: string }[];
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -25,15 +27,24 @@ export default function CleanerLayoutClient({
     pathname === "/cleaner" && searchParams.toString()
       ? `/cleaner?${searchParams.toString()}`
       : "/cleaner";
-  
+
+  const hasInProgress = inProgressCleanings.length > 0;
+  const inProgressHref =
+    inProgressCleanings.length === 1
+      ? `/cleaner/cleanings/${inProgressCleanings[0].id}?returnTo=/cleaner`
+      : `/cleaner/cleanings/all?scope=all&status=IN_PROGRESS&returnTo=/cleaner`;
+
   const navItems = [
     { href: hoyHref, label: "Hoy", icon: "📅" },
+    ...(hasInProgress
+      ? [{ href: inProgressHref, label: "En progreso", icon: "⚡" }]
+      : []),
     { href: "/cleaner/history", label: "Historial", icon: "📋" },
     { href: "/cleaner/marketplace", label: "Marketplace", icon: "🔍" },
     { href: "/cleaner/messages", label: "Mensajes", icon: "💬" },
     { href: "#", label: "Menú", icon: null, isMenu: true },
   ];
-  
+
   const isActive = (href: string) => {
     if (href === "/cleaner") {
       return pathname === "/cleaner";
@@ -44,7 +55,9 @@ export default function CleanerLayoutClient({
     if (href === "/cleaner/marketplace") {
       return pathname?.startsWith("/cleaner/marketplace");
     }
-    return pathname?.startsWith(href);
+    // Para links con query params (ej: inProgressHref), comparar solo el pathname
+    const hrefPath = href.split("?")[0];
+    return pathname?.startsWith(hrefPath);
   };
   
   // Ocultar bottom nav solo en thread pages (no en inbox /cleaner/messages)
@@ -121,7 +134,7 @@ export default function CleanerLayoutClient({
           className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 pb-[env(safe-area-inset-bottom)] sm:hidden"
           aria-label="Navegación principal"
         >
-          <div className="grid grid-cols-5 h-16">
+          <div className={`grid h-16 ${hasInProgress ? "grid-cols-6" : "grid-cols-5"}`}>
             {navItems.map((item) => {
               if (item.isMenu) {
                 return (

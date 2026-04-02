@@ -6,7 +6,7 @@ import CleanerCleaningLink from "@/lib/ui/CleanerCleaningLink";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import ListContainer from "@/lib/ui/ListContainer";
 import ListThumb from "@/lib/ui/ListThumb";
-import { formatCleaningStatus } from "@/lib/cleaning-ui";
+import { getCleanerVisual } from "@/lib/ui/cleaning-visual-state";
 
 interface Cleaning {
   id: string;
@@ -38,40 +38,32 @@ export default function MyCleaningsSection({
   memberIdParam,
   returnTo,
 }: MyCleaningsSectionProps) {
-  // Estado local para el filtro (sin recargar página)
   const [localMyFilter, setLocalMyFilter] = useState<"pending" | "in_progress">(
     (initialMyFilter === "in_progress" ? "in_progress" : "pending") as "pending" | "in_progress"
   );
 
-  // Filtrar limpiezas según el filtro local
-  const filteredMyCleanings = myCleanings.filter((c) => {
-    if (localMyFilter === "pending") {
-      return c.status === "PENDING";
-    }
-    if (localMyFilter === "in_progress") {
-      return c.status === "IN_PROGRESS";
-    }
-    return false;
-  });
+  const filteredMyCleanings = myCleanings.filter((c) =>
+    localMyFilter === "pending" ? c.status === "PENDING" : c.status === "IN_PROGRESS"
+  );
 
   const [myOpen, setMyOpen] = useState(false);
+  const now = new Date();
 
   return (
     <div className="transition-all duration-300">
       <CollapsibleSection
-        title="Mis limpiezas"
         count={filteredMyCleanings.length}
         open={myOpen}
         onOpenChange={setMyOpen}
       >
-        {/* Chips: Pendientes / En progreso */}
+        {/* Filtro tabs */}
         <div className="flex items-center gap-2 mb-4">
           <button
             type="button"
             onClick={() => setLocalMyFilter("pending")}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
               localMyFilter === "pending"
-                ? "bg-black text-white"
+                ? "bg-blue-600 text-white"
                 : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
             }`}
           >
@@ -82,7 +74,7 @@ export default function MyCleaningsSection({
             onClick={() => setLocalMyFilter("in_progress")}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
               localMyFilter === "in_progress"
-                ? "bg-black text-white"
+                ? "bg-blue-600 text-white"
                 : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
             }`}
           >
@@ -91,19 +83,18 @@ export default function MyCleaningsSection({
         </div>
 
         {filteredMyCleanings.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-sm text-neutral-600">
             No hay limpiezas en esta categoría.
           </div>
         ) : (
           <ListContainer>
-            {filteredMyCleanings.map((cleaning, index: number) => {
+            {filteredMyCleanings.map((cleaning, index) => {
               const isLast = index === filteredMyCleanings.length - 1;
-              const propertyName =
-                cleaning.property.shortName || cleaning.property.name;
+              const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `/cleaner/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
-              const isOverdue =
-                (cleaning.status === "PENDING" || cleaning.status === "IN_PROGRESS") &&
-                new Date(cleaning.scheduledDate) < new Date();
+              const isInProgress = cleaning.status === "IN_PROGRESS";
+              const isOverdue = !isInProgress && new Date(cleaning.scheduledDate) < now;
+              const visual = getCleanerVisual(isInProgress ? "mine_inprogress" : "mine_pending");
 
               return (
                 <CleanerCleaningLink
@@ -112,7 +103,8 @@ export default function MyCleaningsSection({
                   aria-label={`Ver detalles de limpieza ${propertyName}`}
                   className={`
                     flex items-center gap-3 py-3 px-3 sm:px-4 min-h-[44px]
-                    hover:bg-neutral-50 active:opacity-95 transition-colors touch-manipulation
+                    hover:brightness-95 active:opacity-95 transition-all touch-manipulation
+                    border-l-4 ${visual.accentBorder} ${visual.cardBg}
                     ${!isLast ? "border-b border-neutral-200" : ""}
                   `.trim()}
                 >
@@ -122,12 +114,17 @@ export default function MyCleaningsSection({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base font-medium text-neutral-900 truncate">
+                      <h3 className={`text-base font-medium truncate ${visual.cardText}`}>
                         {propertyName}
                       </h3>
+                      {/* Badge de estado */}
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 ${visual.badgeBg} ${visual.badgeTextColor}`}>
+                        {visual.badgeFull}
+                      </span>
+                      {/* Badge de atraso */}
                       {isOverdue && (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 flex-shrink-0">
-                          Vencida
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 shrink-0">
+                          Atrasada
                         </span>
                       )}
                     </div>
@@ -140,11 +137,8 @@ export default function MyCleaningsSection({
                         minute: "2-digit",
                       })}
                     </p>
-                    <p className="text-xs text-neutral-500 mt-1">
-                      Estado: {formatCleaningStatus(cleaning.status)}
-                    </p>
                     {cleaning.notes && (
-                      <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
+                      <p className="text-xs text-neutral-400 line-clamp-2 mt-1">
                         {cleaning.notes}
                       </p>
                     )}
@@ -155,7 +149,7 @@ export default function MyCleaningsSection({
           </ListContainer>
         )}
 
-        {/* CTA Mis limpiezas */}
+        {/* CTA */}
         <div className="mt-4 pt-4 border-t border-neutral-200">
           <Link
             href={
@@ -165,21 +159,9 @@ export default function MyCleaningsSection({
             }
             className="flex items-center justify-between group py-2 hover:opacity-80 transition-opacity"
           >
-            <span className="text-base font-medium text-neutral-900">
-              Mis limpiezas
-            </span>
-            <svg
-              className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <span className="text-sm font-medium text-neutral-900">Mis limpiezas</span>
+            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
@@ -187,4 +169,3 @@ export default function MyCleaningsSection({
     </div>
   );
 }
-

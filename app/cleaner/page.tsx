@@ -15,8 +15,6 @@ import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import CleanerMonthlyCalendar from "@/lib/ui/CleaningsCalendar/CleanerMonthlyCalendar";
 import CleanerDailyCalendar from "@/lib/ui/CleaningsCalendar/CleanerDailyCalendar";
 import SummaryCards from "./SummaryCards";
-import MyCleaningsSection from "./MyCleaningsSection";
-import AvailableCleaningsSection from "./AvailableCleaningsSection";
 import NoMembershipPage from "./NoMembershipPage";
 
 export default async function CleanerPage({
@@ -106,23 +104,6 @@ export default async function CleanerPage({
           returnTo="/cleaner"
         />
 
-        {/* Secciones vacías */}
-        <MyCleaningsSection
-          myCleanings={[]}
-          myThumbUrls={{}}
-          currentMemberId=""
-          myFilter="pending"
-          memberIdParam={undefined}
-          returnTo="/cleaner"
-        />
-
-        <AvailableCleaningsSection
-          availableCount={0}
-          eligibleCleanings={[]}
-          availableThumbUrls={{}}
-          currentMemberId=""
-          returnTo="/cleaner"
-        />
       </Page>
     );
   }
@@ -334,23 +315,6 @@ export default async function CleanerPage({
           returnTo={buildReturnTo()}
         />
 
-        {/* Secciones vacías */}
-        <MyCleaningsSection
-          myCleanings={[]}
-          myThumbUrls={emptyThumbUrlsRecord}
-          currentMemberId=""
-          myFilter={myFilter}
-          memberIdParam={memberIdParam}
-          returnTo={buildReturnTo()}
-        />
-
-        <AvailableCleaningsSection
-          availableCount={0}
-          eligibleCleanings={[]}
-          availableThumbUrls={emptyThumbUrlsRecord}
-          currentMemberId=""
-          returnTo={buildReturnTo()}
-        />
       </Page>
     );
   }
@@ -638,23 +602,6 @@ export default async function CleanerPage({
           returnTo={buildReturnTo()}
         />
 
-        {/* Secciones vacías */}
-        <MyCleaningsSection
-          myCleanings={[]}
-          myThumbUrls={emptyThumbUrlsRecord}
-          currentMemberId={currentMemberId}
-          myFilter={myFilter}
-          memberIdParam={memberIdParam}
-          returnTo={buildReturnTo()}
-        />
-
-        <AvailableCleaningsSection
-          availableCount={0}
-          eligibleCleanings={[]}
-          availableThumbUrls={emptyThumbUrlsRecord}
-          currentMemberId={currentMemberId}
-          returnTo={buildReturnTo()}
-        />
       </Page>
     );
   }
@@ -1026,27 +973,6 @@ export default async function CleanerPage({
       }
       containerClassName="pt-6"
     >
-      {/* Mis limpiezas */}
-      <MyCleaningsSection
-        myCleanings={myCleanings.map((c: any) => ({
-          id: c.id,
-          scheduledDate: c.scheduledDate,
-          property: {
-            id: c.property.id,
-            name: c.property.name,
-            shortName: c.property.shortName,
-            coverAssetGroupId: c.property.coverAssetGroupId,
-          },
-          status: c.status,
-          notes: c.notes,
-        }))}
-        myThumbUrls={Object.fromEntries(myThumbUrls)}
-        currentMemberId={currentMemberId}
-        myFilter={myFilter}
-        memberIdParam={memberIdParam}
-        returnTo={buildReturnTo()}
-      />
-
       {/* Calendario - tabs sticky para evitar que toques en la lista activen Mes por superposición */}
       <section className="space-y-3">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-white py-2 -mx-4 px-4 sm:mx-0 sm:px-0 mb-2">
@@ -1200,25 +1126,6 @@ export default async function CleanerPage({
         returnTo={buildReturnTo()}
       />
 
-      {/* Disponibles */}
-      <AvailableCleaningsSection
-        availableCount={availableCount}
-        eligibleCleanings={eligibleCleanings.map((c: any) => ({
-          id: c.id,
-          scheduledDate: c.scheduledDate,
-          property: {
-            id: c.property.id,
-            name: c.property.name,
-            shortName: c.property.shortName,
-            coverAssetGroupId: c.property.coverAssetGroupId,
-          },
-          status: c.status,
-          notes: c.notes,
-        }))}
-        availableThumbUrls={Object.fromEntries(availableThumbUrls)}
-        currentMemberId={currentMemberId}
-        returnTo={buildReturnTo()}
-      />
     </Page>
   );
 }
