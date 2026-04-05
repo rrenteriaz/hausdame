@@ -90,8 +90,6 @@ export default async function CleanerPage({
             memberCleanings={[]}
             lostCleanings={[]}
             availableCleanings={[]}
-            buildMonthHref={(date) => `/cleaner?view=month&month=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`}
-            buildDayHref={(date) => `/cleaner?view=day&date=${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`}
           />
         </section>
 
@@ -286,8 +284,7 @@ export default async function CleanerPage({
               memberCleanings={[]}
               lostCleanings={[]}
               availableCleanings={[]}
-              buildMonthHref={buildMonthHref}
-              buildDayHref={buildDayHref}
+              memberIdParam={memberIdParam}
             />
           ) : (
             <CleanerDailyCalendar
@@ -573,8 +570,7 @@ export default async function CleanerPage({
               memberCleanings={[]}
               lostCleanings={[]}
               availableCleanings={[]}
-              buildMonthHref={buildMonthHref}
-              buildDayHref={buildDayHref}
+              memberIdParam={memberIdParam}
             />
           ) : (
             <CleanerDailyCalendar
@@ -1053,8 +1049,7 @@ export default async function CleanerPage({
               },
               status: c.status,
             }))}
-            buildMonthHref={buildMonthHref}
-            buildDayHref={buildDayHref}
+            memberIdParam={memberIdParam}
           />
         ) : (
           <CleanerDailyCalendar
