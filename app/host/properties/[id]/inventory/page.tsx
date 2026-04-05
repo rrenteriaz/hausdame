@@ -19,6 +19,8 @@ import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import ZonesManagementSection from "./ZonesManagementSection";
 import CopyZoneInventoryModal from "./CopyZoneInventoryModal";
+import { bootstrapPropertyZones } from "@/lib/zones/bootstrapPropertyZones";
+import ZonesBannerClient from "@/lib/ui/inventory/ZonesBannerClient";
 
 export default async function InventoryPage({
   params,
@@ -95,8 +97,8 @@ export default async function InventoryPage({
   );
 
   // Phase 12: Cargar zonas OPERATIONAL activas con conteo de items (para ZonesManagementSection)
-  const propertyZones = await prisma.propertyZone.findMany({
-    where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL", isActive: true },
+  const zonesQuery = {
+    where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL" as const, isActive: true },
     select: {
       id: true,
       name: true,
@@ -104,8 +106,15 @@ export default async function InventoryPage({
       operationalCategory: true,
       _count: { select: { inventoryLines: { where: { isActive: true } } } },
     },
-    orderBy: { sortOrder: "asc" },
-  });
+    orderBy: { sortOrder: "asc" as const },
+  };
+  // Bootstrap idempotente: asegura que las zonas canónicas existan (crea solo las que faltan).
+  // Se ejecuta siempre para cubrir propiedades creadas antes del bootstrap automático.
+  const bootstrapResult = await bootstrapPropertyZones(tenantId, property.id);
+  let propertyZones = await prisma.propertyZone.findMany(zonesQuery);
+
+  // Mostrar banner solo la primera vez (cuando se crearon zonas nuevas)
+  const showZonesBanner = bootstrapResult.operationalCreated > 0;
 
   // Obtener historial de incidencias (stats) para las líneas mostradas
   const lineIds = inventoryLines.map(line => line.id);
@@ -182,6 +191,8 @@ export default async function InventoryPage({
         backHref={returnTo}
       >
         <div className="space-y-6">
+          {showZonesBanner && <ZonesBannerClient propertyId={property.id} />}
+
           {/* Lista agrupada por área */}
           {inventoryLines.length === 0 ? (
             <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">

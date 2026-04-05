@@ -25,12 +25,14 @@ import {
 import {
   OPERATIONAL_CATEGORY_OPTIONS,
 } from "@/lib/inventory-zone-labels";
+import { inferZoneCategory } from "@/lib/zones/inferZoneCategory";
 import type { PropertyZoneOperationalCategory } from "@prisma/client";
 import { InventoryPriority } from "@prisma/client";
 import { inferInventoryData, type AttentionLevel } from "@/lib/inventory-inference";
-import { isBedSizeVariantable, getBedSizeVariantConfig, BED_SIZE_VARIANT } from "@/lib/inventory-suggestions";
+import { isBedSizeVariantable } from "@/lib/inventory-suggestions";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
-import { normalizeName } from "@/lib/inventory-normalize";
+import { normalizeName, normalizeVariantValue } from "@/lib/inventory-normalize";
+import { CANONICAL_VARIANT_GROUPS } from "@/lib/inventory-canonical-variants";
 
 interface AddInventoryItemWizardProps {
   propertyId: string;
@@ -97,6 +99,7 @@ export default function AddInventoryItemWizard({
   const [showNewZoneForm, setShowNewZoneForm] = useState(false);
   const [newZoneName, setNewZoneName] = useState("");
   const [newZoneCategory, setNewZoneCategory] = useState<PropertyZoneOperationalCategory | "">("");
+  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
   const [isCreatingZone, setIsCreatingZone] = useState(false);
   const [newZoneError, setNewZoneError] = useState<string | null>(null);
 
@@ -384,10 +387,14 @@ export default function AddInventoryItemWizard({
       setShowNewZoneForm(false);
       setNewZoneName("");
       setNewZoneCategory("");
+      setCategoryManuallySet(false);
       // Auto-advance if zone is the only requirement (not variantable or variant already set)
-      const isVariantableItem = selectedItemVariantKey === "bed_size" ||
-        (itemName && isBedSizeVariantable(itemName, selectedItemVariantKey));
-      if (!isVariantableItem || variantValue) {
+      const wizardVariantGroupOnCreate = selectedItemVariantKey
+        ? (CANONICAL_VARIANT_GROUPS.find((g) => g.key === selectedItemVariantKey) ?? null)
+        : (isBedSizeVariantable(itemName, selectedItemVariantKey)
+            ? (CANONICAL_VARIANT_GROUPS.find((g) => g.key === "bed_size") ?? null)
+            : null);
+      if (!wizardVariantGroupOnCreate || variantValue) {
         setStep("ATTENTION");
       }
     } catch (err) {
@@ -396,6 +403,18 @@ export default function AddInventoryItemWizard({
       setIsCreatingZone(false);
     }
   };
+
+  // Inferencia automática de categoría al escribir el nombre del área
+  useEffect(() => {
+    if (!newZoneName.trim()) {
+      setNewZoneCategory("");
+      setCategoryManuallySet(false);
+      return;
+    }
+    if (!categoryManuallySet) {
+      setNewZoneCategory(inferZoneCategory(newZoneName) ?? "");
+    }
+  }, [newZoneName, categoryManuallySet]);
 
   // Paso 3: Confirmar y crear
   const handleConfirm = async () => {
@@ -439,20 +458,15 @@ export default function AddInventoryItemWizard({
           formData.set("itemName", itemName);
         }
 
-        // Agregar variante si aplica
-        const isVariantable = selectedItemVariantKey === "bed_size" || 
-                              (itemName && isBedSizeVariantable(itemName, selectedItemVariantKey));
-        if (isVariantable && variantValue) {
-          formData.set("variantKey", "bed_size");
-          // Obtener el label para guardar (el valor normalizado se maneja en el servidor)
-          const bedSizeConfig = getBedSizeVariantConfig();
-          const option = bedSizeConfig.variantOptions.find(opt => opt.value === variantValue);
-          if (option) {
-            // Guardar el label (ej: "Individual") para display, el servidor lo normalizará
-            formData.set("variantValue", option.label);
-          } else {
-            formData.set("variantValue", variantValue); // Fallback
-          }
+        // Agregar variante si aplica — V1.5: soporte para todos los grupos canónicos
+        const wizardVariantGroup = selectedItemVariantKey
+          ? (CANONICAL_VARIANT_GROUPS.find((g) => g.key === selectedItemVariantKey) ?? null)
+          : (isBedSizeVariantable(itemName, selectedItemVariantKey)
+              ? (CANONICAL_VARIANT_GROUPS.find((g) => g.key === "bed_size") ?? null)
+              : null);
+        if (wizardVariantGroup && variantValue) {
+          formData.set("variantKey", wizardVariantGroup.key);
+          formData.set("variantValue", variantValue); // opt.value (etiqueta de display)
         }
 
         // Paso 3: Validar duplicados ANTES de crear
@@ -706,12 +720,15 @@ export default function AddInventoryItemWizard({
           </div>
         );
 
-      case "AREA":
+      case "AREA": {
         // Phase 7: zonas desde PropertyZone (sorted by sortOrder)
-        // Determinar si el item es variantable
-        const isVariantable = selectedItemVariantKey === "bed_size" ||
-                              (itemName && isBedSizeVariantable(itemName, selectedItemVariantKey));
-        const bedSizeConfig = isVariantable ? getBedSizeVariantConfig() : null;
+        // V1.5: soporte para todos los grupos canónicos
+        const wizardVariantGroup = selectedItemVariantKey
+          ? (CANONICAL_VARIANT_GROUPS.find((g) => g.key === selectedItemVariantKey) ?? null)
+          : (isBedSizeVariantable(itemName, selectedItemVariantKey)
+              ? (CANONICAL_VARIANT_GROUPS.find((g) => g.key === "bed_size") ?? null)
+              : null);
+        const isVariantable = !!wizardVariantGroup;
 
         return (
           <div className="space-y-4">
@@ -767,16 +784,24 @@ export default function AddInventoryItemWizard({
                   autoFocus
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
                 />
-                <select
-                  value={newZoneCategory}
-                  onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
-                >
-                  <option value="">Categoría (opcional)</option>
-                  {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+                <div>
+                  <select
+                    value={newZoneCategory}
+                    onChange={(e) => {
+                      setCategoryManuallySet(true);
+                      setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "");
+                    }}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="">Categoría (opcional)</option>
+                    {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  {!categoryManuallySet && newZoneCategory && (
+                    <p className="text-xs text-neutral-400 mt-1">Sugerida según el nombre del área</p>
+                  )}
+                </div>
                 {newZoneError && <p className="text-xs text-red-600">{newZoneError}</p>}
                 <div className="flex gap-2">
                   <button
@@ -789,7 +814,7 @@ export default function AddInventoryItemWizard({
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setNewZoneError(null); }}
+                    onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setCategoryManuallySet(false); setNewZoneError(null); }}
                     className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded-lg transition"
                   >
                     Cancelar
@@ -798,36 +823,38 @@ export default function AddInventoryItemWizard({
               </div>
             )}
 
-            {/* Selector de variante (solo si el item es variantable) */}
-            {isVariantable && bedSizeConfig && (
+            {/* Selector de variante — V1.5: soporte para todos los grupos canónicos */}
+            {isVariantable && wizardVariantGroup && (
               <div className="space-y-2 pt-4 border-t border-neutral-200">
                 <label className="text-sm font-medium text-neutral-700">
-                  {bedSizeConfig.variantLabel} *
+                  {wizardVariantGroup.label} *
                 </label>
                 <p className="text-xs text-neutral-500 mb-2">
-                  Selecciona el tamaño antes de continuar
+                  Selecciona antes de continuar
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {bedSizeConfig.variantOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        setVariantValue(option.value);
-                        // Phase 7: auto-avance si ya hay zona seleccionada
-                        if (propertyZoneId) {
-                          setStep("ATTENTION");
-                        }
-                      }}
-                      className={`p-3 rounded-lg border-2 transition text-sm ${
-                        variantValue === option.value
-                          ? "border-neutral-900 bg-neutral-900 text-white"
-                          : "border-neutral-200 hover:border-neutral-300"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-2">
+                  {wizardVariantGroup.options.map((opt) => {
+                    const isSelected = normalizeVariantValue(variantValue) === opt.valueNormalized;
+                    return (
+                      <button
+                        key={opt.valueNormalized}
+                        type="button"
+                        onClick={() => {
+                          setVariantValue(opt.value);
+                          if (propertyZoneId) {
+                            setStep("ATTENTION");
+                          }
+                        }}
+                        className={`px-3 py-2 rounded-lg border-2 transition text-sm ${
+                          isSelected
+                            ? "border-neutral-900 bg-neutral-900 text-white"
+                            : "border-neutral-200 hover:border-neutral-300"
+                        }`}
+                      >
+                        {opt.value}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -841,6 +868,7 @@ export default function AddInventoryItemWizard({
             </button>
           </div>
         );
+      }
 
       case "ATTENTION":
         return (

@@ -374,24 +374,16 @@ export async function createProperty(formData: FormData) {
         icalUrl: icalUrl ?? undefined,
         propertyZones: {
           create: [
-            {
-              tenantId,
-              name: "Almacén",
-              normalizedName: "almacen",
-              zoneType: PropertyZoneType.VIRTUAL,
-              virtualKind: PropertyZoneVirtualKind.STORAGE,
-              sortOrder: 100,
-              isActive: true,
-            },
-            {
-              tenantId,
-              name: "Dañados / Baja",
-              normalizedName: "danados / baja",
-              zoneType: PropertyZoneType.VIRTUAL,
-              virtualKind: PropertyZoneVirtualKind.DAMAGED,
-              sortOrder: 110,
-              isActive: true,
-            },
+            // Zonas operacionales base
+            { tenantId, name: "Entrada",    normalizedName: "entrada",    zoneType: PropertyZoneType.OPERATIONAL, sortOrder: 10,  isActive: true },
+            { tenantId, name: "Sala",       normalizedName: "sala",       zoneType: PropertyZoneType.OPERATIONAL, sortOrder: 20,  isActive: true },
+            { tenantId, name: "Comedor",    normalizedName: "comedor",    zoneType: PropertyZoneType.OPERATIONAL, sortOrder: 30,  isActive: true },
+            { tenantId, name: "Cocina",     normalizedName: "cocina",     zoneType: PropertyZoneType.OPERATIONAL, sortOrder: 40,  isActive: true },
+            { tenantId, name: "Baño 1",     normalizedName: "bano 1",     zoneType: PropertyZoneType.OPERATIONAL, sortOrder: 50,  isActive: true },
+            { tenantId, name: "Recámara 1", normalizedName: "recamara 1", zoneType: PropertyZoneType.OPERATIONAL, sortOrder: 60,  isActive: true },
+            // Zonas virtuales canónicas
+            { tenantId, name: "Almacén",       normalizedName: "almacen",       zoneType: PropertyZoneType.VIRTUAL, virtualKind: PropertyZoneVirtualKind.STORAGE,  sortOrder: 100, isActive: true },
+            { tenantId, name: "Dañados / Baja", normalizedName: "danados / baja", zoneType: PropertyZoneType.VIRTUAL, virtualKind: PropertyZoneVirtualKind.DAMAGED, sortOrder: 110, isActive: true },
           ],
         },
       },

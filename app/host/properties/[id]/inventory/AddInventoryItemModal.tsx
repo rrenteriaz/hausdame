@@ -21,6 +21,7 @@ import {
 import {
   OPERATIONAL_CATEGORY_OPTIONS,
 } from "@/lib/inventory-zone-labels";
+import { inferZoneCategory } from "@/lib/zones/inferZoneCategory";
 import type { PropertyZoneOperationalCategory } from "@prisma/client";
 import {
   InventoryCategory,
@@ -34,7 +35,6 @@ import {
   BED_SIZE_VARIANT,
   getAllowedCategoriesForArea,
   isBedSizeVariantable,
-  getBedSizeVariantConfig,
   type InventorySuggestion,
 } from "@/lib/inventory-suggestions";
 import { normalizeName, normalizeVariantValue } from "@/lib/inventory-normalize";
@@ -49,6 +49,7 @@ import DuplicateItemWarningModal from "./DuplicateItemWarningModal";
 import CreateVariantGroupModal from "./CreateVariantGroupModal";
 import EditVariantGroupModal from "./EditVariantGroupModal";
 import AddVariantGroupPickerModal from "./AddVariantGroupPickerModal";
+import { CANONICAL_VARIANT_GROUPS } from "@/lib/inventory-canonical-variants";
 
 type EditData = Awaited<ReturnType<typeof getInventoryLineForEditAction>>;
 
@@ -176,6 +177,7 @@ export default function AddInventoryItemModal({
     Array<{ key: string; label: string | null; options: Array<{ value: string; valueNormalized: string }> }>
   >([]);
   const [hasVariantsToggle, setHasVariantsToggle] = useState(false);
+  const [variantEnabled, setVariantEnabled] = useState(false); // V1.5: toggle para modo creación
   const [showCreateVariantGroupModal, setShowCreateVariantGroupModal] = useState(false);
   const [showAddVariantGroupPickerModal, setShowAddVariantGroupPickerModal] = useState(false);
   const [showEditVariantGroupModal, setShowEditVariantGroupModal] = useState(false);
@@ -191,22 +193,6 @@ export default function AddInventoryItemModal({
     return "no_group";
   }, [isLoadingForEdit, hasVariantsToggle, variantGroup]);
 
-  // Selección única por grupo (patrón Colcha): línea activa actual para el variantGroup
-  const activeVariantLine = useMemo(() => {
-    if (!variantGroup) return null;
-    return (
-      siblings.find(
-        (s) =>
-          s.isActive !== false &&
-          s.variantKey === variantGroup.key &&
-          s.variantValueNormalized
-      ) ?? null
-    );
-  }, [variantGroup, siblings]);
-
-  const selectedVariantNormalized =
-    pendingVariantNormalized ?? activeVariantLine?.variantValueNormalized ?? null;
-
   // Phase 7: zonas OPERATIONAL de la propiedad
   const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null; operationalCategory: PropertyZoneOperationalCategory | null }[]>([]);
   const [loadingAreas, setLoadingAreas] = useState(false);
@@ -215,6 +201,7 @@ export default function AddInventoryItemModal({
   const [showNewZoneForm, setShowNewZoneForm] = useState(false);
   const [newZoneName, setNewZoneName] = useState("");
   const [newZoneCategory, setNewZoneCategory] = useState<PropertyZoneOperationalCategory | "">("");
+  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
   const [isCreatingZone, setIsCreatingZone] = useState(false);
   const [newZoneError, setNewZoneError] = useState<string | null>(null);
 
@@ -522,6 +509,7 @@ export default function AddInventoryItemModal({
     setVariantGroup(null);
     setVariantGroups([]);
     setHasVariantsToggle(false);
+    setVariantEnabled(false);
     setShowCreateVariantGroupModal(false);
     setShowEditVariantGroupModal(false);
     setPendingVariantNormalized(null);
@@ -576,6 +564,18 @@ export default function AddInventoryItemModal({
     }
   };
 
+  // Inferencia automática de categoría al escribir el nombre del área
+  useEffect(() => {
+    if (!newZoneName.trim()) {
+      setNewZoneCategory("");
+      setCategoryManuallySet(false);
+      return;
+    }
+    if (!categoryManuallySet) {
+      setNewZoneCategory(inferZoneCategory(newZoneName) ?? "");
+    }
+  }, [newZoneName, categoryManuallySet]);
+
   // Phase 12: crear zona inline desde el AREA step
   const handleCreateZone = async () => {
     const trimmed = newZoneName.trim();
@@ -590,6 +590,7 @@ export default function AddInventoryItemModal({
       setShowNewZoneForm(false);
       setNewZoneName("");
       setNewZoneCategory("");
+      setCategoryManuallySet(false);
       setTimeout(() => goToStep("CATEGORY"), 100);
     } catch (err) {
       setNewZoneError(err instanceof Error ? err.message : "Error al crear el área");
@@ -620,9 +621,11 @@ export default function AddInventoryItemModal({
     
     // Configurar variante si la sugerencia la requiere
     if (suggestion.variantKey && suggestion.variantOptions) {
+      setVariantEnabled(true);
       setVariantKey(suggestion.variantKey);
       setVariantValue("");
     } else {
+      setVariantEnabled(false);
       setVariantKey(null);
       setVariantValue("");
     }
@@ -662,9 +665,11 @@ export default function AddInventoryItemModal({
     // Si el item del catálogo tiene defaultVariantKey, configurar variante
     if (item.defaultVariantKey) {
       console.log("Item tiene variante:", item.defaultVariantKey, "Opciones:", item.defaultVariantOptions);
+      setVariantEnabled(true);
       setVariantKey(item.defaultVariantKey);
       setVariantValue("");
     } else {
+      setVariantEnabled(false);
       setVariantKey(null);
       setVariantValue("");
     }
@@ -726,6 +731,7 @@ export default function AddInventoryItemModal({
       
       // Configurar variante si se seleccionó
       if (data.variantKey) {
+        setVariantEnabled(true);
         setVariantKey(data.variantKey);
         setVariantValue(""); // El usuario seleccionará el valor en el paso DETAILS
         
@@ -754,30 +760,14 @@ export default function AddInventoryItemModal({
     }
   };
 
-  // Determinar si se requiere variante
+  // Determinar si se requiere variante (variantEnabled con grupo seleccionado en CREATE, o toggle ON con grupo en EDIT)
   const requiresVariant = variantKey !== null;
-  
-  // Obtener opciones de variante
-  const getVariantOptions = () => {
-    if (variantKey === "bed_size") {
-      return BED_SIZE_VARIANT.variantOptions;
-    }
-    if (selectedSuggestion?.variantOptions) {
-      return selectedSuggestion.variantOptions;
-    }
-    // Si es una variante personalizada de un item del catálogo
-    if (selectedCatalogItem?.defaultVariantOptions && Array.isArray(selectedCatalogItem.defaultVariantOptions)) {
-      console.log("Usando variantes personalizadas del catálogo:", selectedCatalogItem.defaultVariantOptions);
-      return selectedCatalogItem.defaultVariantOptions;
-    }
-    console.log("No se encontraron opciones de variante. variantKey:", variantKey, "selectedCatalogItem:", selectedCatalogItem);
-    return [];
-  };
-
-  const variantOptions = getVariantOptions();
-  const variantLabel = variantKey === "bed_size" 
-    ? BED_SIZE_VARIANT.variantLabel 
-    : selectedCatalogItem?.defaultVariantLabel || selectedSuggestion?.variantLabel || "Variante";
+  const variantLabel = (() => {
+    if (variantKey === "bed_size") return BED_SIZE_VARIANT.variantLabel;
+    const canonicalGroup = CANONICAL_VARIANT_GROUPS.find((g) => g.key === variantKey);
+    if (canonicalGroup) return canonicalGroup.label;
+    return selectedCatalogItem?.defaultVariantLabel || selectedSuggestion?.variantLabel || "Variante";
+  })();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -815,10 +805,9 @@ export default function AddInventoryItemModal({
       return;
     }
 
-    const hasVariantSelection = selectedVariantNormalized != null;
-    if (isEditMode && hasVariantsToggle && editStage === "has_group" && !hasVariantSelection) {
+    if (isEditMode && hasVariantsToggle && variantKey && !variantValue) {
       setError(
-        "Selecciona una opción antes de guardar, o desactiva el toggle de variantes."
+        "Selecciona una opción antes de guardar, o desactiva el toggle de variante."
       );
       return;
     }
@@ -1088,8 +1077,8 @@ export default function AddInventoryItemModal({
     if (step === "CATEGORY") return category !== "";
     if (step === "ITEM") return selectedItemId !== "" || customItemName.trim().length > 0;
     if (step === "DETAILS") {
-      const hasVariantSelection = selectedVariantNormalized != null;
-      if (isEditMode && editStage === "has_group" && !hasVariantSelection) {
+      // V1.5: EDIT con toggle ON y grupo seleccionado requiere valor
+      if (isEditMode && hasVariantsToggle && variantKey && !variantValue) {
         return false;
       }
       return (
@@ -1320,23 +1309,31 @@ export default function AddInventoryItemModal({
                           autoFocus
                           className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
                         />
-                        <select
-                          value={newZoneCategory}
-                          onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
-                          className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
-                        >
-                          <option value="">Categoría (opcional)</option>
-                          {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </select>
+                        <div>
+                          <select
+                            value={newZoneCategory}
+                            onChange={(e) => {
+                              setCategoryManuallySet(true);
+                              setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "");
+                            }}
+                            className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
+                          >
+                            <option value="">Categoría (opcional)</option>
+                            {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                              <option key={value} value={value}>{label}</option>
+                            ))}
+                          </select>
+                          {!categoryManuallySet && newZoneCategory && (
+                            <p className="text-xs text-neutral-400 mt-1">Sugerida según el nombre del área</p>
+                          )}
+                        </div>
                         {newZoneError && <p className="text-xs text-red-600">{newZoneError}</p>}
                         <div className="flex gap-2">
                           <button type="button" onClick={handleCreateZone} disabled={isCreatingZone}
                             className="flex-1 py-1.5 text-xs font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition">
                             {isCreatingZone ? "Guardando..." : "Crear área"}
                           </button>
-                          <button type="button" onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setNewZoneError(null); }}
+                          <button type="button" onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setCategoryManuallySet(false); setNewZoneError(null); }}
                             className="px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
                             Cancelar
                           </button>
@@ -1817,20 +1814,28 @@ export default function AddInventoryItemModal({
                               onKeyDown={(e) => { if (e.key === "Enter") handleCreateZone(); if (e.key === "Escape") setShowNewZoneForm(false); }}
                               placeholder="Ej. Baño principal" autoFocus
                               className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400" />
-                            <select value={newZoneCategory} onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
-                              className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white">
-                              <option value="">Categoría (opcional)</option>
-                              {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
-                                <option key={value} value={value}>{label}</option>
-                              ))}
-                            </select>
+                            <div>
+                              <select value={newZoneCategory} onChange={(e) => {
+                                  setCategoryManuallySet(true);
+                                  setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "");
+                                }}
+                                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white">
+                                <option value="">Categoría (opcional)</option>
+                                {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                                  <option key={value} value={value}>{label}</option>
+                                ))}
+                              </select>
+                              {!categoryManuallySet && newZoneCategory && (
+                                <p className="text-xs text-neutral-400 mt-1">Sugerida según el nombre del área</p>
+                              )}
+                            </div>
                             {newZoneError && <p className="text-xs text-red-600">{newZoneError}</p>}
                             <div className="flex gap-2">
                               <button type="button" onClick={handleCreateZone} disabled={isCreatingZone}
                                 className="flex-1 py-1.5 text-xs font-medium bg-neutral-900 text-white rounded-lg disabled:opacity-50 transition">
                                 {isCreatingZone ? "Guardando..." : "Crear área"}
                               </button>
-                              <button type="button" onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setNewZoneError(null); }}
+                              <button type="button" onClick={() => { setShowNewZoneForm(false); setNewZoneName(""); setNewZoneCategory(""); setCategoryManuallySet(false); setNewZoneError(null); }}
                                 className="px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
                                 Cancelar
                               </button>
@@ -1909,7 +1914,7 @@ export default function AddInventoryItemModal({
                         </div>
                     </div>
 
-                    {/* Sección Variantes (solo modo edición) — editStage state machine */}
+                    {/* Sección Variante — V1.5 (modo edición) */}
                     {isEditMode && (
                       <div className="pt-3 border-t border-neutral-200 space-y-3">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -1920,6 +1925,8 @@ export default function AddInventoryItemModal({
                               const checked = e.target.checked;
                               setHasVariantsToggle(checked);
                               if (!checked) {
+                                setVariantKey(null);
+                                setVariantValue("");
                                 setVariantGroup(null);
                                 setVariantGroups([]);
                                 setPendingVariantNormalized(null);
@@ -1929,176 +1936,233 @@ export default function AddInventoryItemModal({
                             className="w-4 h-4 rounded border-neutral-300 text-black disabled:opacity-50"
                           />
                           <span className="text-sm font-medium text-neutral-700">
-                            Este ítem tiene variantes
+                            Este ítem tiene variante
                           </span>
                         </label>
 
                         {editStage === "loading" && (
                           <p className="text-xs text-neutral-500">Cargando variantes…</p>
                         )}
-                        {editStage === "no_group" && (
-                          <div className="space-y-2">
-                            <button
-                              type="button"
-                              onClick={() => setShowAddVariantGroupPickerModal(true)}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-neutral-900 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800"
-                            >
-                              <span className="text-neutral-300">+</span>
-                              Agregar grupo
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowCreateVariantGroupModal(true)}
-                              className="block text-sm text-neutral-600 hover:text-neutral-900"
-                            >
-                              Crear grupo nuevo
-                            </button>
-                            {isBedSizeVariantable(editingItemName ?? "") && (
-                              <p className="text-xs text-neutral-500 mt-1.5">
-                                Se sugiere &quot;Tamaño de cama&quot; para este ítem
-                              </p>
-                            )}
+
+                        {hasVariantsToggle && editStage !== "loading" && (() => {
+                          // Grupos disponibles para el picker: siempre los 3 canónicos +
+                          // cualquier grupo custom de la BD (no canónico).
+                          const pickerGroups = [
+                            ...CANONICAL_VARIANT_GROUPS,
+                            ...variantGroups.filter(
+                              (g) => !CANONICAL_VARIANT_GROUPS.some((c) => c.key === g.key)
+                            ),
+                          ];
+                          const selectedGrp = variantKey
+                            ? (() => {
+                                // Para grupos canónicos, siempre usar las opciones de CANONICAL_VARIANT_GROUPS
+                                // para evitar mostrar opciones desactualizadas/incompletas de la BD.
+                                const canonical = CANONICAL_VARIANT_GROUPS.find((g) => g.key === variantKey);
+                                if (canonical) return canonical;
+                                return pickerGroups.find((g) => g.key === variantKey) ?? null;
+                              })()
+                            : null;
+
+                          return (
+                            <div className="space-y-3">
+                              {!selectedGrp && (
+                                <div>
+                                  <p className="text-xs text-neutral-500 mb-2">
+                                    Selecciona el tipo de variante
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {pickerGroups.map((grp) => (
+                                      <button
+                                        key={grp.key}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setVariantKey(grp.key);
+                                          setVariantValue("");
+                                          setPendingVariantNormalized(null);
+                                          setVariantGroup({
+                                            key: grp.key,
+                                            label: grp.label ?? null,
+                                            options: [...grp.options],
+                                          });
+                                        }}
+                                        className="px-3 py-1.5 rounded-full text-sm border border-neutral-300 hover:border-neutral-500 hover:bg-neutral-50 transition"
+                                      >
+                                        {grp.label ?? grp.key}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedGrp && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-medium text-neutral-600">
+                                      {selectedGrp.label ?? selectedGrp.key}
+                                    </p>
+                                    {pickerGroups.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setVariantKey(null);
+                                          setVariantValue("");
+                                          setPendingVariantNormalized(null);
+                                        }}
+                                        className="text-xs text-neutral-500 hover:text-neutral-700 underline"
+                                      >
+                                        Cambiar
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {selectedGrp.options.map((opt) => {
+                                      const isSelected =
+                                        normalizeVariantValue(variantValue) === opt.valueNormalized;
+                                      return (
+                                        <button
+                                          key={opt.valueNormalized}
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setVariantKey(selectedGrp.key);
+                                            setVariantValue(opt.value);
+                                            setPendingVariantNormalized(opt.valueNormalized);
+                                            setVariantGroup({
+                                              key: selectedGrp.key,
+                                              label: selectedGrp.label ?? null,
+                                              options: [...selectedGrp.options],
+                                            });
+                                          }}
+                                          className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                                            isSelected
+                                              ? "border-neutral-900 bg-neutral-900 text-white"
+                                              : "border-neutral-300 hover:bg-neutral-50 cursor-pointer"
+                                          }`}
+                                        >
+                                          {opt.value}
+                                          {isSelected ? " ✓" : ""}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {variantKey && !variantValue && (
+                                    <p className="text-xs text-amber-700 mt-1.5">
+                                      Selecciona una opción antes de guardar.
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Sección Variante — V1.5 (modo creación) */}
+                    {!isEditMode && (
+                      <div className="pt-3 border-t border-neutral-200 space-y-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={variantEnabled}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setVariantEnabled(checked);
+                              if (!checked) {
+                                setVariantKey(null);
+                                setVariantValue("");
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-neutral-300 text-black"
+                          />
+                          <span className="text-sm font-medium text-neutral-700">
+                            Este ítem tiene variante
+                          </span>
+                        </label>
+
+                        {variantEnabled && !variantKey && (
+                          <div>
+                            <p className="text-xs text-neutral-500 mb-2">
+                              Selecciona el tipo de variante
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {CANONICAL_VARIANT_GROUPS.map((grp) => (
+                                <button
+                                  key={grp.key}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setVariantKey(grp.key);
+                                    setVariantValue("");
+                                  }}
+                                  className="px-3 py-1.5 rounded-full text-sm border border-neutral-300 hover:border-neutral-500 hover:bg-neutral-50 transition"
+                                >
+                                  {grp.label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        {editStage === "has_group" && variantGroup && (
-                          <div className="space-y-3">
-                            {variantGroups.length > 1 && (
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                                <span className="text-xs text-neutral-500">Grupo:</span>
-                                {variantGroups.map((grp) => {
-                                  const isSelected = variantGroup.key === grp.key;
-                                  const label = grp.label || grp.key;
-                                  return (
-                                    <button
-                                      key={grp.key}
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setVariantGroup({
-                                          key: grp.key,
-                                          label: grp.label,
-                                          options: grp.options,
-                                        });
-                                        setPendingVariantNormalized(null);
-                                      }}
-                                      className={`text-sm underline cursor-pointer transition ${
-                                        isSelected
-                                          ? "text-neutral-900 font-medium"
-                                          : "text-neutral-500 hover:text-neutral-700"
-                                      }`}
-                                    >
-                                      {label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
+
+                        {variantEnabled && variantKey && (() => {
+                          const selectedGrp =
+                            CANONICAL_VARIANT_GROUPS.find((g) => g.key === variantKey) ?? null;
+                          if (!selectedGrp) return null;
+                          return (
                             <div>
-                              <p className="text-xs text-neutral-500 mb-1.5">
-                                {variantGroup.key === "bed_size"
-                                  ? "Selecciona un tamaño de cama"
-                                  : "Selecciona una opción (se guarda al Actualizar)"}
-                              </p>
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-xs font-medium text-neutral-600">
+                                  {selectedGrp.label}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setVariantKey(null);
+                                    setVariantValue("");
+                                  }}
+                                  className="text-xs text-neutral-500 hover:text-neutral-700 underline"
+                                >
+                                  Cambiar
+                                </button>
+                              </div>
                               <div className="flex flex-wrap gap-1.5">
-                                {variantGroup.options.map((opt) => {
-                                  const isSelected = selectedVariantNormalized === opt.valueNormalized;
-                                  const displayLabel =
-                                    variantGroup.key === "bed_size"
-                                      ? getVariantLabel(variantGroup.key, opt.valueNormalized)
-                                      : opt.value;
+                                {selectedGrp.options.map((opt) => {
+                                  const isSelected =
+                                    normalizeVariantValue(variantValue) === opt.valueNormalized;
                                   return (
                                     <button
                                       key={opt.valueNormalized}
                                       type="button"
                                       onClick={(e) => {
                                         e.preventDefault();
-                                        e.stopPropagation();
-                                        setPendingVariantNormalized(opt.valueNormalized);
+                                        setVariantValue(opt.value);
                                       }}
                                       className={`px-3 py-1.5 rounded-full text-sm border transition ${
                                         isSelected
                                           ? "border-neutral-900 bg-neutral-900 text-white"
-                                          : "border border-neutral-300 hover:bg-neutral-50 cursor-pointer"
+                                          : "border-neutral-300 hover:bg-neutral-50 cursor-pointer"
                                       }`}
                                     >
-                                      {displayLabel}
+                                      {opt.value}
                                       {isSelected ? " ✓" : ""}
                                     </button>
                                   );
                                 })}
                               </div>
-                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setShowEditVariantGroupModal(true);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-neutral-600 hover:text-neutral-900 rounded hover:bg-neutral-100"
-                                >
-                                  Editar grupo
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setShowCreateVariantGroupModal(true);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-neutral-600 hover:text-neutral-900 rounded hover:bg-neutral-100"
-                                >
-                                  <span className="text-neutral-400">+</span>
-                                  Crear otro grupo
-                                </button>
-                              </div>
-                            </div>
-
-                            {editStage === "has_group" &&
-                              variantGroup &&
-                              !selectedVariantNormalized && (
-                                <p className="text-xs text-amber-700">
+                              {variantKey && !variantValue && (
+                                <p className="text-xs text-amber-700 mt-1.5">
                                   Selecciona una opción antes de guardar.
                                 </p>
                               )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Selector de variante (legacy) — NO renderizar si hay grupo/toggle (evita flicker) */}
-                    {requiresVariant &&
-                      !isEditMode &&
-                      !hasVariantsToggle &&
-                      !variantGroup && (
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          {variantLabel} *
-                        </label>
-                        <p className="text-xs text-neutral-500 mb-3">
-                          Selecciona el tamaño de cama
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {variantOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => setVariantValue(option.value)}
-                              className={`p-3 rounded-lg border-2 transition text-sm ${
-                                variantValue === option.value
-                                  ? "border-neutral-900 bg-neutral-900 text-white"
-                                  : "border-neutral-200 hover:border-neutral-300"
-                              }`}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                        {variantKey && (
-                          <input type="hidden" name="variantKey" value={variantKey} />
-                        )}
-                        <input type="hidden" name="variantValue" value={variantValue} />
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

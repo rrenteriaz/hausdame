@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { bootstrapPropertyZones } from "@/lib/zones/bootstrapPropertyZones";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import {
   createInventoryLine,
@@ -1191,6 +1192,9 @@ export async function getPropertyZones(propertyId: string) {
   if (!tenantId) return [];
 
   try {
+    // Bootstrap idempotente: asegura que las zonas canónicas existan antes de devolver la lista.
+    await bootstrapPropertyZones(tenantId, propertyId);
+
     const zones = await prisma.propertyZone.findMany({
       where: {
         tenantId,

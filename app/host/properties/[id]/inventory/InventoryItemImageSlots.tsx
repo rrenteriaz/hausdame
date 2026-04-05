@@ -26,6 +26,8 @@ export default function InventoryItemImageSlots({
   const [confirmDeletePosition, setConfirmDeletePosition] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRefs = useRef<Array<HTMLInputElement | null>>([null, null, null]);
+  const cameraInputRefs = useRef<Array<HTMLInputElement | null>>([null, null, null]);
+  const [openSheetPosition, setOpenSheetPosition] = useState<number | null>(null);
 
   const handleFileSelect = async (position: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,6 +73,9 @@ export default function InventoryItemImageSlots({
       // Limpiar el input para permitir seleccionar el mismo archivo de nuevo
       if (fileInputRefs.current[position - 1]) {
         fileInputRefs.current[position - 1]!.value = "";
+      }
+      if (cameraInputRefs.current[position - 1]) {
+        cameraInputRefs.current[position - 1]!.value = "";
       }
     }
   };
@@ -157,25 +162,24 @@ export default function InventoryItemImageSlots({
                       </button>
                     </>
                   ) : (
-                    <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition">
-                      <input
-                        ref={(el) => {
-                          fileInputRefs.current[position - 1] = el;
-                        }}
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={(e) => handleFileSelect(position, e)}
-                        disabled={isLoading}
-                        className="hidden"
-                      />
-                      <div className="text-center">
-                        {isUploading ? (
-                          <span className="text-xs text-neutral-500">Subiendo...</span>
-                        ) : (
-                          <span className="text-xs text-neutral-600">Agregar</span>
-                        )}
-                      </div>
-                    </label>
+                    <div
+                      className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-100 transition"
+                      onClick={() => !isLoading && setOpenSheetPosition(position)}
+                      role="button"
+                      aria-label="Agregar foto"
+                    >
+                      {isUploading ? (
+                        <span className="text-xs text-neutral-500">Subiendo...</span>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-neutral-400">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-[10px]">Agregar foto</span>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -186,6 +190,25 @@ export default function InventoryItemImageSlots({
       <p className="text-xs text-neutral-500">
         Máximo 3 imágenes por item
       </p>
+
+      {/* Hidden inputs — siempre montados para dispararse desde el bottom sheet */}
+      {[1, 2, 3].map((pos) => (
+        <div key={`inputs-${pos}`} className="hidden">
+          <input
+            ref={(el) => { cameraInputRefs.current[pos - 1] = el; }}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => handleFileSelect(pos, e)}
+          />
+          <input
+            ref={(el) => { fileInputRefs.current[pos - 1] = el; }}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileSelect(pos, e)}
+          />
+        </div>
+      ))}
 
       <ConfirmModal
         isOpen={confirmDeletePosition !== null}
@@ -198,6 +221,55 @@ export default function InventoryItemImageSlots({
         variant="danger"
         disabled={deletingPosition !== null}
       />
+
+      {/* Bottom sheet — selección de origen de foto */}
+      {openSheetPosition !== null && (
+        <>
+          <div
+            className="fixed inset-0 z-[70] bg-black/40"
+            onClick={() => setOpenSheetPosition(null)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-[80] bg-white rounded-t-2xl shadow-2xl pt-5 pb-10 px-4 space-y-1">
+            <p className="text-center text-sm font-semibold text-neutral-800 pb-2">Agregar foto</p>
+            <button
+              type="button"
+              onClick={() => {
+                cameraInputRefs.current[openSheetPosition - 1]?.click();
+                setOpenSheetPosition(null);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-base text-neutral-800 hover:bg-neutral-100 active:bg-neutral-200 transition text-left"
+            >
+              <svg className="w-5 h-5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Tomar foto
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                fileInputRefs.current[openSheetPosition - 1]?.click();
+                setOpenSheetPosition(null);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-base text-neutral-800 hover:bg-neutral-100 active:bg-neutral-200 transition text-left"
+            >
+              <svg className="w-5 h-5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Elegir de galería
+            </button>
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={() => setOpenSheetPosition(null)}
+                className="w-full py-3.5 text-base font-medium text-neutral-500 rounded-xl border border-neutral-200 hover:bg-neutral-50 active:bg-neutral-100 transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

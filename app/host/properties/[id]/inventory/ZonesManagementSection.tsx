@@ -33,6 +33,7 @@ import {
   OPERATIONAL_CATEGORY_OPTIONS,
 } from "@/lib/inventory-zone-labels";
 import type { PropertyZoneOperationalCategory } from "@prisma/client";
+import { inferZoneCategory } from "@/lib/zones/inferZoneCategory";
 
 interface Zone {
   id: string;
@@ -183,6 +184,7 @@ export default function ZonesManagementSection({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newZoneName, setNewZoneName] = useState("");
   const [newZoneCategory, setNewZoneCategory] = useState<PropertyZoneOperationalCategory | "">("");
+  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Renombrar
@@ -222,6 +224,18 @@ export default function ZonesManagementSection({
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
+  // Inferencia de categoría a partir del nombre
+  useEffect(() => {
+    if (!newZoneName.trim()) {
+      setNewZoneCategory("");
+      setCategoryManuallySet(false);
+      return;
+    }
+    if (!categoryManuallySet) {
+      setNewZoneCategory(inferZoneCategory(newZoneName) ?? "");
+    }
+  }, [newZoneName, categoryManuallySet]);
+
   // ── DnD ──────────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -257,6 +271,7 @@ export default function ZonesManagementSection({
         setShowCreateForm(false);
         setNewZoneName("");
         setNewZoneCategory("");
+        setCategoryManuallySet(false);
         router.refresh();
       } catch (err) {
         setCreateError(err instanceof Error ? err.message : "Error al crear el área");
@@ -401,16 +416,24 @@ export default function ZonesManagementSection({
                     autoFocus
                     className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
                   />
-                  <select
-                    value={newZoneCategory}
-                    onChange={(e) => setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "")}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
-                  >
-                    <option value="">Categoría (opcional)</option>
-                    {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
+                  <div>
+                    <select
+                      value={newZoneCategory}
+                      onChange={(e) => {
+                        setCategoryManuallySet(true);
+                        setNewZoneCategory(e.target.value as PropertyZoneOperationalCategory | "");
+                      }}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
+                    >
+                      <option value="">Categoría (opcional)</option>
+                      {OPERATIONAL_CATEGORY_OPTIONS.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    {!categoryManuallySet && newZoneCategory && (
+                      <p className="text-xs text-neutral-400 mt-1">Sugerida según el nombre del área</p>
+                    )}
+                  </div>
                   {createError && <p className="text-xs text-red-600">{createError}</p>}
                   <div className="flex gap-2">
                     <button type="button" onClick={handleCreate} disabled={isPending}
@@ -418,7 +441,7 @@ export default function ZonesManagementSection({
                       {isPending ? "Guardando..." : "Crear área"}
                     </button>
                     <button type="button"
-                      onClick={() => { setShowCreateForm(false); setNewZoneName(""); setNewZoneCategory(""); setCreateError(null); }}
+                      onClick={() => { setShowCreateForm(false); setNewZoneName(""); setNewZoneCategory(""); setCategoryManuallySet(false); setCreateError(null); }}
                       className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded-lg transition">
                       Cancelar
                     </button>

@@ -1,6 +1,6 @@
 /**
  * Bootstrap de grupos de variantes canónicos por tenant.
- * Asegura que bed_size, material y use existan con sus opciones.
+ * Asegura que bed_size, material y size existan con sus opciones.
  * Idempotente: crea solo lo que falta.
  *
  * Se usa en:
@@ -36,14 +36,23 @@ const CANONICAL_GROUPS = [
       { label: "Plástico", valueNormalized: "plastico", sortOrder: 70 },
       { label: "Tela", valueNormalized: "tela", sortOrder: 80 },
       { label: "Vidrio", valueNormalized: "vidrio", sortOrder: 90 },
+      { label: "Melamina", valueNormalized: "melamina", sortOrder: 100 },
+      { label: "Aluminio", valueNormalized: "aluminio", sortOrder: 110 },
+      { label: "Acero", valueNormalized: "acero", sortOrder: 120 },
+      { label: "Acero inoxidable", valueNormalized: "acero_inoxidable", sortOrder: 130 },
+      { label: "Piedra", valueNormalized: "piedra", sortOrder: 140 },
+      { label: "Granito", valueNormalized: "granito", sortOrder: 150 },
     ],
   },
   {
-    key: "use",
-    label: "Uso",
+    key: "size",
+    label: "Tamaño",
     options: [
-      { label: "Limpiar", valueNormalized: "limpiar", sortOrder: 10 },
-      { label: "Secar", valueNormalized: "secar", sortOrder: 20 },
+      { label: "Mini", valueNormalized: "mini", sortOrder: 10 },
+      { label: "Chico", valueNormalized: "chico", sortOrder: 20 },
+      { label: "Mediano", valueNormalized: "mediano", sortOrder: 30 },
+      { label: "Grande", valueNormalized: "grande", sortOrder: 40 },
+      { label: "Extra Grande", valueNormalized: "extra_grande", sortOrder: 50 },
     ],
   },
 ] as const;
@@ -51,7 +60,7 @@ const CANONICAL_GROUPS = [
 type DbClient = typeof prisma | Prisma.TransactionClient;
 
 /**
- * Asegura que los grupos canónicos (bed_size, material, use) existan para el tenant.
+ * Asegura que los grupos canónicos (bed_size, material, size) existan para el tenant.
  * Idempotente: crea solo lo que falta.
  * @param tenantId - ID del tenant
  * @param db - Cliente Prisma (prisma o tx dentro de transacción). Si se omite, usa prisma global.
