@@ -108,9 +108,10 @@ export default async function InventoryPage({
     },
     orderBy: { sortOrder: "asc" as const },
   };
-  // Bootstrap idempotente: asegura que las zonas canónicas existan (crea solo las que faltan).
-  // Se ejecuta siempre para cubrir propiedades creadas antes del bootstrap automático.
-  const bootstrapResult = await bootstrapPropertyZones(tenantId, property.id);
+  // Bootstrap idempotente: crea zonas canónicas que nunca existieron.
+  // reactivate: false → respeta borrados intencionales del usuario (solo crea, no reactiva).
+  // La reactivación se reserva para getPropertyZones (picker del modal de agregar ítem).
+  const bootstrapResult = await bootstrapPropertyZones(tenantId, property.id, undefined, { reactivate: false });
   let propertyZones = await prisma.propertyZone.findMany(zonesQuery);
 
   // Mostrar banner solo la primera vez (cuando se crearon zonas nuevas)

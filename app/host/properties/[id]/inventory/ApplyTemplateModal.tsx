@@ -16,6 +16,7 @@ export default function ApplyTemplateModal({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
+  const [showDestructiveConfirm, setShowDestructiveConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     created: number;
@@ -24,17 +25,28 @@ export default function ApplyTemplateModal({
 
   const handleOpen = () => {
     setIsOpen(true);
+    setShowDestructiveConfirm(false);
     setError(null);
     setResult(null);
   };
 
   const handleClose = () => {
     setIsOpen(false);
+    setShowDestructiveConfirm(false);
     setError(null);
     setResult(null);
   };
 
+  const handleApplyClick = () => {
+    if (hasExistingInventory) {
+      setShowDestructiveConfirm(true);
+    } else {
+      handleApply();
+    }
+  };
+
   const handleApply = () => {
+    setShowDestructiveConfirm(false);
     setError(null);
     setResult(null);
 
@@ -64,7 +76,11 @@ export default function ApplyTemplateModal({
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        handleClose();
+        if (showDestructiveConfirm) {
+          setShowDestructiveConfirm(false);
+        } else {
+          handleClose();
+        }
       }
     };
 
@@ -75,7 +91,7 @@ export default function ApplyTemplateModal({
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, showDestructiveConfirm]);
 
   // Prevenir scroll del body cuando el modal está abierto
   useEffect(() => {
@@ -174,11 +190,43 @@ export default function ApplyTemplateModal({
               </div>
             )}
 
+            {/* Segunda confirmación destructiva */}
+            {showDestructiveConfirm && (
+              <div className="mb-4 rounded-lg p-4 bg-red-50 border border-red-200 space-y-3">
+                <p className="text-sm font-semibold text-red-900">
+                  Confirmar reemplazo del inventario
+                </p>
+                <p className="text-xs text-red-800">
+                  Se eliminará el inventario actual de esta propiedad y será
+                  reemplazado por la plantilla base. Esta acción no se puede
+                  deshacer.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleApply}
+                    disabled={isPending}
+                    className="flex-1 rounded-lg border border-red-600 bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isPending ? "Reemplazando..." : "Sí, reemplazar inventario"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDestructiveConfirm(false)}
+                    disabled={isPending}
+                    className="flex-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-3 pt-2 border-t border-neutral-100">
               <button
                 type="button"
-                onClick={handleApply}
-                disabled={isPending || (result !== null && result.errors.length === 0)}
+                onClick={handleApplyClick}
+                disabled={isPending || (result !== null && result.errors.length === 0) || showDestructiveConfirm}
                 className="flex-1 rounded-lg border border-black bg-black px-4 py-2.5 text-base font-medium text-white hover:bg-neutral-800 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPending ? "Creando..." : "Crear inventario"}

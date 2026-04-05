@@ -1,4 +1,5 @@
 // lib/ui/CleaningsCalendar/CleanerMonthlyCalendar.tsx
+"use client";
 import Link from "next/link";
 import { CalendarCleanerKind } from "@/lib/ui/cleaning-visual-state";
 

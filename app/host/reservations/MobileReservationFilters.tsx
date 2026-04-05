@@ -104,10 +104,11 @@ export default function MobileReservationFilters({
   };
 
   // Determinar si los botones están activos
+  // Se usa el valor efectivo (con defaults) para reflejar el estado real del filtro en la UI.
   const isPropertyActive = !!currentPropertyId;
-  const isStatusActive = currentStatus && currentStatus !== "CONFIRMED" && currentStatus !== "all";
-  const isPastActive = currentDateBucket === "PAST";
-  const isCurrentFutureActive = currentDateBucket === "CURRENT_FUTURE";
+  const isStatusActive = activeStatus !== "all"; // CONFIRMED y CANCELLED son filtros activos
+  const isPastActive = activeDateBucket === "PAST";
+  const isCurrentFutureActive = activeDateBucket === "CURRENT_FUTURE";
 
   return (
     <>

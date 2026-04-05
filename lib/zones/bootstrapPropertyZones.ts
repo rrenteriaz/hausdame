@@ -45,12 +45,20 @@ const CANONICAL_VIRTUAL_ZONES = [
 
 type DbClient = typeof prisma | Prisma.TransactionClient;
 
+/**
+ * opts.reactivate (default: true):
+ *   true  → reactiva zonas canónicas soft-deleted (para el picker de zonas: siempre muestra opciones)
+ *   false → solo crea zonas que nunca han existido; respeta eliminaciones manuales del usuario
+ *           (usado en la página de inventario para no deshacer borrados intencionales)
+ */
 export async function bootstrapPropertyZones(
   tenantId: string,
   propertyId: string,
-  db?: DbClient
+  db?: DbClient,
+  opts?: { reactivate?: boolean }
 ): Promise<{ operationalCreated: number; virtualCreated: number }> {
   const client = db ?? prisma;
+  const reactivate = opts?.reactivate !== false; // default true
   let operationalCreated = 0;
   let virtualCreated = 0;
 
@@ -75,8 +83,8 @@ export async function bootstrapPropertyZones(
         },
       });
       virtualCreated++;
-    } else if (!existing.isActive) {
-      // Reactivar zona virtual canónica soft-deleted
+    } else if (!existing.isActive && reactivate) {
+      // Reactivar zona virtual canónica soft-deleted (solo cuando reactivate=true)
       await client.propertyZone.update({
         where: { id: existing.id },
         data: {
@@ -112,8 +120,8 @@ export async function bootstrapPropertyZones(
         },
       });
       operationalCreated++;
-    } else if (!existing.isActive) {
-      // Reactivar zona operacional canónica soft-deleted
+    } else if (!existing.isActive && reactivate) {
+      // Reactivar zona operacional canónica soft-deleted (solo cuando reactivate=true)
       await client.propertyZone.update({
         where: { id: existing.id },
         data: {

@@ -291,6 +291,12 @@ async function executeSyncCore(
 
   for (const existing of existingReservations) {
     if (existing.status !== "CONFIRMED") continue;
+    // Si la reserva ya terminó (endDate < today), su ausencia del feed es normal:
+    // los proveedores (Airbnb, Booking, etc.) eliminan eventos pasados del iCal.
+    // No cancelar — solo cancelar reservas futuras o en curso que desaparezcan.
+    const existingEnd = new Date(existing.endDate);
+    existingEnd.setHours(0, 0, 0, 0);
+    if (existingEnd < today) continue;
     if (!presentUids.has(existing.calendarUid)) {
       await (prisma as any).reservation.update({
         where: { id: existing.id },

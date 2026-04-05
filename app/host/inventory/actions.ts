@@ -1192,8 +1192,9 @@ export async function getPropertyZones(propertyId: string) {
   if (!tenantId) return [];
 
   try {
-    // Bootstrap idempotente: asegura que las zonas canónicas existan antes de devolver la lista.
-    await bootstrapPropertyZones(tenantId, propertyId);
+    // Bootstrap idempotente: crea zonas canónicas que nunca han existido.
+    // reactivate: false → respeta eliminaciones manuales del usuario (no reactiva soft-deleted).
+    await bootstrapPropertyZones(tenantId, propertyId, undefined, { reactivate: false });
 
     const zones = await prisma.propertyZone.findMany({
       where: {
