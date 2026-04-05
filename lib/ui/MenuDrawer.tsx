@@ -176,7 +176,7 @@ export default function MenuDrawer({ isOpen, onClose, user }: MenuDrawerProps) {
             </button>
             <button
               type="button"
-              onClick={() => handleMenuNav("/host/properties")}
+              onClick={() => handleMenuNav("/host/inventory")}
               className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
             >
               Inventario
