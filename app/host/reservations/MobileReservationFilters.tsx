@@ -103,6 +103,10 @@ export default function MobileReservationFilters({
     router.push(`/host/reservations${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
+  // Valores efectivos con defaults aplicados
+  const activeStatus = currentStatus || "CONFIRMED";
+  const activeDateBucket = currentDateBucket || "CURRENT_FUTURE";
+
   // Determinar si los botones están activos
   // Se usa el valor efectivo (con defaults) para reflejar el estado real del filtro en la UI.
   const isPropertyActive = !!currentPropertyId;
