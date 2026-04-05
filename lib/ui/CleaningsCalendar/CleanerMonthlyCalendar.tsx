@@ -1,5 +1,6 @@
 // lib/ui/CleaningsCalendar/CleanerMonthlyCalendar.tsx
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CalendarCleanerKind } from "@/lib/ui/cleaning-visual-state";
 
@@ -51,7 +52,13 @@ export default function CleanerMonthlyCalendar({
   buildMonthHref,
   buildDayHref,
 }: CleanerMonthlyCalendarProps) {
-  const today = new Date();
+  // today se inicializa en null para evitar que el SSR (que corre en UTC) marque el día
+  // incorrecto. El useEffect lo setea en el cliente con la zona horaria real del usuario.
+  const [today, setToday] = useState<Date | null>(null);
+  useEffect(() => {
+    setToday(new Date());
+  }, []);
+
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
 
@@ -144,6 +151,7 @@ export default function CleanerMonthlyCalendar({
             const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
             const dayCleanings = cleaningsByDay.get(key) ?? [];
             const isToday =
+              today !== null &&
               date.getFullYear() === today.getFullYear() &&
               date.getMonth() === today.getMonth() &&
               date.getDate() === today.getDate();
