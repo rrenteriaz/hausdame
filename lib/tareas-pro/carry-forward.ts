@@ -1,7 +1,7 @@
-// lib/tareas-pro/carry-forward.ts
+// lib/tareas-pro/carry-forward.ts 
 import prisma from "@/lib/prisma";
 import { logTaskEvent } from "./event-log";
-import { TaskStepResponseType } from "@prisma/client";
+import { TaskStepResponseType } from "../generated/prisma";
 
 // ---- Tipos del snapshot ----
 

@@ -1,6 +1,6 @@
 // lib/tareas-pro/job-generation.ts
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma";
 import { logTaskEvent } from "./event-log";
 import { injectCarryForwards } from "./carry-forward";
 

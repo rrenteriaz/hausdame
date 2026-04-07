@@ -8,71 +8,71 @@ datasource db {
 }
 
 model Tenant {
-  id                         String                      @id @default(cuid())
-  name                       String
-  slug                       String                      @unique
-  createdAt                  DateTime                    @default(now())
-  updatedAt                  DateTime                    @updatedAt
-  assets                     Asset[]
-  chatMessages               ChatMessage[]
-  chatThreads                ChatThread[]
-  checklistItemAssets        ChecklistItemAsset[]
-  cleanings                  Cleaning[]
-  cleaningAssignees          CleaningAssignee[]
-  cleaningChecklistItems     CleaningChecklistItem[]
-  cleaningMedia              CleaningMedia[]
-  cleaningViews              CleaningView[]
-  hostWorkGroups             HostWorkGroup[]             @relation("Tenant_HostWorkGroups")
-  hostWorkGroupInvites       HostWorkGroupInvite[]       @relation("Tenant_HostWorkGroupInvites")
-  hostWorkGroupProperties    HostWorkGroupProperty[]     @relation("Tenant_HostWorkGroupProperties")
-  inventoryChecks            InventoryCheck[]
-  inventoryEvidence          InventoryEvidence[]
-  inventoryItems             InventoryItem[]
-  inventoryItemAssets        InventoryItemAsset[]
-  inventoryLineAssets        InventoryLineAsset[]
-  inventoryLines             InventoryLine[]
-  inventoryReports           InventoryReport[]
-  inventoryReviews           InventoryReview[]
-  inventoryReviewItemChanges InventoryReviewItemChange[]
-  inventoryLogs              InventoryLog[]
-  propertyZones              PropertyZone[]
-  locks                      Lock[]
-  lockCodes                  LockCode[]
-  metricEvents               MetricEvent[]
-  properties                 Property[]
-  propertyAdmins             PropertyAdmin[]
-  propertyApplications       PropertyApplication[]
-  propertyChecklistItems     PropertyChecklistItem[]
-  propertyCleaners           PropertyCleaner[]
-  propertyHandymen           PropertyHandyman[]
-  propertyInvites            PropertyInvite[]
-  propertyOpenings           PropertyOpening[]
-  propertyTeams              PropertyTeam[]
-  reservations               Reservation[]
-  teams                      Team[]
-  teamMembers                TeamMember[]
-  teamMemberScheduleDays     TeamMemberScheduleDay[]
-  users                      User[]
-  variantGroups              VariantGroup[]
-  workGroupExecutorsHost     WorkGroupExecutor[]         @relation("Tenant_WorkGroupExecutorsHost")
-  workGroupExecutorsServices WorkGroupExecutor[]         @relation("Tenant_WorkGroupExecutorsServices")
+  id                           String                        @id @default(cuid())
+  name                         String
+  slug                         String                        @unique
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  assets                       Asset[]
+  chatMessages                 ChatMessage[]
+  chatThreads                  ChatThread[]
+  checklistItemAssets          ChecklistItemAsset[]
+  cleanings                    Cleaning[]
+  cleaningAssignees            CleaningAssignee[]
+  cleaningChecklistItems       CleaningChecklistItem[]
+  cleaningMedia                CleaningMedia[]
+  cleaningViews                CleaningView[]
+  hostWorkGroups               HostWorkGroup[]               @relation("Tenant_HostWorkGroups")
+  hostWorkGroupInvites         HostWorkGroupInvite[]         @relation("Tenant_HostWorkGroupInvites")
+  hostWorkGroupProperties      HostWorkGroupProperty[]       @relation("Tenant_HostWorkGroupProperties")
+  inventoryChecks              InventoryCheck[]
+  inventoryEvidence            InventoryEvidence[]
+  inventoryItems               InventoryItem[]
+  inventoryItemAssets          InventoryItemAsset[]
+  inventoryLineAssets          InventoryLineAsset[]
+  inventoryLines               InventoryLine[]
+  inventoryReports             InventoryReport[]
+  inventoryReviews             InventoryReview[]
+  inventoryReviewItemChanges   InventoryReviewItemChange[]
+  inventoryLogs                InventoryLog[]
+  propertyZones                PropertyZone[]
+  locks                        Lock[]
+  lockCodes                    LockCode[]
+  metricEvents                 MetricEvent[]
+  properties                   Property[]
+  propertyAdmins               PropertyAdmin[]
+  propertyApplications         PropertyApplication[]
+  propertyChecklistItems       PropertyChecklistItem[]
+  propertyCleaners             PropertyCleaner[]
+  propertyHandymen             PropertyHandyman[]
+  propertyInvites              PropertyInvite[]
+  propertyOpenings             PropertyOpening[]
+  propertyTeams                PropertyTeam[]
+  reservations                 Reservation[]
+  teams                        Team[]
+  teamMembers                  TeamMember[]
+  teamMemberScheduleDays       TeamMemberScheduleDay[]
+  users                        User[]
+  variantGroups                VariantGroup[]
+  workGroupExecutorsHost       WorkGroupExecutor[]           @relation("Tenant_WorkGroupExecutorsHost")
+  workGroupExecutorsServices   WorkGroupExecutor[]           @relation("Tenant_WorkGroupExecutorsServices")
   // Tareas Pro
-  taskTemplates              TaskTemplate[]
-  taskTemplateSchedules      TaskTemplateSchedule[]
-  taskSectionTemplates       TaskSectionTemplate[]
-  taskSectionReferenceAssets TaskSectionReferenceAsset[]
-  taskStepTemplates          TaskStepTemplate[]
-  taskStepOptions            TaskStepOption[]
-  taskStepReferenceAssets    TaskStepReferenceAsset[]
-  taskJobs                   TaskJob[]
-  taskJobSections            TaskJobSection[]
-  taskJobSectionResponses    TaskJobSectionResponse[]
+  taskTemplates                TaskTemplate[]
+  taskTemplateSchedules        TaskTemplateSchedule[]
+  taskSectionTemplates         TaskSectionTemplate[]
+  taskSectionReferenceAssets   TaskSectionReferenceAsset[]
+  taskStepTemplates            TaskStepTemplate[]
+  taskStepOptions              TaskStepOption[]
+  taskStepReferenceAssets      TaskStepReferenceAsset[]
+  taskJobs                     TaskJob[]
+  taskJobSections              TaskJobSection[]
+  taskJobSectionResponses      TaskJobSectionResponse[]
   taskJobSectionEvidenceAssets TaskJobSectionEvidenceAsset[]
-  taskJobSteps               TaskJobStep[]
-  taskJobStepResponses       TaskJobStepResponse[]
-  taskJobStepEvidenceAssets  TaskJobStepEvidenceAsset[]
-  taskCarryForwards          TaskCarryForward[]
-  taskJobEventLogs           TaskJobEventLog[]
+  taskJobSteps                 TaskJobStep[]
+  taskJobStepResponses         TaskJobStepResponse[]
+  taskJobStepEvidenceAssets    TaskJobStepEvidenceAsset[]
+  taskCarryForwards            TaskCarryForward[]
+  taskJobEventLogs             TaskJobEventLog[]
 }
 
 /// *
@@ -791,21 +791,21 @@ model CleaningView {
 /// * Checklist template por propiedad
 /// * Define los items que deben completarse en cada limpieza de esta propiedad
 model PropertyChecklistItem {
-  id                  String               @id @default(cuid())
-  tenantId            String
-  area                ChecklistArea
-  title               String
-  sortOrder           Int                  @default(0)
-  isActive            Boolean              @default(true)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  requiresValue       Boolean              @default(false)
-  valueLabel          String?
-  propertyId          String
-  checklistItemAssets ChecklistItemAsset[]
+  id                     String                  @id @default(cuid())
+  tenantId               String
+  area                   ChecklistArea
+  title                  String
+  sortOrder              Int                     @default(0)
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  requiresValue          Boolean                 @default(false)
+  valueLabel             String?
+  propertyId             String
+  checklistItemAssets    ChecklistItemAsset[]
   cleaningChecklistItems CleaningChecklistItem[]
-  property            Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property               Property                @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([propertyId])
@@ -816,25 +816,25 @@ model PropertyChecklistItem {
 /// * Checklist snapshot por limpieza
 /// * Copia del checklist de la propiedad al momento de crear la limpieza
 model CleaningChecklistItem {
-  id                     String                  @id @default(cuid())
-  tenantId               String
-  cleaningId             String
-  area                   ChecklistArea
-  title                  String
-  sortOrder              Int                     @default(0)
-  isCompleted            Boolean                 @default(false)
-  notCompletedReasonCode NotCompletedReasonCode?
-  notCompletedReasonNote String?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  requiresValue          Boolean                 @default(false)
-  valueLabel             String?
-  valueNumber            Int?
+  id                      String                  @id @default(cuid())
+  tenantId                String
+  cleaningId              String
+  area                    ChecklistArea
+  title                   String
+  sortOrder               Int                     @default(0)
+  isCompleted             Boolean                 @default(false)
+  notCompletedReasonCode  NotCompletedReasonCode?
+  notCompletedReasonNote  String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  requiresValue           Boolean                 @default(false)
+  valueLabel              String?
+  valueNumber             Int?
   propertyChecklistItemId String?
-  isRemovedFromTemplate  Boolean                 @default(false)
-  cleaning               Cleaning                @relation(fields: [cleaningId], references: [id], onDelete: Cascade)
-  propertyChecklistItem  PropertyChecklistItem?  @relation(fields: [propertyChecklistItemId], references: [id], onDelete: SetNull)
-  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  isRemovedFromTemplate   Boolean                 @default(false)
+  cleaning                Cleaning                @relation(fields: [cleaningId], references: [id], onDelete: Cascade)
+  propertyChecklistItem   PropertyChecklistItem?  @relation(fields: [propertyChecklistItemId], references: [id], onDelete: SetNull)
+  tenant                  Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([cleaningId])
@@ -1060,38 +1060,38 @@ model GlobalCatalogItem {
 /// *
 /// * Línea de inventario en una propiedad/área específica.
 model InventoryLine {
-  id                     String             @id @default(cuid())
-  tenantId               String
-  propertyId             String
-  area                   String
-  areaNormalized         String
-  itemId                 String
-  expectedQty            Int
-  condition              InventoryCondition @default(USED_LT_1Y)
-  priority               InventoryPriority  @default(MEDIUM)
-  brand                  String?
-  model                  String?
-  serialNumber           String?
-  color                  String?
-  size                   String?
-  notes                  String?
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
-  variantKey             String?
-  variantValue           String?
-  variantValueNormalized String?
-  version                Int                @default(1)
-  isActive               Boolean            @default(true)
-  propertyZoneId         String?
-  inventoryChecks        InventoryCheck[]
+  id                         String                      @id @default(cuid())
+  tenantId                   String
+  propertyId                 String
+  area                       String
+  areaNormalized             String
+  itemId                     String
+  expectedQty                Int
+  condition                  InventoryCondition          @default(USED_LT_1Y)
+  priority                   InventoryPriority           @default(MEDIUM)
+  brand                      String?
+  model                      String?
+  serialNumber               String?
+  color                      String?
+  size                       String?
+  notes                      String?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  variantKey                 String?
+  variantValue               String?
+  variantValueNormalized     String?
+  version                    Int                         @default(1)
+  isActive                   Boolean                     @default(true)
+  propertyZoneId             String?
+  inventoryChecks            InventoryCheck[]
   inventoryReviewItemChanges InventoryReviewItemChange[]
-  inventoryReports       InventoryReport[]
-  inventoryLogs          InventoryLog[]
-  inventoryLineAssets    InventoryLineAsset[]
-  item                   InventoryItem      @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  property               Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant                 Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  propertyZone           PropertyZone?      @relation(fields: [propertyZoneId], references: [id], onDelete: SetNull)
+  inventoryReports           InventoryReport[]
+  inventoryLogs              InventoryLog[]
+  inventoryLineAssets        InventoryLineAsset[]
+  item                       InventoryItem               @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  property                   Property                    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant                     Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  propertyZone               PropertyZone?               @relation(fields: [propertyZoneId], references: [id], onDelete: SetNull)
 
   @@unique([propertyId, areaNormalized, itemId, variantKey, variantValueNormalized, version])
   @@index([tenantId, propertyId])
@@ -1274,18 +1274,18 @@ model InventoryEvidence {
 /// * Operativas: Sala, Cocina, Baño 1, etc.
 /// * Virtuales: Almacén (STORAGE), Dañados / Baja (DAMAGED).
 model PropertyZone {
-  id             String                   @id @default(cuid())
-  tenantId       String
-  propertyId     String
-  name           String
-  normalizedName String
-  zoneType              PropertyZoneType
-  virtualKind           PropertyZoneVirtualKind?
-  operationalCategory   PropertyZoneOperationalCategory?
-  sortOrder             Int?
-  isActive       Boolean                  @default(true)
-  createdAt      DateTime                 @default(now())
-  updatedAt      DateTime                 @updatedAt
+  id                  String                           @id @default(cuid())
+  tenantId            String
+  propertyId          String
+  name                String
+  normalizedName      String
+  zoneType            PropertyZoneType
+  virtualKind         PropertyZoneVirtualKind?
+  operationalCategory PropertyZoneOperationalCategory?
+  sortOrder           Int?
+  isActive            Boolean                          @default(true)
+  createdAt           DateTime                         @default(now())
+  updatedAt           DateTime                         @updatedAt
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   property       Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -2090,11 +2090,11 @@ model TaskJob {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property     Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   template     TaskTemplate @relation(fields: [templateId], references: [id])
-  cleaning     Cleaning? @relation(fields: [cleaningId], references: [id])
-  assignedUser User?     @relation("TaskJobAssignee", fields: [assignedUserId], references: [id])
+  cleaning     Cleaning?    @relation(fields: [cleaningId], references: [id])
+  assignedUser User?        @relation("TaskJobAssignee", fields: [assignedUserId], references: [id])
 
   sections             TaskJobSection[]
   eventLogs            TaskJobEventLog[]
@@ -2122,8 +2122,8 @@ model TaskJobSection {
   createdAt                     DateTime             @default(now())
   updatedAt                     DateTime             @updatedAt
 
-  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  job          TaskJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job          TaskJob           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   carryForward TaskCarryForward? @relation("TaskCarryForwardSection", fields: [carryForwardId], references: [id])
 
   steps          TaskJobStep[]
@@ -2237,18 +2237,18 @@ model TaskJobStepEvidenceAsset {
 
 /// Carry-forward: tarea diferida que se inyecta en el siguiente job elegible
 model TaskCarryForward {
-  id               String                 @id @default(cuid())
-  tenantId         String
-  propertyId       String
-  sourceJobId      String
-  status           TaskCarryForwardStatus @default(OPEN)
-  policy           TaskCarryForwardPolicy @default(LIMITED)
-  maxAttempts      Int                    @default(2)
-  currentAttempt   Int                    @default(0)
-  reason           String?
-  contextSnapshot  Json
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
+  id              String                 @id @default(cuid())
+  tenantId        String
+  propertyId      String
+  sourceJobId     String
+  status          TaskCarryForwardStatus @default(OPEN)
+  policy          TaskCarryForwardPolicy @default(LIMITED)
+  maxAttempts     Int                    @default(2)
+  currentAttempt  Int                    @default(0)
+  reason          String?
+  contextSnapshot Json
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)

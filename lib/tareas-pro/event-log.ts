@@ -1,6 +1,6 @@
 // lib/tareas-pro/event-log.ts
 import prisma from "@/lib/prisma";
-import { TaskEventLogType } from "@prisma/client";
+import { TaskEventLogType } from "../generated/prisma";
 
 export async function logTaskEvent({
   tenantId,
