@@ -55,6 +55,23 @@ model Tenant {
   variantGroups              VariantGroup[]
   workGroupExecutorsHost     WorkGroupExecutor[]         @relation("Tenant_WorkGroupExecutorsHost")
   workGroupExecutorsServices WorkGroupExecutor[]         @relation("Tenant_WorkGroupExecutorsServices")
+  // Tareas Pro
+  taskTemplates              TaskTemplate[]
+  taskTemplateSchedules      TaskTemplateSchedule[]
+  taskSectionTemplates       TaskSectionTemplate[]
+  taskSectionReferenceAssets TaskSectionReferenceAsset[]
+  taskStepTemplates          TaskStepTemplate[]
+  taskStepOptions            TaskStepOption[]
+  taskStepReferenceAssets    TaskStepReferenceAsset[]
+  taskJobs                   TaskJob[]
+  taskJobSections            TaskJobSection[]
+  taskJobSectionResponses    TaskJobSectionResponse[]
+  taskJobSectionEvidenceAssets TaskJobSectionEvidenceAsset[]
+  taskJobSteps               TaskJobStep[]
+  taskJobStepResponses       TaskJobStepResponse[]
+  taskJobStepEvidenceAssets  TaskJobStepEvidenceAsset[]
+  taskCarryForwards          TaskCarryForward[]
+  taskJobEventLogs           TaskJobEventLog[]
 }
 
 /// *
@@ -100,6 +117,9 @@ model User {
   TeamMembership                              TeamMembership[]
   avatarMedia                                 Asset?                        @relation("UserAvatar", fields: [avatarMediaId], references: [id])
   tenant                                      Tenant?                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Tareas Pro
+  assignedTaskJobs                            TaskJob[]                     @relation("TaskJobAssignee")
+  taskJobEventLogs                            TaskJobEventLog[]             @relation("TaskJobEventActor")
 }
 
 /// *
@@ -272,6 +292,10 @@ model Property {
   propertyOpenings        PropertyOpening[]
   teams                   PropertyTeam[]
   reservations            Reservation[]           @relation("ReservationProperty")
+  // Tareas Pro
+  taskTemplates           TaskTemplate[]
+  taskJobs                TaskJob[]
+  taskCarryForwards       TaskCarryForward[]
 
   @@index([tenantId])
 }
@@ -460,6 +484,7 @@ model Cleaning {
   inventoryChecks        InventoryCheck[]        @relation("CleaningInventoryChecks")
   inventoryReports       InventoryReport[]
   inventoryReview        InventoryReview?
+  taskJobs               TaskJob[]
 
   @@index([tenantId])
   @@index([propertyId])
@@ -851,6 +876,11 @@ model Asset {
   inventoryLineAssets          InventoryLineAsset[]
   propertyCover                Property?                     @relation("PropertyCover")
   userAvatar                   User?                         @relation("UserAvatar")
+  // Tareas Pro
+  taskSectionReferenceAssets   TaskSectionReferenceAsset[]   @relation("TaskSectionReferenceAssets")
+  taskStepReferenceAssets      TaskStepReferenceAsset[]      @relation("TaskStepReferenceAssets")
+  taskJobSectionEvidenceAssets TaskJobSectionEvidenceAsset[] @relation("TaskJobSectionEvidence")
+  taskJobStepEvidenceAssets    TaskJobStepEvidenceAsset[]    @relation("TaskJobStepEvidence")
 
   @@unique([tenantId, bucket, key])
   @@index([tenantId, groupId])
@@ -1811,4 +1841,438 @@ enum InventoryLogType {
   DELETE
   DAMAGE
   RESTORE
+}
+
+// =====================================================================
+// TAREAS PRO — Nuevo dominio independiente del checklist legacy
+// =====================================================================
+
+// ---- Enums ----
+
+enum TaskTemplateStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum TaskScheduleFrequency {
+  PER_CHECKOUT
+  DAILY
+  WEEKLY
+  MONTHLY
+  MANUAL
+}
+
+enum TaskSectionType {
+  INFORMATIVE
+  STANDARD
+  CRITICAL
+}
+
+enum TaskStepResponseType {
+  NONE
+  CONFIRMATION
+  YES_NO
+  NUMBER
+  TEXT
+  EVIDENCE
+}
+
+enum TaskJobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DEFERRED
+  CANCELLED
+}
+
+enum TaskJobSectionStatus {
+  PENDING
+  IN_PROGRESS
+  CONFIRMED
+  DEFERRED
+  SKIPPED
+}
+
+enum TaskJobStepStatus {
+  PENDING
+  RESPONDED
+  DEFERRED
+  SKIPPED
+}
+
+enum TaskCarryForwardStatus {
+  OPEN
+  INJECTED
+  EXPIRED
+}
+
+enum TaskCarryForwardPolicy {
+  UNLIMITED
+  LIMITED
+}
+
+enum TaskAssetSyncStatus {
+  LOCAL_PENDING
+  UPLOADING
+  UPLOADED
+  FAILED
+}
+
+enum TaskEventLogType {
+  CREATED
+  STARTED
+  STEP_RESPONDED
+  SECTION_CONFIRMED
+  DEFERRED
+  COMPLETED
+  CARRY_FORWARD_CREATED
+  CARRY_FORWARD_INJECTED
+}
+
+// ---- Modelos de Definición ----
+
+/// Plantilla operativa que define el estándar de una propiedad
+model TaskTemplate {
+  id          String             @id @default(cuid())
+  tenantId    String
+  propertyId  String
+  name        String
+  description String?
+  status      TaskTemplateStatus @default(DRAFT)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  sections TaskSectionTemplate[]
+  schedule TaskTemplateSchedule?
+  jobs     TaskJob[]
+
+  @@index([tenantId, propertyId, status])
+  @@index([tenantId])
+}
+
+/// Configuración de frecuencia y carry-forward por template (1:1)
+model TaskTemplateSchedule {
+  id                      String                 @id @default(cuid())
+  tenantId                String
+  templateId              String                 @unique
+  frequency               TaskScheduleFrequency  @default(MANUAL)
+  carryForwardPolicy      TaskCarryForwardPolicy @default(LIMITED)
+  maxCarryForwardAttempts Int                    @default(2)
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template TaskTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+/// Sección de una plantilla (agrupa pasos)
+model TaskSectionTemplate {
+  id                    String          @id @default(cuid())
+  tenantId              String
+  templateId            String
+  name                  String
+  description           String?
+  sectionType           TaskSectionType @default(STANDARD)
+  order                 Int             @default(0)
+  requiresGlobalConfirm Boolean         @default(false)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template TaskTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  steps           TaskStepTemplate[]
+  referenceAssets TaskSectionReferenceAsset[]
+
+  @@index([tenantId])
+  @@index([templateId])
+}
+
+/// Imagen de referencia para una sección de plantilla
+model TaskSectionReferenceAsset {
+  id        String   @id @default(cuid())
+  tenantId  String
+  sectionId String
+  assetId   String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  tenant  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  section TaskSectionTemplate @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  asset   Asset               @relation("TaskSectionReferenceAssets", fields: [assetId], references: [id])
+
+  @@index([tenantId])
+  @@index([sectionId])
+}
+
+/// Paso individual dentro de una sección de plantilla
+model TaskStepTemplate {
+  id               String               @id @default(cuid())
+  tenantId         String
+  sectionId        String
+  name             String
+  description      String?
+  responseType     TaskStepResponseType @default(NONE)
+  isRequired       Boolean              @default(true)
+  blocksCompletion Boolean              @default(false)
+  order            Int                  @default(0)
+  numberMin        Decimal?             @db.Decimal(12, 2)
+  numberMax        Decimal?             @db.Decimal(12, 2)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  tenant  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  section TaskSectionTemplate @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  options         TaskStepOption[]
+  referenceAssets TaskStepReferenceAsset[]
+
+  @@index([tenantId])
+  @@index([sectionId])
+}
+
+/// Opción seleccionable para un paso (simplificado MVP)
+model TaskStepOption {
+  id       String @id @default(cuid())
+  tenantId String
+  stepId   String
+  label    String
+  order    Int    @default(0)
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  step   TaskStepTemplate @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([stepId])
+}
+
+/// Imagen de referencia para un paso de plantilla
+model TaskStepReferenceAsset {
+  id        String   @id @default(cuid())
+  tenantId  String
+  stepId    String
+  assetId   String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  step   TaskStepTemplate @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  asset  Asset            @relation("TaskStepReferenceAssets", fields: [assetId], references: [id])
+
+  @@index([tenantId])
+  @@index([stepId])
+}
+
+// ---- Modelos de Ejecución ----
+
+/// Job generado a partir de un template (instancia ejecutable)
+model TaskJob {
+  id                   String        @id @default(cuid())
+  tenantId             String
+  propertyId           String
+  templateId           String
+  cleaningId           String?
+  assignedUserId       String?
+  status               TaskJobStatus @default(PENDING)
+  occurrenceKey        String
+  startedAt            DateTime?
+  completedAt          DateTime?
+  deferredAt           DateTime?
+  deferredReason       String?
+  templateNameSnapshot String
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  template     TaskTemplate @relation(fields: [templateId], references: [id])
+  cleaning     Cleaning? @relation(fields: [cleaningId], references: [id])
+  assignedUser User?     @relation("TaskJobAssignee", fields: [assignedUserId], references: [id])
+
+  sections             TaskJobSection[]
+  eventLogs            TaskJobEventLog[]
+  carryForwardsCreated TaskCarryForward[] @relation("TaskCarryForwardSource")
+
+  @@unique([tenantId, occurrenceKey])
+  @@index([tenantId, propertyId, status])
+  @@index([tenantId])
+  @@index([propertyId])
+}
+
+/// Sección del job (snapshot de TaskSectionTemplate al momento de generación)
+model TaskJobSection {
+  id                            String               @id @default(cuid())
+  tenantId                      String
+  jobId                         String
+  templateSectionId             String
+  nameSnapshot                  String
+  sectionTypeSnapshot           TaskSectionType
+  requiresGlobalConfirmSnapshot Boolean
+  order                         Int
+  status                        TaskJobSectionStatus @default(PENDING)
+  isCarryForwardInjected        Boolean              @default(false)
+  carryForwardId                String?
+  createdAt                     DateTime             @default(now())
+  updatedAt                     DateTime             @updatedAt
+
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job          TaskJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  carryForward TaskCarryForward? @relation("TaskCarryForwardSection", fields: [carryForwardId], references: [id])
+
+  steps          TaskJobStep[]
+  response       TaskJobSectionResponse?
+  evidenceAssets TaskJobSectionEvidenceAsset[]
+
+  @@index([tenantId])
+  @@index([jobId])
+}
+
+/// Confirmación global de una sección (si requiresGlobalConfirm = true)
+model TaskJobSectionResponse {
+  id          String   @id @default(cuid())
+  tenantId    String
+  sectionId   String   @unique
+  confirmedAt DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  section TaskJobSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+/// Evidencia fotográfica adjunta a una sección del job
+model TaskJobSectionEvidenceAsset {
+  id         String              @id @default(cuid())
+  tenantId   String
+  sectionId  String
+  assetId    String?
+  syncStatus TaskAssetSyncStatus @default(LOCAL_PENDING)
+  caption    String?
+  order      Int                 @default(0)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  section TaskJobSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  asset   Asset?         @relation("TaskJobSectionEvidence", fields: [assetId], references: [id])
+
+  @@index([tenantId])
+  @@index([sectionId])
+}
+
+/// Paso del job (snapshot de TaskStepTemplate al momento de generación)
+model TaskJobStep {
+  id                       String               @id @default(cuid())
+  tenantId                 String
+  sectionId                String
+  templateStepId           String
+  nameSnapshot             String
+  descriptionSnapshot      String?
+  responseTypeSnapshot     TaskStepResponseType
+  isRequiredSnapshot       Boolean
+  blocksCompletionSnapshot Boolean
+  order                    Int
+  status                   TaskJobStepStatus    @default(PENDING)
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  section TaskJobSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  response       TaskJobStepResponse?
+  evidenceAssets TaskJobStepEvidenceAsset[]
+
+  @@index([tenantId])
+  @@index([sectionId])
+}
+
+/// Respuesta del cleaner a un paso (una sola respuesta vigente por paso)
+model TaskJobStepResponse {
+  id          String   @id @default(cuid())
+  tenantId    String
+  stepId      String   @unique
+  respondedAt DateTime
+  confirmed   Boolean?
+  boolValue   Boolean?
+  numberValue Decimal? @db.Decimal(12, 2)
+  textValue   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  step   TaskJobStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+/// Evidencia fotográfica adjunta a un paso del job
+model TaskJobStepEvidenceAsset {
+  id         String              @id @default(cuid())
+  tenantId   String
+  stepId     String
+  assetId    String?
+  syncStatus TaskAssetSyncStatus @default(LOCAL_PENDING)
+  caption    String?
+  order      Int                 @default(0)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  step   TaskJobStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  asset  Asset?      @relation("TaskJobStepEvidence", fields: [assetId], references: [id])
+
+  @@index([tenantId])
+  @@index([stepId])
+}
+
+/// Carry-forward: tarea diferida que se inyecta en el siguiente job elegible
+model TaskCarryForward {
+  id               String                 @id @default(cuid())
+  tenantId         String
+  propertyId       String
+  sourceJobId      String
+  status           TaskCarryForwardStatus @default(OPEN)
+  policy           TaskCarryForwardPolicy @default(LIMITED)
+  maxAttempts      Int                    @default(2)
+  currentAttempt   Int                    @default(0)
+  reason           String?
+  contextSnapshot  Json
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  sourceJob TaskJob  @relation("TaskCarryForwardSource", fields: [sourceJobId], references: [id])
+
+  injectedSections TaskJobSection[] @relation("TaskCarryForwardSection")
+
+  @@index([tenantId, propertyId, status])
+  @@index([tenantId])
+}
+
+/// Log de eventos de un job (auditoría inmutable)
+model TaskJobEventLog {
+  id        String           @id @default(cuid())
+  tenantId  String
+  jobId     String
+  eventType TaskEventLogType
+  actorId   String?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job    TaskJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  actor  User?   @relation("TaskJobEventActor", fields: [actorId], references: [id])
+
+  @@index([tenantId])
+  @@index([jobId])
 }
