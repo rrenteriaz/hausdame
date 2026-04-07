@@ -161,6 +161,13 @@ export default function CleanerMenu({ isOpen, onClose, user }: CleanerMenuProps)
 
           <button
             type="button"
+            onClick={() => handleMenuNav("/cleaner/tareas-pro")}
+            className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+          >
+            Mis tareas
+          </button>
+          <button
+            type="button"
             onClick={() => handleMenuNav("/cleaner/teams")}
             className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
           >
@@ -253,6 +260,13 @@ export default function CleanerMenu({ isOpen, onClose, user }: CleanerMenuProps)
               </div>
             </button>
 
+            <button
+              type="button"
+              onClick={() => handleMenuNav("/cleaner/tareas-pro")}
+              className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+            >
+              Mis tareas
+            </button>
             <button
               type="button"
               onClick={() => handleMenuNav("/cleaner/teams")}

@@ -14,6 +14,7 @@ import {
   deleteTaskStep,
   generateTaskJobAction,
 } from "../actions";
+import { SubmitConfirmButton } from "../components/SubmitConfirmButton";
 
 export default async function TemplateEditorPage({
   params,
@@ -43,9 +44,9 @@ export default async function TemplateEditorPage({
   if (!template) notFound();
 
   const sectionTypeLabels: Record<string, string> = {
-    INFORMATIVE: "Informativa",
-    STANDARD: "Estándar",
-    CRITICAL: "Crítica",
+    INFORMATIVE: "Solo revisión",
+    STANDARD: "Normal",
+    CRITICAL: "Obligatoria",
   };
 
   const responseTypeLabels: Record<string, string> = {
@@ -79,14 +80,14 @@ export default async function TemplateEditorPage({
               : "bg-gray-100 text-gray-500"
           }`}
         >
-          {template.status}
+          {template.status === "ACTIVE" ? "Activo" : template.status === "DRAFT" ? "Borrador" : "Inactivo"}
         </span>
       </div>
 
-      {/* Editar template */}
+      {/* Editar checklist */}
       <details className="border rounded-xl p-4">
         <summary className="font-medium cursor-pointer select-none text-sm">
-          Editar plantilla
+          Editar checklist
         </summary>
         <form action={updateTaskTemplate} className="mt-4 space-y-3">
           <input type="hidden" name="templateId" value={template.id} />
@@ -126,10 +127,10 @@ export default async function TemplateEditorPage({
         </form>
       </details>
 
-      {/* Schedule / Carry-forward */}
+      {/* Frecuencia */}
       <details className="border rounded-xl p-4">
         <summary className="font-medium cursor-pointer select-none text-sm">
-          Configuración de frecuencia y carry-forward
+          ¿Cada cuándo se debe hacer?
         </summary>
         <form action={updateTaskTemplateSchedule} className="mt-4 space-y-3">
           <input type="hidden" name="templateId" value={template.id} />
@@ -146,43 +147,56 @@ export default async function TemplateEditorPage({
               <option value="WEEKLY">Semanal</option>
               <option value="MONTHLY">Mensual</option>
             </select>
+            <p className="text-xs text-gray-400 mt-1">
+              Ej: limpieza diaria, semanal o después de cada huésped
+            </p>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1 text-gray-600">
-              Política carry-forward
-            </label>
-            <select
-              name="carryForwardPolicy"
-              defaultValue={template.schedule?.carryForwardPolicy ?? "LIMITED"}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="LIMITED">Limitado</option>
-              <option value="UNLIMITED">Ilimitado</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1 text-gray-600">
-              Intentos máximos de carry-forward
-            </label>
-            <input
-              name="maxCarryForwardAttempts"
-              type="number"
-              min={1}
-              max={10}
-              defaultValue={template.schedule?.maxCarryForwardAttempts ?? 2}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
+
+          {/* Opciones avanzadas */}
+          <details className="border rounded-lg p-3">
+            <summary className="text-xs text-gray-500 cursor-pointer select-none hover:text-gray-700">
+              Mostrar opciones avanzadas
+            </summary>
+            <div className="mt-3 space-y-3">
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-600">
+                  Si no se completa, ¿qué pasa?
+                </label>
+                <select
+                  name="carryForwardPolicy"
+                  defaultValue={template.schedule?.carryForwardPolicy ?? "LIMITED"}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                >
+                  <option value="LIMITED">Reintentar (limitado)</option>
+                  <option value="UNLIMITED">Siempre reintentar</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-600">
+                  Máximo de reintentos
+                </label>
+                <input
+                  name="maxCarryForwardAttempts"
+                  type="number"
+                  min={1}
+                  max={10}
+                  defaultValue={template.schedule?.maxCarryForwardAttempts ?? 2}
+                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                />
+              </div>
+            </div>
+          </details>
+
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
             Guardar configuración
           </button>
         </form>
       </details>
 
-      {/* Generar job manual */}
+      {/* Generar tarea manual */}
       {template.status === "ACTIVE" && (
         <div className="border rounded-xl p-4 bg-blue-50 border-blue-200">
-          <p className="text-sm font-medium text-blue-800 mb-3">Generar job manualmente</p>
+          <p className="text-sm font-medium text-blue-800 mb-3">Generar tarea manualmente</p>
           <form action={generateTaskJobAction} className="space-y-2">
             <input type="hidden" name="templateId" value={template.id} />
             <input type="hidden" name="propertyId" value={template.propertyId} />
@@ -190,26 +204,29 @@ export default async function TemplateEditorPage({
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
             >
-              Generar job ahora
+              Generar tarea ahora
             </button>
           </form>
         </div>
       )}
 
-      {/* Secciones */}
+      {/* Áreas */}
       <div className="space-y-4">
-        <h2 className="font-semibold">Secciones ({template.sections.length})</h2>
+        <div>
+          <h2 className="font-semibold">Áreas ({template.sections.length})</h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Divide tu checklist por áreas como cocina, baño, etc.
+          </p>
+        </div>
 
         {template.sections.map((section) => (
           <div key={section.id} className="border rounded-xl overflow-hidden">
-            {/* Header sección */}
+            {/* Header área */}
             <div className="bg-gray-50 px-4 py-3 flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">{section.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {sectionTypeLabels[section.sectionType]} ·{" "}
-                  {section.requiresGlobalConfirm ? "Requiere confirmación" : "Sin confirmación global"} ·{" "}
-                  {section.steps.length} pasos
+                  {sectionTypeLabels[section.sectionType]} · {section.steps.length} pasos
                 </p>
               </div>
               <div className="flex gap-2">
@@ -225,7 +242,7 @@ export default async function TemplateEditorPage({
                         defaultValue={section.name}
                         required
                         className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                        placeholder="Nombre"
+                        placeholder="Nombre del área"
                       />
                       <textarea
                         name="description"
@@ -234,24 +251,34 @@ export default async function TemplateEditorPage({
                         className="w-full border rounded-lg px-2 py-1.5 text-sm"
                         placeholder="Descripción"
                       />
-                      <select
-                        name="sectionType"
-                        defaultValue={section.sectionType}
-                        className="w-full border rounded-lg px-2 py-1.5 text-sm"
-                      >
-                        <option value="INFORMATIVE">Informativa</option>
-                        <option value="STANDARD">Estándar</option>
-                        <option value="CRITICAL">Crítica</option>
-                      </select>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          name="requiresGlobalConfirm"
-                          value="true"
-                          defaultChecked={section.requiresGlobalConfirm}
-                        />
-                        Requiere confirmación global
-                      </label>
+                      <div>
+                        <label className="block text-xs font-medium mb-1 text-gray-600">
+                          Nivel de importancia
+                        </label>
+                        <select
+                          name="sectionType"
+                          defaultValue={section.sectionType}
+                          className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                        >
+                          <option value="STANDARD">Normal</option>
+                          <option value="INFORMATIVE">Solo revisión</option>
+                          <option value="CRITICAL">Obligatoria</option>
+                        </select>
+                      </div>
+                      <details className="border rounded-lg p-2">
+                        <summary className="text-xs text-gray-500 cursor-pointer select-none hover:text-gray-700">
+                          Opciones avanzadas
+                        </summary>
+                        <label className="flex items-center gap-2 text-sm mt-2">
+                          <input
+                            type="checkbox"
+                            name="requiresGlobalConfirm"
+                            value="true"
+                            defaultChecked={section.requiresGlobalConfirm}
+                          />
+                          Requiere confirmación global
+                        </label>
+                      </details>
                       <button
                         type="submit"
                         className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs w-full"
@@ -263,15 +290,12 @@ export default async function TemplateEditorPage({
                 </details>
                 <form action={deleteTaskSection}>
                   <input type="hidden" name="sectionId" value={section.id} />
-                  <button
-                    type="submit"
+                  <SubmitConfirmButton
+                    confirmMessage="¿Eliminar área y todos sus pasos?"
                     className="text-xs text-red-500 hover:underline"
-                    onClick={(e) => {
-                      if (!confirm("¿Eliminar sección?")) e.preventDefault();
-                    }}
                   >
                     Eliminar
-                  </button>
+                  </SubmitConfirmButton>
                 </form>
               </div>
             </div>
@@ -290,9 +314,12 @@ export default async function TemplateEditorPage({
                   </div>
                   <form action={deleteTaskStep}>
                     <input type="hidden" name="stepId" value={step.id} />
-                    <button type="submit" className="text-xs text-red-400 hover:underline ml-3">
+                    <SubmitConfirmButton
+                      confirmMessage="¿Eliminar este paso?"
+                      className="text-xs text-red-400 hover:underline ml-3"
+                    >
                       ×
-                    </button>
+                    </SubmitConfirmButton>
                   </form>
                 </div>
               ))}
@@ -349,17 +376,17 @@ export default async function TemplateEditorPage({
           </div>
         ))}
 
-        {/* Agregar sección */}
+        {/* Agregar área */}
         <details className="border rounded-xl p-4">
           <summary className="text-sm font-medium cursor-pointer select-none">
-            + Agregar sección
+            + Agregar área
           </summary>
           <form action={createTaskSection} className="mt-4 space-y-3">
             <input type="hidden" name="templateId" value={template.id} />
             <input
               name="name"
               required
-              placeholder="Nombre de la sección"
+              placeholder="Nombre del área (ej: Cocina, Baño, Dormitorio)"
               className="w-full border rounded-lg px-3 py-2 text-sm"
             />
             <textarea
@@ -368,20 +395,30 @@ export default async function TemplateEditorPage({
               rows={2}
               className="w-full border rounded-lg px-3 py-2 text-sm"
             />
-            <select name="sectionType" className="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="STANDARD">Estándar</option>
-              <option value="INFORMATIVE">Informativa</option>
-              <option value="CRITICAL">Crítica</option>
-            </select>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="requiresGlobalConfirm" value="true" />
-              Requiere confirmación global
-            </label>
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-600">
+                Nivel de importancia
+              </label>
+              <select name="sectionType" className="w-full border rounded-lg px-3 py-2 text-sm">
+                <option value="STANDARD">Normal</option>
+                <option value="INFORMATIVE">Solo revisión</option>
+                <option value="CRITICAL">Obligatoria</option>
+              </select>
+            </div>
+            <details className="border rounded-lg p-3">
+              <summary className="text-xs text-gray-500 cursor-pointer select-none hover:text-gray-700">
+                Opciones avanzadas
+              </summary>
+              <label className="flex items-center gap-2 text-sm mt-2">
+                <input type="checkbox" name="requiresGlobalConfirm" value="true" />
+                Requiere confirmación global
+              </label>
+            </details>
             <button
               type="submit"
               className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm"
             >
-              Agregar sección
+              Agregar área
             </button>
           </form>
         </details>

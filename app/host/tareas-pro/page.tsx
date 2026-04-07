@@ -35,26 +35,40 @@ export default async function TareasProPage() {
           href="/host/tareas-pro/jobs"
           className="text-sm text-blue-600 hover:underline"
         >
-          Ver jobs
+          Ver tareas generadas
         </Link>
       </div>
 
-      {/* Crear template */}
+      {/* Crear checklist */}
       <details className="border rounded-xl p-4">
         <summary className="font-medium cursor-pointer select-none">
-          + Nueva plantilla
+          + Nuevo checklist
         </summary>
-        <form action={createTaskTemplate} className="mt-4 space-y-3">
+        <form action={createTaskTemplate} className="mt-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Propiedad</label>
-            <select name="propertyId" required className="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">Seleccionar...</option>
+            <label className="block text-sm font-medium mb-2">Propiedad</label>
+            <div className="space-y-1 max-h-48 overflow-y-auto border rounded-xl p-2">
               {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.shortName ?? p.name}
-                </option>
+                <label
+                  key={p.id}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                >
+                  <input
+                    type="radio"
+                    name="propertyId"
+                    value={p.id}
+                    required
+                    className="shrink-0"
+                  />
+                  <span className="text-sm font-medium text-neutral-900">
+                    {p.shortName ?? p.name}
+                  </span>
+                  {p.shortName && (
+                    <span className="text-xs text-neutral-400 truncate">{p.name}</span>
+                  )}
+                </label>
               ))}
-            </select>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Nombre</label>
@@ -77,16 +91,16 @@ export default async function TareasProPage() {
             type="submit"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
           >
-            Crear plantilla
+            Crear checklist
           </button>
         </form>
       </details>
 
-      {/* Lista de templates */}
+      {/* Lista de checklists */}
       <div className="space-y-2">
         {templates.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">
-            Aún no hay plantillas. Crea la primera.
+            Aún no hay checklists. Crea el primero.
           </p>
         ) : (
           templates.map((t) => (
@@ -99,7 +113,7 @@ export default async function TareasProPage() {
                 <p className="font-medium text-sm">{t.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {t.property.shortName ?? t.property.name} ·{" "}
-                  {t._count.sections} secciones · {t._count.jobs} jobs
+                  {t._count.sections} áreas · {t._count.jobs} tareas
                 </p>
               </div>
               <span

@@ -15,8 +15,14 @@ const sectionStatusLabels: Record<string, string> = {
   PENDING: "Pendiente",
   IN_PROGRESS: "En progreso",
   CONFIRMED: "Confirmada",
-  DEFERRED: "Diferida",
+  DEFERRED: "Pendiente (diferida)",
   SKIPPED: "Omitida",
+};
+
+const sectionTypeLabels: Record<string, string> = {
+  INFORMATIVE: "Solo revisión",
+  STANDARD: "Normal",
+  CRITICAL: "Obligatoria",
 };
 
 export default async function HostJobDetailPage({
@@ -72,13 +78,19 @@ export default async function HostJobDetailPage({
             {job.assignedUser ? ` · ${job.assignedUser.name}` : ""}
           </p>
           <p className="text-xs text-gray-400">
-            Status:{" "}
-            <span className="font-medium text-gray-700">{job.status}</span>
+            Estado:{" "}
+            <span className="font-medium text-gray-700">
+              {job.status === "PENDING" ? "Pendiente"
+                : job.status === "IN_PROGRESS" ? "En progreso"
+                : job.status === "COMPLETED" ? "Completada"
+                : job.status === "CANCELLED" ? "Cancelada"
+                : job.status}
+            </span>
           </p>
         </div>
       </div>
 
-      {/* Secciones */}
+      {/* Áreas */}
       <div className="space-y-3">
         {job.sections.map((section) => (
           <div key={section.id} className="border rounded-xl overflow-hidden">
@@ -92,7 +104,7 @@ export default async function HostJobDetailPage({
                 </p>
                 <p className="text-xs text-gray-400">
                   {sectionStatusLabels[section.status] ?? section.status} ·{" "}
-                  {section.sectionTypeSnapshot}
+                  {sectionTypeLabels[section.sectionTypeSnapshot] ?? section.sectionTypeSnapshot}
                 </p>
               </div>
               {section.response && (
@@ -133,9 +145,9 @@ export default async function HostJobDetailPage({
         ))}
       </div>
 
-      {/* Event log */}
+      {/* Historial */}
       <div className="border rounded-xl p-4 space-y-2">
-        <h3 className="text-sm font-semibold">Historial de eventos</h3>
+        <h3 className="text-sm font-semibold">Historial</h3>
         {job.eventLogs.map((log) => (
           <div key={log.id} className="flex items-start gap-2 text-xs text-gray-500">
             <span className="text-gray-300">·</span>

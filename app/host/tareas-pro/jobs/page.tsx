@@ -41,12 +41,12 @@ export default async function HostJobsPage() {
         <Link href="/host/tareas-pro" className="text-gray-400 hover:text-gray-700">
           ←
         </Link>
-        <h1 className="text-xl font-semibold">Jobs de Tareas Pro</h1>
+        <h1 className="text-xl font-semibold">Tareas generadas</h1>
       </div>
 
       {jobs.length === 0 ? (
         <p className="text-sm text-gray-400 py-8 text-center">
-          Aún no hay jobs. Genera uno desde una plantilla activa.
+          Aún no hay tareas. Genera una desde un checklist activo.
         </p>
       ) : (
         jobs.map((job) => (
@@ -59,7 +59,7 @@ export default async function HostJobsPage() {
               <p className="font-medium text-sm">{job.templateNameSnapshot}</p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {job.property.shortName ?? job.property.name} ·{" "}
-                {job._count.sections} secciones
+                {job._count.sections} áreas
                 {job.assignedUser ? ` · ${job.assignedUser.name}` : ""}
               </p>
               <p className="text-xs text-gray-400">
