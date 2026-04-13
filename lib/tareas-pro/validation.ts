@@ -2,8 +2,6 @@
 // Reglas de cierre estricto de un TaskJob
 import prisma from "@/lib/prisma";
 
-// Tipo local para no depender del estado del cliente Prisma en el servidor TS de VS Code.
-// Los valores deben mantenerse alineados con el enum TaskSectionType del schema.
 type SectionType = "INFORMATIVE" | "STANDARD" | "CRITICAL";
 
 export interface JobValidationResult {
@@ -11,18 +9,11 @@ export interface JobValidationResult {
   blockers: string[];
 }
 
-/**
- * Prefijo semántico para mensajes de bloqueo según el tipo de sección.
- * Hace que los mensajes sean informativos para el Cleaner.
- */
 function sectionPrefix(name: string, type: SectionType): string {
   switch (type) {
-    case "CRITICAL":
-      return `[CRÍTICO] Sección "${name}"`;
-    case "INFORMATIVE":
-      return `[INFO] Sección "${name}"`;
-    default:
-      return `Sección "${name}"`;
+    case "CRITICAL": return `[CRÍTICO] Sección "${name}"`;
+    case "INFORMATIVE": return `[INFO] Sección "${name}"`;
+    default: return `Sección "${name}"`;
   }
 }
 
@@ -47,85 +38,95 @@ export async function validateJobCompletion(
   });
 
   for (const section of sections) {
-    // Secciones DEFERRED no bloquean en ningún caso
     if (section.status === "DEFERRED") continue;
 
     const type = section.sectionTypeSnapshot as SectionType;
     const prefix = sectionPrefix(section.nameSnapshot, type);
 
-    // ---- Secciones INFORMATIVE ----
-    // No bloquean salvo que tengan confirmación global explícita.
-    // Sus pasos (que típicamente son NONE) tampoco bloquean.
     if (type === "INFORMATIVE") {
       if (section.requiresGlobalConfirmSnapshot && !section.response) {
-        blockers.push(`${prefix}: requiere confirmación aunque es informativa`);
+        blockers.push(`${prefix}: requiere confirmación`);
       }
-      // Verificar sync de evidencia de sección (por si se añadió una)
       for (const ev of section.evidenceAssets) {
         if (ev.syncStatus === "FAILED" || ev.syncStatus === "LOCAL_PENDING") {
-          blockers.push(`${prefix}: evidencia no sincronizada (${ev.syncStatus})`);
+          blockers.push(`${prefix}: evidencia no sincronizada`);
         }
       }
-      // No validamos pasos de secciones informativas
       continue;
     }
 
-    // ---- Secciones STANDARD y CRITICAL ----
-
-    // Confirmación global obligatoria
     if (section.requiresGlobalConfirmSnapshot && !section.response) {
       blockers.push(`${prefix}: falta confirmación global`);
     }
 
-    // Evidencia de sección con sync inválido
     for (const ev of section.evidenceAssets) {
       if (ev.syncStatus === "FAILED" || ev.syncStatus === "LOCAL_PENDING") {
-        blockers.push(`${prefix}: evidencia no sincronizada (${ev.syncStatus})`);
+        blockers.push(`${prefix}: evidencia no sincronizada`);
       }
     }
 
-    // Validar pasos
     for (const step of section.steps) {
-      // Pasos DEFERRED no bloquean
-      if (step.status === "DEFERRED") continue;
+      if (step.status === "DEFERRED" || step.status === "SKIPPED") continue;
 
-      const responseType = step.responseTypeSnapshot;
+      const isLegacy = step.snapshotVersion === "LEGACY_V1";
+      const hasAnyCapture =
+        step.capturesYesNoSnapshot ||
+        step.capturesNumberSnapshot ||
+        step.capturesPhotoSnapshot ||
+        step.capturesTextSnapshot;
 
-      // Pasos sin tipo de respuesta nunca bloquean
-      if (responseType === "NONE") continue;
+      // LEGACY_V1 steps with no captures: only require a response (confirmed=true).
+      // No specific capture validation — the original responseType data was lost in migration.
+      // The sheet UX shows "Marca como completada" and allows saving with confirmed=true.
+      if (isLegacy && !hasAnyCapture) {
+        if (step.isRequiredSnapshot || step.blocksCompletionSnapshot) {
+          if (!step.response) {
+            const qualifier = " (legacy — confirmar en el sheet)";
+            const msg = type === "CRITICAL"
+              ? `${prefix} — paso crítico "${step.nameSnapshot}" sin confirmar${qualifier}`
+              : `${prefix} — paso "${step.nameSnapshot}" sin confirmar${qualifier}`;
+            blockers.push(msg);
+          }
+        }
+        continue;
+      }
 
-      // Verificar respuesta obligatoria
+      // MULTI_CAPTURE_V2 or LEGACY_V1 with inferred captures: standard validation
+      if (!hasAnyCapture && !step.isRequiredSnapshot && !step.blocksCompletionSnapshot) continue;
+
+      // Step must be responded
       if (step.isRequiredSnapshot || step.blocksCompletionSnapshot) {
         if (!step.response) {
-          // Para secciones CRITICAL, mensaje más explícito
-          const stepMsg =
-            type === "CRITICAL"
-              ? `${prefix} — paso crítico "${step.nameSnapshot}" sin respuesta`
-              : `${prefix} — paso "${step.nameSnapshot}" requiere respuesta`;
-          blockers.push(stepMsg);
+          const msg = type === "CRITICAL"
+            ? `${prefix} — paso crítico "${step.nameSnapshot}" sin respuesta`
+            : `${prefix} — paso "${step.nameSnapshot}" sin completar`;
+          blockers.push(msg);
           continue;
         }
 
-        // EVIDENCE: verificar que tenga al menos un asset UPLOADED
-        if (responseType === "EVIDENCE") {
+        // Validate individual required captures
+        if (step.capturesYesNoSnapshot && step.yesNoRequiredSnapshot && step.response.boolValue === null) {
+          blockers.push(`${prefix} — "${step.nameSnapshot}": falta respuesta Sí/No`);
+        }
+        if (step.capturesNumberSnapshot && step.numberRequiredSnapshot && step.response.numberValue === null) {
+          blockers.push(`${prefix} — "${step.nameSnapshot}": falta el número`);
+        }
+        if (step.capturesTextSnapshot && step.textRequiredSnapshot && !step.response.textValue) {
+          blockers.push(`${prefix} — "${step.nameSnapshot}": falta el texto`);
+        }
+        if (step.capturesPhotoSnapshot && step.photoRequiredSnapshot) {
           const validEvidence = step.evidenceAssets.filter(
             (a: { syncStatus: string }) => a.syncStatus === "UPLOADED"
           );
           if (validEvidence.length === 0) {
-            const evidenceMsg =
-              type === "CRITICAL"
-                ? `${prefix} — evidencia crítica del paso "${step.nameSnapshot}" sin foto sincronizada`
-                : `${prefix} — paso "${step.nameSnapshot}" requiere evidencia fotográfica sincronizada`;
-            blockers.push(evidenceMsg);
+            blockers.push(`${prefix} — "${step.nameSnapshot}": falta foto de evidencia`);
           }
         }
 
-        // Evidencia en assets con sync inválido
+        // Check evidence sync status
         for (const ev of step.evidenceAssets) {
           if (ev.syncStatus === "FAILED" || ev.syncStatus === "LOCAL_PENDING") {
-            blockers.push(
-              `${prefix} — evidencia del paso "${step.nameSnapshot}" no sincronizada (${ev.syncStatus})`
-            );
+            blockers.push(`${prefix} — evidencia de "${step.nameSnapshot}" no sincronizada`);
           }
         }
       }

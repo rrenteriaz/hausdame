@@ -2,6 +2,8 @@
 import { requireHostUser } from "@/lib/auth/requireUser";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
+import HostWebContainer from "@/lib/ui/HostWebContainer";
+import Page from "@/lib/ui/Page";
 
 const statusLabels: Record<string, string> = {
   PENDING: "Pendiente",
@@ -36,17 +38,17 @@ export default async function HostJobsPage() {
   });
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <Link href="/host/tareas-pro" className="text-gray-400 hover:text-gray-700">
-          ←
-        </Link>
-        <h1 className="text-xl font-semibold">Tareas generadas</h1>
-      </div>
-
+    <HostWebContainer>
+    <Page
+      title="Tareas generadas"
+      subtitle="Historial de jobs generados a partir de tus templates"
+      showBack
+      backHref="/host/tareas-pro"
+    >
+    <div className="max-w-2xl space-y-4">
       {jobs.length === 0 ? (
         <p className="text-sm text-gray-400 py-8 text-center">
-          Aún no hay tareas. Genera una desde un checklist activo.
+          Aún no hay jobs generados. Activa un template para comenzar.
         </p>
       ) : (
         jobs.map((job) => (
@@ -81,5 +83,7 @@ export default async function HostJobsPage() {
         ))
       )}
     </div>
+    </Page>
+    </HostWebContainer>
   );
 }

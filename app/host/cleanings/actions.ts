@@ -207,7 +207,14 @@ export async function completeCleaning(formData: FormData) {
     },
   });
 
+  // Auto-cerrar TaskRecurringDues asignadas a esta limpieza
+  await prisma.taskRecurringDue.updateMany({
+    where: { assignedCleaningId: id, tenantId, status: "ASSIGNED" },
+    data: { status: "COMPLETED", completedAt: new Date() },
+  });
+
   revalidatePath("/host/cleanings");
+  revalidatePath("/host/tareas-pro/pendientes");
   redirectBack(formData);
 }
 
@@ -235,7 +242,14 @@ export async function cancelCleaning(formData: FormData) {
     },
   });
 
+  // Revertir TaskRecurringDues asignadas a esta limpieza → vuelven a PENDING_ASSIGNMENT
+  await prisma.taskRecurringDue.updateMany({
+    where: { assignedCleaningId: id, tenantId, status: "ASSIGNED" },
+    data: { status: "PENDING_ASSIGNMENT", assignedCleaningId: null, assignedAt: null },
+  });
+
   revalidatePath("/host/cleanings");
+  revalidatePath("/host/tareas-pro/pendientes");
   redirectBack(formData);
 }
 
@@ -282,6 +296,12 @@ export async function deleteCleaning(formData: FormData) {
     redirectBack(formData);
     return;
   }
+
+  // Revertir TaskRecurringDues antes de eliminar (el cascade SetNull no actualiza el status)
+  await prisma.taskRecurringDue.updateMany({
+    where: { assignedCleaningId: id, tenantId, status: "ASSIGNED" },
+    data: { status: "PENDING_ASSIGNMENT", assignedCleaningId: null, assignedAt: null },
+  });
 
   // Solo permitir eliminar limpiezas canceladas
   await prisma.cleaning.deleteMany({

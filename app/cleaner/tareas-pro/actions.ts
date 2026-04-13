@@ -7,6 +7,14 @@ import { revalidatePath } from "next/cache";
 import { validateJobCompletion } from "@/lib/tareas-pro/validation";
 import { logTaskEvent } from "@/lib/tareas-pro/event-log";
 import { createCarryForwardFromSection } from "@/lib/tareas-pro/carry-forward";
+import storageProvider from "@/lib/storage";
+import { generateThumbnail, getOutputMimeType } from "@/lib/media/thumbnail";
+import { randomUUID } from "crypto";
+import sharp from "sharp";
+
+const EVIDENCE_BUCKET = "tareas-pro-job-evidence";
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 // =====================================================================
 // INICIAR JOB
@@ -293,5 +301,135 @@ export async function markEvidenceSyncStatus(formData: FormData) {
   await prisma.taskJobStepEvidenceAsset.updateMany({
     where: { id: evidenceId, tenantId },
     data: { syncStatus, assetId: assetId ?? undefined },
+  });
+}
+
+// =====================================================================
+// EVIDENCIA FOTOGRÁFICA DEL PASO
+// =====================================================================
+
+export async function uploadStepEvidenceAction(
+  formData: FormData
+): Promise<{ evidenceAssetId: string; thumbUrl: string }> {
+  const user = await requireUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const stepId = formData.get("stepId")?.toString();
+  const file = formData.get("file") as File | null;
+  if (!stepId) throw new Error("stepId es requerido");
+  if (!file) throw new Error("file es requerido");
+  if (!ALLOWED_MIME_TYPES.includes(file.type))
+    throw new Error("Tipo de archivo no permitido. Use JPG, PNG o WebP.");
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  if (buffer.length > MAX_FILE_SIZE)
+    throw new Error("El archivo es demasiado grande. Máximo 5MB.");
+
+  const step = await prisma.taskJobStep.findFirst({
+    where: { id: stepId, tenantId },
+    include: { section: { select: { job: { select: { id: true } } } } },
+  });
+  if (!step) throw new Error("Paso no encontrado");
+
+  const jobId = step.section.job.id;
+  const groupId = randomUUID();
+  const originalMetadata = await sharp(buffer).metadata();
+  const thumbnailResult = await generateThumbnail(buffer, file.type);
+
+  const fileExt = file.name.split(".").pop() || "jpg";
+  const originalKey = `${tenantId}/jobs/${jobId}/steps/${stepId}/${groupId}/original.${fileExt}`;
+  const thumbKey = `${tenantId}/jobs/${jobId}/steps/${stepId}/${groupId}/thumb_256.${thumbnailResult.format}`;
+
+  try {
+    const [originalUpload, thumbUpload] = await Promise.all([
+      storageProvider.putPublicObject({
+        bucket: EVIDENCE_BUCKET,
+        key: originalKey,
+        contentType: file.type,
+        buffer,
+      }),
+      storageProvider.putPublicObject({
+        bucket: EVIDENCE_BUCKET,
+        key: thumbKey,
+        contentType: getOutputMimeType(thumbnailResult.format),
+        buffer: thumbnailResult.buffer,
+      }),
+    ]);
+
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.asset.create({
+        data: {
+          tenantId,
+          type: "IMAGE",
+          provider: "SUPABASE",
+          variant: "ORIGINAL",
+          bucket: EVIDENCE_BUCKET,
+          key: originalKey,
+          publicUrl: originalUpload.publicUrl,
+          mimeType: file.type,
+          sizeBytes: buffer.length,
+          width: originalMetadata.width || 0,
+          height: originalMetadata.height || 0,
+          groupId,
+        },
+      });
+
+      const thumbAsset = await tx.asset.create({
+        data: {
+          tenantId,
+          type: "IMAGE",
+          provider: "SUPABASE",
+          variant: "THUMB_256",
+          bucket: EVIDENCE_BUCKET,
+          key: thumbKey,
+          publicUrl: thumbUpload.publicUrl,
+          mimeType: getOutputMimeType(thumbnailResult.format),
+          sizeBytes: thumbnailResult.buffer.length,
+          width: thumbnailResult.width,
+          height: thumbnailResult.height,
+          groupId,
+        },
+      });
+
+      const existingCount = await tx.taskJobStepEvidenceAsset.count({
+        where: { stepId },
+      });
+
+      const ea = await tx.taskJobStepEvidenceAsset.create({
+        data: {
+          tenantId,
+          stepId,
+          assetId: thumbAsset.id,
+          syncStatus: "UPLOADED",
+          order: existingCount + 1,
+        },
+      });
+
+      return { evidenceAssetId: ea.id, thumbUrl: thumbUpload.publicUrl };
+    });
+
+    revalidatePath(`/cleaner/tareas-pro/${jobId}`);
+    return result;
+  } catch (error) {
+    try {
+      await storageProvider.deleteObject({ bucket: EVIDENCE_BUCKET, key: originalKey });
+      await storageProvider.deleteObject({ bucket: EVIDENCE_BUCKET, key: thumbKey });
+    } catch {}
+    throw error;
+  }
+}
+
+export async function deleteStepEvidenceAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const evidenceAssetId = formData.get("evidenceAssetId")?.toString();
+  if (!evidenceAssetId) throw new Error("evidenceAssetId es requerido");
+
+  await prisma.taskJobStepEvidenceAsset.deleteMany({
+    where: { id: evidenceAssetId, tenantId },
   });
 }

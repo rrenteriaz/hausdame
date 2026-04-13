@@ -3,42 +3,33 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "../generated/prisma";
 import { logTaskEvent } from "./event-log";
 import { injectCarryForwards } from "./carry-forward";
+import { getServiceType, stepAppliesToJob } from "./domain/service-type";
 
 // ---- Helpers de occurrenceKey ----
 
-/**
- * Construye un occurrenceKey determinista o explícitamente marcado.
- *
- * - cleaning:{cleaningId}:{templateId}  → determinista, para jobs ligados a una limpieza
- * - schedule:{templateId}:{propertyId}:{yyyy-mm-dd} → para generación por schedule
- * - manual:{templateId}:{isoTimestamp}  → para generación manual desde UI (única por invocación)
- */
 export function buildOccurrenceKey(params: {
   templateId: string;
   propertyId: string;
   cleaningId?: string;
   mode?: "manual" | "schedule";
-  scheduleDate?: string; // yyyy-mm-dd
+  scheduleDate?: string;
 }): string {
   if (params.cleaningId) {
-    // Determinista: un único job por cleaning + template
     return `cleaning:${params.cleaningId}:${params.templateId}`;
   }
   if (params.mode === "schedule" && params.scheduleDate) {
     return `schedule:${params.templateId}:${params.propertyId}:${params.scheduleDate}`;
   }
-  // Manual: única por invocación, pero marcada explícitamente
   return `manual:${params.templateId}:${new Date().toISOString()}`;
 }
 
 /**
  * Genera un TaskJob desde un template.
  *
- * Idempotencia: si ya existe un job con el mismo tenantId + occurrenceKey,
- * retorna ese job existente sin crear uno nuevo.
- *
- * Toma snapshot completo de secciones y pasos.
- * Inyecta automáticamente carry-forwards OPEN de la propiedad.
+ * Filtrado por stepFrequency (v2 — modelo simplificado):
+ * - null         → siempre incluida
+ * - PER_CHECKOUT → solo en jobs de tipo CLEANING
+ * - WEEKLY/MONTHLY/DAILY → excluidas; se ejecutan vía TaskRecurringDue
  */
 export async function generateTaskJob({
   tenantId,
@@ -55,18 +46,16 @@ export async function generateTaskJob({
   cleaningId?: string;
   assignedUserId?: string;
   actorId: string;
-  /** Permite al caller pasar una clave ya construida (p.ej. desde schedule). */
   occurrenceKeyOverride?: string;
 }) {
   const template = await prisma.taskTemplate.findFirst({
     where: { id: templateId, tenantId, propertyId },
     include: {
+      schedule: true,
       sections: {
         orderBy: { order: "asc" },
         include: {
-          steps: {
-            orderBy: { order: "asc" },
-          },
+          steps: { orderBy: { order: "asc" } },
         },
       },
     },
@@ -79,15 +68,13 @@ export async function generateTaskJob({
     occurrenceKeyOverride ??
     buildOccurrenceKey({ templateId, propertyId, cleaningId });
 
-  // ---- Idempotencia nivel 1: búsqueda previa (evita el create en el caso habitual) ----
+  // ---- Idempotencia nivel 1 ----
   const existing = await prisma.taskJob.findUnique({
     where: { tenantId_occurrenceKey: { tenantId, occurrenceKey } },
   });
-  if (existing) {
-    return existing;
-  }
+  if (existing) return existing;
 
-  // ---- Idempotencia nivel 2: captura colisión por @@unique en carrera concurrente ----
+  // ---- Idempotencia nivel 2: captura colisión concurrente ----
   let job: Awaited<ReturnType<typeof prisma.taskJob.create>>;
   try {
     job = await prisma.taskJob.create({
@@ -107,7 +94,6 @@ export async function generateTaskJob({
       err instanceof Prisma.PrismaClientKnownRequestError &&
       err.code === "P2002"
     ) {
-      // Colisión de unique constraint: otro proceso ganó la carrera — retornar el job existente
       const raceWinner = await prisma.taskJob.findUnique({
         where: { tenantId_occurrenceKey: { tenantId, occurrenceKey } },
       });
@@ -116,7 +102,9 @@ export async function generateTaskJob({
     throw err;
   }
 
-  // Crear secciones con snapshot
+  // ServiceType derivado de los datos persistidos (sin campo extra en BD)
+  const serviceType = getServiceType({ cleaningId: cleaningId ?? null, occurrenceKey });
+
   for (const section of template.sections) {
     const jobSection = await prisma.taskJobSection.create({
       data: {
@@ -132,8 +120,9 @@ export async function generateTaskJob({
       },
     });
 
-    // Crear pasos con snapshot
     for (const step of section.steps) {
+      if (!stepAppliesToJob(step.stepFrequency, serviceType)) continue;
+
       await prisma.taskJobStep.create({
         data: {
           tenantId,
@@ -141,20 +130,26 @@ export async function generateTaskJob({
           templateStepId: step.id,
           nameSnapshot: step.name,
           descriptionSnapshot: step.description ?? null,
-          responseTypeSnapshot: step.responseType,
+          capturesYesNoSnapshot: step.capturesYesNo,
+          yesNoRequiredSnapshot: step.yesNoRequired,
+          capturesNumberSnapshot: step.capturesNumber,
+          numberRequiredSnapshot: step.numberRequired,
+          capturesPhotoSnapshot: step.capturesPhoto,
+          photoRequiredSnapshot: step.photoRequired,
+          capturesTextSnapshot: step.capturesText,
+          textRequiredSnapshot: step.textRequired,
           isRequiredSnapshot: step.isRequired,
           blocksCompletionSnapshot: step.blocksCompletion,
           order: step.order,
           status: "PENDING",
+          snapshotVersion: step.captureVersion, // propagates template version to job step
         },
       });
     }
   }
 
-  // Inyectar carry-forwards OPEN de esta propiedad
   await injectCarryForwards(job.id, tenantId, propertyId);
 
-  // Log CREATED
   await logTaskEvent({
     tenantId,
     jobId: job.id,

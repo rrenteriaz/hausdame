@@ -1,14 +1,21 @@
 // lib/tareas-pro/carry-forward.ts 
 import prisma from "@/lib/prisma";
 import { logTaskEvent } from "./event-log";
-import { TaskStepResponseType } from "../generated/prisma";
+
 
 // ---- Tipos del snapshot ----
 
 interface StepSnapshot {
   nameSnapshot: string;
   descriptionSnapshot: string | null;
-  responseTypeSnapshot: TaskStepResponseType;
+  capturesYesNoSnapshot: boolean;
+  yesNoRequiredSnapshot: boolean;
+  capturesNumberSnapshot: boolean;
+  numberRequiredSnapshot: boolean;
+  capturesPhotoSnapshot: boolean;
+  photoRequiredSnapshot: boolean;
+  capturesTextSnapshot: boolean;
+  textRequiredSnapshot: boolean;
   isRequiredSnapshot: boolean;
   blocksCompletionSnapshot: boolean;
   order: number;
@@ -78,7 +85,14 @@ export async function injectCarryForwards(
             templateStepId: "carry-forward",
             nameSnapshot: stepSnap.nameSnapshot,
             descriptionSnapshot: stepSnap.descriptionSnapshot,
-            responseTypeSnapshot: stepSnap.responseTypeSnapshot,
+            capturesYesNoSnapshot: stepSnap.capturesYesNoSnapshot,
+            yesNoRequiredSnapshot: stepSnap.yesNoRequiredSnapshot,
+            capturesNumberSnapshot: stepSnap.capturesNumberSnapshot,
+            numberRequiredSnapshot: stepSnap.numberRequiredSnapshot,
+            capturesPhotoSnapshot: stepSnap.capturesPhotoSnapshot,
+            photoRequiredSnapshot: stepSnap.photoRequiredSnapshot,
+            capturesTextSnapshot: stepSnap.capturesTextSnapshot,
+            textRequiredSnapshot: stepSnap.textRequiredSnapshot,
             isRequiredSnapshot: stepSnap.isRequiredSnapshot,
             blocksCompletionSnapshot: stepSnap.blocksCompletionSnapshot,
             order: stepSnap.order,
@@ -139,7 +153,14 @@ export async function createCarryForwardFromSection(
   const stepsSnapshot: StepSnapshot[] = (section.steps as any[]).map((step) => ({
     nameSnapshot: step.nameSnapshot,
     descriptionSnapshot: step.descriptionSnapshot,
-    responseTypeSnapshot: step.responseTypeSnapshot,
+    capturesYesNoSnapshot: step.capturesYesNoSnapshot,
+    yesNoRequiredSnapshot: step.yesNoRequiredSnapshot,
+    capturesNumberSnapshot: step.capturesNumberSnapshot,
+    numberRequiredSnapshot: step.numberRequiredSnapshot,
+    capturesPhotoSnapshot: step.capturesPhotoSnapshot,
+    photoRequiredSnapshot: step.photoRequiredSnapshot,
+    capturesTextSnapshot: step.capturesTextSnapshot,
+    textRequiredSnapshot: step.textRequiredSnapshot,
     isRequiredSnapshot: step.isRequiredSnapshot,
     blocksCompletionSnapshot: step.blocksCompletionSnapshot,
     order: step.order,

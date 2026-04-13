@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { generateTaskJob } from "@/lib/tareas-pro/job-generation";
+import { isValidTimezone } from "@/lib/tareas-pro/domain/schedule-anchor";
 import { TaskTemplateStatus } from "@prisma/client";
 
 // =====================================================================
@@ -50,8 +50,36 @@ export async function createTaskTemplate(formData: FormData) {
     },
   });
 
+  // Auto-crear sección "General" para empezar a agregar tareas de inmediato
+  await prisma.taskSectionTemplate.create({
+    data: {
+      tenantId,
+      templateId: template.id,
+      name: "General",
+      sectionType: "STANDARD",
+      order: 0,
+    },
+  });
+
   revalidatePath("/host/tareas-pro");
   redirect(`/host/tareas-pro/${template.id}`);
+}
+
+export async function updateTaskTemplateStatus(formData: FormData) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const templateId = String(formData.get("templateId") || "");
+  const status = String(formData.get("status") || "") as TaskTemplateStatus;
+
+  const template = await prisma.taskTemplate.findFirst({ where: { id: templateId, tenantId } });
+  if (!template) throw new Error("Template no encontrado");
+
+  await prisma.taskTemplate.update({ where: { id: templateId }, data: { status } });
+
+  revalidatePath(`/host/tareas-pro/${templateId}`);
+  revalidatePath("/host/tareas-pro");
 }
 
 export async function updateTaskTemplate(formData: FormData) {
@@ -90,8 +118,49 @@ export async function updateTaskTemplateSchedule(formData: FormData) {
   const carryForwardPolicy = String(formData.get("carryForwardPolicy") || "LIMITED") as any;
   const maxCarryForwardAttempts = parseInt(
     String(formData.get("maxCarryForwardAttempts") || "2"),
-    10
+    10,
   );
+
+  // Anchor fields — solo relevantes para WEEKLY / MONTHLY
+  const rawDayOfWeek = formData.get("anchorDayOfWeek");
+  const rawDayOfMonth = formData.get("anchorDayOfMonth");
+  const rawTimezone = String(formData.get("timezone") || "").trim();
+
+  const parsedDayOfWeek =
+    rawDayOfWeek !== null && rawDayOfWeek !== ""
+      ? parseInt(String(rawDayOfWeek), 10)
+      : null;
+  const parsedDayOfMonth =
+    rawDayOfMonth !== null && rawDayOfMonth !== ""
+      ? parseInt(String(rawDayOfMonth), 10)
+      : null;
+
+  // Validación de timezone: debe ser IANA válida si viene informada
+  if (rawTimezone && !isValidTimezone(rawTimezone)) {
+    throw new Error(
+      `Zona horaria inválida: "${rawTimezone}". Usa formato IANA, ej. "America/Mexico_City".`,
+    );
+  }
+
+  // Validación estricta: anclas requeridas para frecuencias programadas
+  if (frequency === "WEEKLY") {
+    if (parsedDayOfWeek === null || parsedDayOfWeek < 0 || parsedDayOfWeek > 6) {
+      throw new Error("La frecuencia Semanal requiere un día de la semana (0=domingo … 6=sábado).");
+    }
+  }
+  if (frequency === "MONTHLY") {
+    if (parsedDayOfMonth === null || parsedDayOfMonth < 1 || parsedDayOfMonth > 28) {
+      throw new Error("La frecuencia Mensual requiere un día del mes entre 1 y 28.");
+    }
+  }
+
+  // Normalización: limpiar anchors que no corresponden a la frecuencia elegida
+  const anchorDayOfWeek = frequency === "WEEKLY" ? parsedDayOfWeek : null;
+  const anchorDayOfMonth = frequency === "MONTHLY" ? parsedDayOfMonth : null;
+  const timezone =
+    frequency === "DAILY" || frequency === "WEEKLY" || frequency === "MONTHLY"
+      ? rawTimezone || null
+      : null;
 
   const template = await prisma.taskTemplate.findFirst({
     where: { id: templateId, tenantId },
@@ -106,11 +175,17 @@ export async function updateTaskTemplateSchedule(formData: FormData) {
       frequency,
       carryForwardPolicy,
       maxCarryForwardAttempts,
+      anchorDayOfWeek,
+      anchorDayOfMonth,
+      timezone,
     },
     update: {
       frequency,
       carryForwardPolicy,
       maxCarryForwardAttempts,
+      anchorDayOfWeek,
+      anchorDayOfMonth,
+      timezone,
     },
   });
 
@@ -126,12 +201,44 @@ export async function deleteTaskTemplate(formData: FormData) {
 
   const template = await prisma.taskTemplate.findFirst({
     where: { id: templateId, tenantId },
+    include: { _count: { select: { jobs: true } } },
   });
   if (!template) throw new Error("Template no encontrado");
 
-  await prisma.taskTemplate.delete({ where: { id: templateId } });
+  if (template._count.jobs === 0) {
+    // Sin historial — hard delete seguro
+    await prisma.taskTemplate.delete({ where: { id: templateId } });
+  } else {
+    // Con historial — soft delete: ocultar completamente sin borrar los jobs
+    await prisma.taskTemplate.update({
+      where: { id: templateId },
+      data: { status: "DELETED" },
+    });
+  }
 
   revalidatePath("/host/tareas-pro");
+  redirect("/host/tareas-pro");
+}
+
+export async function archiveTaskTemplate(formData: FormData) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const templateId = String(formData.get("templateId") || "");
+
+  const template = await prisma.taskTemplate.findFirst({
+    where: { id: templateId, tenantId },
+  });
+  if (!template) throw new Error("Template no encontrado");
+
+  await prisma.taskTemplate.update({
+    where: { id: templateId },
+    data: { status: "INACTIVE" },
+  });
+
+  revalidatePath("/host/tareas-pro");
+  revalidatePath(`/host/tareas-pro/${templateId}`);
   redirect("/host/tareas-pro");
 }
 
@@ -164,7 +271,7 @@ export async function createTaskSection(formData: FormData) {
   });
   const order = (maxOrder._max.order ?? -1) + 1;
 
-  await prisma.taskSectionTemplate.create({
+  const section = await prisma.taskSectionTemplate.create({
     data: {
       tenantId,
       templateId,
@@ -177,6 +284,7 @@ export async function createTaskSection(formData: FormData) {
   });
 
   revalidatePath(`/host/tareas-pro/${templateId}`);
+  return { id: section.id, name: section.name, sectionType: section.sectionType, order: section.order, steps: [] as any[] };
 }
 
 export async function updateTaskSection(formData: FormData) {
@@ -231,7 +339,14 @@ export async function createTaskStep(formData: FormData) {
   const sectionId = String(formData.get("sectionId") || "");
   const name = String(formData.get("name") || "").trim();
   const description = String(formData.get("description") || "").trim() || null;
-  const responseType = String(formData.get("responseType") || "NONE") as any;
+  const capturesYesNo = formData.get("capturesYesNo") === "true";
+  const yesNoRequired = formData.get("yesNoRequired") === "true";
+  const capturesNumber = formData.get("capturesNumber") === "true";
+  const numberRequired = formData.get("numberRequired") === "true";
+  const capturesPhoto = formData.get("capturesPhoto") === "true";
+  const photoRequired = formData.get("photoRequired") === "true";
+  const capturesText = formData.get("capturesText") === "true";
+  const textRequired = formData.get("textRequired") === "true";
   const isRequired = formData.get("isRequired") !== "false";
   const blocksCompletion = formData.get("blocksCompletion") === "true";
 
@@ -248,20 +363,47 @@ export async function createTaskStep(formData: FormData) {
   });
   const order = (maxOrder._max.order ?? -1) + 1;
 
-  await prisma.taskStepTemplate.create({
+  const step = await prisma.taskStepTemplate.create({
     data: {
       tenantId,
       sectionId,
       name,
       description,
-      responseType,
+      capturesYesNo,
+      yesNoRequired,
+      capturesNumber,
+      numberRequired,
+      capturesPhoto,
+      photoRequired,
+      capturesText,
+      textRequired,
       isRequired,
       blocksCompletion,
       order,
+      captureVersion: "MULTI_CAPTURE_V2",
     },
   });
 
   revalidatePath(`/host/tareas-pro/${section.templateId}`);
+  return {
+    id: step.id,
+    name: step.name,
+    stepFrequency: step.stepFrequency,
+    stepAnchorDayOfWeek: step.stepAnchorDayOfWeek,
+    stepAnchorDayOfMonth: step.stepAnchorDayOfMonth,
+    intervalDays: step.intervalDays,
+    startDate: step.startDate,
+    order: step.order,
+    capturesYesNo: step.capturesYesNo,
+    yesNoRequired: step.yesNoRequired,
+    capturesNumber: step.capturesNumber,
+    numberRequired: step.numberRequired,
+    capturesPhoto: step.capturesPhoto,
+    photoRequired: step.photoRequired,
+    capturesText: step.capturesText,
+    textRequired: step.textRequired,
+    captureVersion: step.captureVersion,
+  };
 }
 
 export async function updateTaskStep(formData: FormData) {
@@ -272,7 +414,14 @@ export async function updateTaskStep(formData: FormData) {
   const stepId = String(formData.get("stepId") || "");
   const name = String(formData.get("name") || "").trim();
   const description = String(formData.get("description") || "").trim() || null;
-  const responseType = String(formData.get("responseType") || "NONE") as any;
+  const capturesYesNo = formData.get("capturesYesNo") === "true";
+  const yesNoRequired = formData.get("yesNoRequired") === "true";
+  const capturesNumber = formData.get("capturesNumber") === "true";
+  const numberRequired = formData.get("numberRequired") === "true";
+  const capturesPhoto = formData.get("capturesPhoto") === "true";
+  const photoRequired = formData.get("photoRequired") === "true";
+  const capturesText = formData.get("capturesText") === "true";
+  const textRequired = formData.get("textRequired") === "true";
   const isRequired = formData.get("isRequired") !== "false";
   const blocksCompletion = formData.get("blocksCompletion") === "true";
 
@@ -284,7 +433,7 @@ export async function updateTaskStep(formData: FormData) {
 
   await prisma.taskStepTemplate.update({
     where: { id: stepId },
-    data: { name, description, responseType, isRequired, blocksCompletion },
+    data: { name, description, capturesYesNo, yesNoRequired, capturesNumber, numberRequired, capturesPhoto, photoRequired, capturesText, textRequired, isRequired, blocksCompletion },
   });
 
   revalidatePath(`/host/tareas-pro/${step.section.templateId}`);
@@ -307,31 +456,99 @@ export async function deleteTaskStep(formData: FormData) {
   revalidatePath(`/host/tareas-pro/${step.section.templateId}`);
 }
 
-// =====================================================================
-// GENERACIÓN MANUAL DE JOB
-// =====================================================================
-
-export async function generateTaskJobAction(formData: FormData) {
+export async function updateTaskStepFrequency(formData: FormData) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
   if (!tenantId) throw new Error("Usuario sin tenant");
 
-  const templateId = String(formData.get("templateId") || "");
-  const propertyId = String(formData.get("propertyId") || "");
-  const cleaningId = String(formData.get("cleaningId") || "") || undefined;
-  const assignedUserId = String(formData.get("assignedUserId") || "") || undefined;
+  const stepId = String(formData.get("stepId") || "");
+  const raw = formData.get("stepFrequency")?.toString() ?? "";
+  const stepFrequency = raw === "" ? null : (raw as any);
 
-  if (!templateId || !propertyId) throw new Error("Datos incompletos");
+  // Anchors semanales/mensuales
+  const rawDow = formData.get("stepAnchorDayOfWeek")?.toString();
+  const rawDom = formData.get("stepAnchorDayOfMonth")?.toString();
+  const stepAnchorDayOfWeek =
+    stepFrequency === "WEEKLY" && rawDow !== undefined ? parseInt(rawDow, 10) : null;
+  const stepAnchorDayOfMonth =
+    stepFrequency === "MONTHLY" && rawDom !== undefined ? parseInt(rawDom, 10) : null;
 
-  const job = await generateTaskJob({
-    tenantId,
-    templateId,
-    propertyId,
-    cleaningId,
-    assignedUserId,
-    actorId: user.id,
+  // Intervalo
+  const rawInterval  = formData.get("intervalDays")?.toString();
+  const rawStartDate = formData.get("startDate")?.toString();
+  const intervalDays =
+    stepFrequency === "INTERVAL" && rawInterval ? parseInt(rawInterval, 10) : null;
+  // startDate se guarda para WEEKLY, MONTHLY e INTERVAL — define cuándo inicia la repetición
+  const startDate =
+    (stepFrequency === "INTERVAL" || stepFrequency === "WEEKLY" || stepFrequency === "MONTHLY") && rawStartDate
+      ? new Date(rawStartDate)
+      : null;
+
+  // Validaciones
+  if (stepFrequency === "WEEKLY") {
+    if (stepAnchorDayOfWeek === null || isNaN(stepAnchorDayOfWeek) || stepAnchorDayOfWeek < 0 || stepAnchorDayOfWeek > 6)
+      throw new Error("La frecuencia Semanal requiere un día de la semana válido (0=domingo … 6=sábado).");
+  }
+  if (stepFrequency === "MONTHLY") {
+    if (stepAnchorDayOfMonth === null || isNaN(stepAnchorDayOfMonth) || stepAnchorDayOfMonth < 1 || stepAnchorDayOfMonth > 31)
+      throw new Error("La frecuencia Mensual requiere un día del mes entre 1 y 31.");
+  }
+  if (stepFrequency === "INTERVAL") {
+    if (!intervalDays || isNaN(intervalDays) || intervalDays < 1)
+      throw new Error("La frecuencia por intervalo requiere un número de días mayor a 0.");
+    if (!startDate || isNaN(startDate.getTime()))
+      throw new Error("La frecuencia por intervalo requiere una fecha de inicio válida.");
+  }
+
+  const step = await prisma.taskStepTemplate.findFirst({
+    where: { id: stepId, tenantId },
+    include: { section: true },
+  });
+  if (!step) throw new Error("Tarea no encontrada");
+
+  await prisma.taskStepTemplate.update({
+    where: { id: stepId },
+    data: {
+      stepFrequency,
+      stepAnchorDayOfWeek,
+      stepAnchorDayOfMonth,
+      intervalDays,
+      startDate,
+    },
+  });
+  revalidatePath(`/host/tareas-pro/${step.section.templateId}`);
+}
+
+export async function updateTaskStepCaptures(formData: FormData) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const stepId = String(formData.get("stepId") || "");
+  const capturesYesNo = formData.get("capturesYesNo") === "true";
+  const yesNoRequired = formData.get("yesNoRequired") === "true";
+  const capturesNumber = formData.get("capturesNumber") === "true";
+  const numberRequired = formData.get("numberRequired") === "true";
+  const capturesPhoto = formData.get("capturesPhoto") === "true";
+  const photoRequired = formData.get("photoRequired") === "true";
+  const capturesText = formData.get("capturesText") === "true";
+  const textRequired = formData.get("textRequired") === "true";
+
+  const step = await prisma.taskStepTemplate.findFirst({
+    where: { id: stepId, tenantId },
+    include: { section: true },
+  });
+  if (!step) throw new Error("Tarea no encontrada");
+
+  await prisma.taskStepTemplate.update({
+    where: { id: stepId },
+    data: {
+      capturesYesNo, yesNoRequired, capturesNumber, numberRequired,
+      capturesPhoto, photoRequired, capturesText, textRequired,
+      captureVersion: "MULTI_CAPTURE_V2", // upgrade legacy step to new model
+    },
   });
 
-  revalidatePath("/host/tareas-pro/jobs");
-  redirect(`/host/tareas-pro/jobs/${job.id}`);
+  revalidatePath(`/host/tareas-pro/${step.section.templateId}`);
 }
+
