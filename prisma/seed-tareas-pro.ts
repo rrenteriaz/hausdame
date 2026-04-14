@@ -13,7 +13,7 @@
  * IMPORTANTE: Requiere que ya exista al menos un Tenant y un User OWNER en la BD.
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../lib/generated/prisma";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
@@ -113,7 +113,6 @@ async function main() {
       sectionId: section1.id,
       name: "Revisar notas del Host antes de iniciar",
       description: "Consulta el chat o la bitácora de la propiedad.",
-      responseType: "NONE",
       isRequired: false,
       blocksCompletion: false,
       order: 0,
@@ -138,7 +137,8 @@ async function main() {
         tenantId: tenant.id,
         sectionId: section2.id,
         name: "Limpiar estufa",
-        responseType: "CONFIRMATION",
+        capturesYesNo: true,
+        yesNoRequired: true,
         isRequired: true,
         blocksCompletion: false,
         order: 0,
@@ -147,7 +147,7 @@ async function main() {
         tenantId: tenant.id,
         sectionId: section2.id,
         name: "Revisar existencias en despensa (contar)",
-        responseType: "NUMBER",
+        capturesNumber: true,
         isRequired: false,
         blocksCompletion: false,
         order: 1,
@@ -173,7 +173,8 @@ async function main() {
         tenantId: tenant.id,
         sectionId: section3.id,
         name: "Desinfectar inodoro",
-        responseType: "CONFIRMATION",
+        capturesYesNo: true,
+        yesNoRequired: true,
         isRequired: true,
         blocksCompletion: true,
         order: 0,
@@ -183,7 +184,8 @@ async function main() {
         sectionId: section3.id,
         name: "Foto del baño terminado",
         description: "Toma una foto panorámica del baño limpio.",
-        responseType: "EVIDENCE",
+        capturesPhoto: true,
+        photoRequired: true,
         isRequired: true,
         blocksCompletion: true,
         order: 1,
@@ -248,7 +250,14 @@ async function main() {
           templateStepId: step.id,
           nameSnapshot: step.name,
           descriptionSnapshot: step.description,
-          responseTypeSnapshot: step.responseType,
+          capturesYesNoSnapshot: step.capturesYesNo,
+          yesNoRequiredSnapshot: step.yesNoRequired,
+          capturesNumberSnapshot: step.capturesNumber,
+          numberRequiredSnapshot: step.numberRequired,
+          capturesPhotoSnapshot: step.capturesPhoto,
+          photoRequiredSnapshot: step.photoRequired,
+          capturesTextSnapshot: step.capturesText,
+          textRequiredSnapshot: step.textRequired,
           isRequiredSnapshot: step.isRequired,
           blocksCompletionSnapshot: step.blocksCompletion,
           order: step.order,
