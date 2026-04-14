@@ -8,7 +8,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { setInventoryCheck } from "@/app/cleaner/inventory/actions";
-import { InventoryPriority } from "@prisma/client";
+import { InventoryReviewStatus, InventoryPriority } from "@/lib/inventory-constants";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 
 // Temporal: hasta que se aplique la migración

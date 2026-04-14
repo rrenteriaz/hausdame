@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { InventoryReportType, InventoryReportSeverity } from "@prisma/client";
+import { InventoryReportType, InventoryReportSeverity } from "@/lib/inventory-constants";
 import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 import { reportTypeLabel, reportSeverityLabel, itemCategoryLabel, resolutionLabel } from "@/lib/inventory-i18n";
 import HistorySubModal from "@/lib/ui/inventory/HistorySubModal";

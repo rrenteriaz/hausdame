@@ -11,7 +11,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { copyInventoryBetweenZonesAction } from "@/app/host/inventory/actions";
 import { OPERATIONAL_CATEGORY_LABELS } from "@/lib/inventory-zone-labels";
-import type { PropertyZoneOperationalCategory } from "@prisma/client";
+import { PropertyZoneOperationalCategory } from "@/lib/inventory-constants";
 
 interface ZoneOption {
   id: string;

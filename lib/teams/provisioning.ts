@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import type { PrismaClient, Prisma, TeamMembershipStatus, TeamRole } from "@prisma/client";
 import { assertServiceTenantById } from "@/lib/tenants/serviceTenant";
 
-type DbClient = PrismaClient | Prisma.TransactionClient;
+type DbClient = any;
 
 type EnsureMembershipArgs = {
   teamId: string;

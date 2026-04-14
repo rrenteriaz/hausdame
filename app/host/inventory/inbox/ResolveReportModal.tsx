@@ -2,7 +2,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { InventoryReportResolution } from "@prisma/client";
+import {
+  InventoryReportResolution,
+  InventoryReportStatus,
+} from "@/lib/inventory-constants";
 import { InboxItem } from "./types";
 import HistorySubModal from "@/lib/ui/inventory/HistorySubModal";
 import { reportTypeLabel, resolutionLabel } from "@/lib/inventory-i18n";

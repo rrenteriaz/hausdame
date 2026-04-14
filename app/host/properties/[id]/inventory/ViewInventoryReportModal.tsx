@@ -1,6 +1,6 @@
 "use client";
 
-import { InventoryReportType, InventoryReportSeverity } from "@prisma/client";
+import { InventoryReportType, InventoryReportSeverity } from "@/lib/inventory-constants";
 import { reportTypeLabel, reportSeverityLabel } from "@/lib/inventory-i18n";
 
 interface ReportForModal {

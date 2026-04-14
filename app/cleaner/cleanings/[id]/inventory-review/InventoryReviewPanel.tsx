@@ -16,7 +16,7 @@ import {
   InventoryChangeReason, 
   InventoryReportType, 
   InventoryReportSeverity 
-} from "@prisma/client";
+} from "@/lib/inventory-constants";
 import { 
   InventoryReview, 
   InventoryReport, 

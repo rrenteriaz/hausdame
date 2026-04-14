@@ -22,12 +22,12 @@ import {
   OPERATIONAL_CATEGORY_OPTIONS,
 } from "@/lib/inventory-zone-labels";
 import { inferZoneCategory } from "@/lib/zones/inferZoneCategory";
-import type { PropertyZoneOperationalCategory } from "@prisma/client";
 import {
   InventoryCategory,
   InventoryCondition,
   InventoryPriority,
-} from "@prisma/client";
+  PropertyZoneOperationalCategory,
+} from "@/lib/inventory-constants";
 import {
   INVENTORY_SUGGESTIONS,
   getCategoryLabel,

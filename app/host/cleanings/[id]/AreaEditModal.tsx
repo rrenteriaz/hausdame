@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { ChecklistArea } from "@prisma/client";
+import { ChecklistArea } from "@/lib/inventory-constants";
 import {
   updateCleaningChecklistItem,
   deleteCleaningChecklistItem,

@@ -7,7 +7,7 @@ import {
   InventoryChangeReason,
   InventoryReportType,
   InventoryReportSeverity,
-} from "@prisma/client";
+} from "@/lib/inventory-constants";
 import { changeReasonLabel, reportTypeLabel, reportSeverityLabel } from "@/lib/inventory-i18n";
 import ConfirmDeleteReportModal from "./ConfirmDeleteReportModal";
 

@@ -3,7 +3,7 @@ import {
   InventoryChangeReason,
   InventoryReportType,
   InventoryReportSeverity,
-} from "@prisma/client";
+} from "@/lib/inventory-constants";
 
 export interface InventoryEvidenceView {
   id: string;

@@ -14,7 +14,7 @@ import ResolveReportModal from "./ResolveReportModal";
 import {
   InventoryReportResolution,
   InventoryReportSeverity,
-} from "@prisma/client";
+} from "@/lib/inventory-constants";
 import IconFilterButton from "@/lib/ui/IconFilterButton";
 import OptionPickerSheet from "@/lib/ui/OptionPickerSheet";
 import PropertyPickerSheet from "@/lib/ui/PropertyPickerSheet";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { InventoryLineWithItem } from "@/lib/inventory";
 import { getCategoryLabel, getVariantLabel } from "@/lib/inventory-suggestions";
-import { InventoryCondition, InventoryPriority } from "@prisma/client";
+import { InventoryCondition, InventoryPriority } from "@/lib/inventory-constants";
 import { getInventoryLineImageThumbsAction } from "@/app/host/inventory/line-image-actions";
 import { editInventoryCache } from "@/lib/client/editInventoryCache";
 import Image from "next/image";

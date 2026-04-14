@@ -5,7 +5,7 @@ import {
   InventoryReportStatus,
   InventoryChangeReason,
   InventoryCategory,
-} from "@prisma/client";
+} from "./inventory-constants";
 
 /**
  * Mapeo centralizado de enums de inventario a etiquetas en español para UI

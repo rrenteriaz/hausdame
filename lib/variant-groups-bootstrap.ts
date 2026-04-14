@@ -57,7 +57,7 @@ const CANONICAL_GROUPS = [
   },
 ] as const;
 
-type DbClient = typeof prisma | Prisma.TransactionClient;
+type DbClient = any;
 
 /**
  * Asegura que los grupos canónicos (bed_size, material, size) existan para el tenant.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChecklistArea } from "@prisma/client";
+import { ChecklistArea } from "@/lib/inventory-constants";
 import TaskPhotosModal from "./TaskPhotosModal";
 import Image from "next/image";
 

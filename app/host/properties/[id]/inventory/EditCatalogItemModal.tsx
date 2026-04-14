@@ -3,7 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { BED_SIZE_VARIANT, type VariantOption } from "@/lib/inventory-suggestions";
 import { updateInventoryItemAction, createInventoryItemAction } from "@/app/host/inventory/actions";
-import { InventoryCategory } from "@prisma/client";
+import {
+  InventoryCategory,
+  InventoryCondition,
+  InventoryPriority,
+} from "@/lib/inventory-constants";
 import ItemVariantGroupsSection from "./ItemVariantGroupsSection";
 
 interface EditCatalogItemModalProps {
