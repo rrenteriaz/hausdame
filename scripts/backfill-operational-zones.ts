@@ -32,7 +32,7 @@
  */
 
 import "dotenv/config";
-import { PropertyZoneType } from "@prisma/client";
+import { PropertyZoneType } from "../lib/generated/prisma";
 import prisma from "../lib/prisma";
 
 const DRY_RUN = !process.argv.includes("--apply");

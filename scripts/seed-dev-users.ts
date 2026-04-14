@@ -114,7 +114,7 @@ if (process.env.SEED_ALLOWED_DB_HOST) {
   }
 }
 
-import { PrismaClient, UserRole } from "@prisma/client";
+import { PrismaClient, UserRole } from "../lib/generated/prisma";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";

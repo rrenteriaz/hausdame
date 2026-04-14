@@ -20,7 +20,7 @@ if (process.env.NODE_ENV === "production") {
   process.exit(1);
 }
 
-import { PrismaClient, CleaningStatus, AssignmentStatus } from "@prisma/client";
+import { PrismaClient, CleaningStatus, AssignmentStatus } from "../../lib/generated/prisma";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";

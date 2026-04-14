@@ -9,7 +9,7 @@
  */
 
 import "dotenv/config";
-import { PropertyZoneType, PropertyZoneVirtualKind } from "@prisma/client";
+import { PropertyZoneType, PropertyZoneVirtualKind } from "../lib/generated/prisma";
 import prisma from "../lib/prisma";
 
 const DRY_RUN = !process.argv.includes("--apply");
