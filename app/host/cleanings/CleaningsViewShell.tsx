@@ -3,14 +3,32 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import DailyCleaningsViewWithModal from "./DailyCleaningsViewWithModal";
-import { Cleaning, Property } from "@prisma/client";
-
-type CleaningWithProperty = Cleaning & {
-  property: Property;
+// Formas locales — no dependen de Prisma
+interface CleaningWithProperty {
+  id: string;
+  propertyId: string;
+  scheduledDate: Date;
+  status: string;
+  notes: string | null;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  needsAttention?: boolean;
+  attentionReason?: string | null;
+  property: {
+    id: string;
+    name: string;
+    shortName: string | null;
+  };
   viewsCount?: number;
-};
+  [key: string]: unknown;
+}
 
-type PropertyListItem = Pick<Property, "id" | "name" | "shortName" | "isActive">;
+type PropertyListItem = {
+  id: string;
+  name: string;
+  shortName: string | null;
+  isActive: boolean;
+};
 
 interface CleaningsViewShellProps {
   cleanings: CleaningWithProperty[];

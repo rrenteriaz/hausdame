@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { updateChecklistItemCompletion } from "../../checklist-actions";
-import { ChecklistArea, NotCompletedReasonCode } from "@prisma/client";
+import { ChecklistArea, NotCompletedReasonCode } from "@/lib/types/cleaning-enums";
 import Image from "next/image";
 import { normalizeKey, buildMatchKey } from "@/lib/media/checklistItemThumbsKeys";
 

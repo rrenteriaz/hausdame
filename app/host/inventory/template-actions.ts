@@ -9,7 +9,7 @@ import {
   InventoryCondition,
   InventoryPriority,
   PropertyZoneType,
-} from "@prisma/client";
+} from "@/lib/generated/prisma";
 import fs from "fs";
 import path from "path";
 import { ensureCanonicalVariantGroupsForTenant } from "@/lib/variant-groups-bootstrap";

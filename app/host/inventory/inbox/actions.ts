@@ -12,7 +12,7 @@ import {
   InventoryCondition,
   InventoryChangeReason,
   InventoryReportType,
-} from "@prisma/client";
+} from "@/lib/generated/prisma";
 import { fetchInventoryHistoryStats, getInventoryLineHistory } from "@/lib/inventory-history-queries";
 
 import { InboxItem } from "./types";

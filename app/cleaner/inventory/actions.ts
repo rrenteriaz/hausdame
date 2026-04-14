@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/requireUser";
 import { requireCleanerAccessToCleaning } from "@/lib/cleaner/requireCleanerAccessToCleaning";
-import { InventoryPriority } from "@prisma/client";
+import { InventoryPriority } from "@/lib/generated/prisma";
 import { revalidatePath } from "next/cache";
 
 // Temporal: hasta que se aplique la migración

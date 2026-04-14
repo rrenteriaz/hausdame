@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
-import { Property } from "@prisma/client";
+import { Property } from "@/lib/generated/prisma";
 import Page from "@/lib/ui/Page";
 import PageHeader from "@/lib/ui/PageHeader";
 import { deleteProperty, deactivateProperty, activateProperty } from "../../actions";

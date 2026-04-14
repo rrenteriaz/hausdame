@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChecklistArea } from "@prisma/client";
+import { ChecklistArea } from "@/lib/types/cleaning-enums";
 import { usePathname, useSearchParams } from "next/navigation";
 
 interface ChecklistSummaryProps {

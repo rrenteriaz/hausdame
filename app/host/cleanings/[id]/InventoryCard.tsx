@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { InventoryReviewStatus } from "@prisma/client";
+import { InventoryReviewStatus } from "@/lib/types/inventory-enums";
 import { submitInventoryReview } from "@/app/host/inventory-review/actions";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";

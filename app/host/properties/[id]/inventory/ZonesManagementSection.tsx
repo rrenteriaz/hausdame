@@ -32,7 +32,7 @@ import {
   OPERATIONAL_CATEGORY_LABELS,
   OPERATIONAL_CATEGORY_OPTIONS,
 } from "@/lib/inventory-zone-labels";
-import type { PropertyZoneOperationalCategory } from "@prisma/client";
+import type { PropertyZoneOperationalCategory } from "@/lib/types/inventory-enums";
 import { inferZoneCategory } from "@/lib/zones/inferZoneCategory";
 
 interface Zone {

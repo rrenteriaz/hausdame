@@ -7,7 +7,7 @@ import {
   InventoryChangeReason,
   InventoryReportType,
   InventoryReportSeverity,
-} from "@prisma/client";
+} from "@/lib/types/inventory-enums";
 import { changeReasonLabel, reportTypeLabel, reportSeverityLabel } from "@/lib/inventory-i18n";
 import { InboxItem } from "./types";
 

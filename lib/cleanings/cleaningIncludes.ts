@@ -2,7 +2,7 @@
 // Helpers tipados para includes estándar de Cleaning
 // Evita errores de nombres de relaciones incorrectos
 
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/lib/generated/prisma";
 
 /**
  * Include estándar para detalle completo de Cleaning (Host)

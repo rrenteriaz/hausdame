@@ -3,7 +3,7 @@
  * Infiere nivel de atención y categoría basado en el nombre del item
  */
 
-import { InventoryCategory, InventoryPriority } from "@prisma/client";
+import { InventoryCategory, InventoryPriority } from "@/lib/generated/prisma";
 import { normalizeName } from "./inventory-normalize";
 
 /**

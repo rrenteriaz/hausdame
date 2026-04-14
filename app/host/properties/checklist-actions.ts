@@ -7,7 +7,7 @@
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
-import { ChecklistArea } from "@prisma/client";
+import { ChecklistArea } from "@/lib/generated/prisma";
 import { getChecklistItemImageThumbs } from "@/lib/media/getChecklistItemImageThumbs";
 
 // Nota: estas actions se usan desde UI client-side (optimistic) y NO deben redirigir.

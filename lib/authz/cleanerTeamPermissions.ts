@@ -1,4 +1,4 @@
-import type { TeamRole, TeamMembershipStatus } from "@prisma/client";
+import type { TeamRole, TeamMembershipStatus } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 
 type UserLike = {

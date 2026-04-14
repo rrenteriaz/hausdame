@@ -1,4 +1,4 @@
-import { PropertyZoneOperationalCategory } from "@prisma/client";
+import { PropertyZoneOperationalCategory } from "@/lib/generated/prisma";
 
 export const OPERATIONAL_CATEGORY_LABELS: Record<PropertyZoneOperationalCategory, string> = {
   BEDROOM:  "Dormitorio",

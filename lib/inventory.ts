@@ -1,6 +1,6 @@
 // lib/inventory.ts
 import prisma from "@/lib/prisma";
-import { InventoryCategory, InventoryCondition, InventoryPriority, Prisma } from "@prisma/client";
+import { InventoryCategory, InventoryCondition, InventoryPriority, Prisma } from "@/lib/generated/prisma";
 import { normalizeName, normalizeVariantValue } from "./inventory-normalize";
 
 export interface InventoryLineWithItem {

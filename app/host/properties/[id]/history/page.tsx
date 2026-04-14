@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
-import { Cleaning, Property } from "@prisma/client";
+import { Cleaning, Property } from "@/lib/generated/prisma";
 import { getCleaningUi, getPropertyColor } from "@/lib/cleaning-ui";
 import Page from "@/lib/ui/Page";
 import PageHeader from "@/lib/ui/PageHeader";

@@ -1,4 +1,4 @@
-import { InventoryReportResolution, InventoryReportSeverity } from "@prisma/client";
+import { InventoryReportResolution, InventoryReportSeverity } from "@/lib/generated/prisma";
 
 export interface InboxItem {
   type: "CHANGE" | "REPORT";

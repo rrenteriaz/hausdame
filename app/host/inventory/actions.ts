@@ -27,7 +27,7 @@ import {
   InventoryCategory,
   InventoryCondition,
   InventoryPriority,
-} from "@prisma/client";
+} from "@/lib/generated/prisma";
 import {
   serializeDefaultVariantOptions,
   parseDefaultVariantOptions,
@@ -1219,7 +1219,7 @@ export async function getPropertyZones(propertyId: string) {
 
 import { normalizeName as _normalizeName } from "@/lib/inventory-normalize";
 import { deactivatePropertyZone, copyInventoryBetweenZones } from "@/lib/inventory";
-import type { PropertyZoneOperationalCategory } from "@prisma/client";
+import type { PropertyZoneOperationalCategory } from "@/lib/generated/prisma";
 
 /**
  * Phase 12: Crea una nueva zona OPERATIONAL para una propiedad.

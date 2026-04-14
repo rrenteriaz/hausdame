@@ -1,7 +1,7 @@
 // lib/auth/requireUser.ts
 import { redirect } from "next/navigation";
 import { getCurrentUser, getSessionUserId } from "./session";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/lib/generated/prisma";
 
 export interface AuthenticatedUser {
   id: string;

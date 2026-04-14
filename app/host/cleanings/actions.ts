@@ -5,11 +5,11 @@ import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { CleaningStatus } from "@prisma/client";
+import { CleaningStatus } from "@/lib/generated/prisma";
 import { getEligibleMembersForCleaning } from "@/lib/cleaning-eligibility";
 import { createChecklistSnapshotForCleaning } from "@/lib/checklist-snapshot";
 import { createOrUpdateInventoryReview } from "@/app/host/inventory-review/actions";
-import { InventoryReviewStatus } from "@prisma/client";
+import { InventoryReviewStatus } from "@/lib/generated/prisma";
 // FASE 5: property-id-helper eliminado, propertyId ahora es el PK directamente
 
 export async function rescheduleCleaning(formData: FormData) {

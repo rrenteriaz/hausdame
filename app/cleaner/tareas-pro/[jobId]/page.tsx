@@ -69,15 +69,17 @@ export default async function CleanerJobPage({
         ? {
             confirmed: step.response.confirmed,
             boolValue: step.response.boolValue,
-            numberValue: step.response.numberValue,
+            numberValue: step.response.numberValue !== null ? Number(step.response.numberValue) : null,
             textValue: step.response.textValue,
             notes: step.response.notes,
           }
         : null,
-      evidencePhotos: step.evidenceAssets.map((ea) => ({
-        id: ea.id,
-        thumbUrl: ea.asset.publicUrl,
-      })),
+      evidencePhotos: step.evidenceAssets
+        .filter((ea) => ea.asset !== null && ea.asset!.publicUrl !== null)
+        .map((ea) => ({
+          id: ea.id,
+          thumbUrl: ea.asset!.publicUrl as string,
+        })),
     })),
   }));
 

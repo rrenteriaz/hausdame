@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo, useCallback, memo } from "react";
-import { ChecklistArea, NotCompletedReasonCode } from "@prisma/client";
+import { ChecklistArea, NotCompletedReasonCode } from "@/lib/types/cleaning-enums";
 import { useRouter } from "next/navigation";
 import AreaEditModal from "./AreaEditModal";
 import { deleteCleaningChecklistArea, toggleCleaningChecklistItem } from "./checklist-actions";

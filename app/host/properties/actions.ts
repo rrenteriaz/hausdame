@@ -6,7 +6,7 @@ import { requireHostUser } from "@/lib/auth/requireUser";
 import { getOrCreateDefaultOwner } from "@/lib/users";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma, PropertyZoneType, PropertyZoneVirtualKind } from "@prisma/client";
+import { Prisma, PropertyZoneType, PropertyZoneVirtualKind } from "@/lib/generated/prisma";
 import storageProvider from "@/lib/storage";
 import { generateThumbnail, getOutputMimeType } from "@/lib/media/thumbnail";
 import { randomUUID } from "crypto";

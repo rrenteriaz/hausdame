@@ -3,7 +3,7 @@
 
 import prisma from "@/lib/prisma";
 import { getCleaningsNeedingAttention } from "@/lib/cleaning-needs-attention";
-import { InventoryReportStatus } from "@prisma/client";
+import { InventoryReportStatus } from "@/lib/generated/prisma";
 import { BlockData, HoyData, ProximasData, BlockItem } from "./types";
 
 /**

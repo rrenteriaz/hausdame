@@ -11,7 +11,7 @@ import AddInventoryItemButton from "./AddInventoryItemButton";
 import CopyInventoryModal from "./CopyInventoryModal";
 import ApplyTemplateModal from "./ApplyTemplateModal";
 import DeleteAreaButton from "./DeleteAreaButton";
-import { InventoryCategory, InventoryPriority } from "@prisma/client";
+import { InventoryCategory, InventoryPriority } from "@/lib/generated/prisma";
 import { getInventoryLineImageThumbsBatch } from "@/lib/media/getInventoryLineImageThumbs";
 import InventoryList from "./InventoryList";
 import HostWebContainer from "@/lib/ui/HostWebContainer";

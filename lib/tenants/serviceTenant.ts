@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@/lib/generated/prisma";
 
 type TenantLike = {
   slug?: string | null;

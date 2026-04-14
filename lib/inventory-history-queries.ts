@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { InventoryReportStatus } from "@prisma/client";
+import { InventoryReportStatus } from "@/lib/generated/prisma";
 
 if (typeof window !== "undefined") {
   throw new Error("Este archivo solo puede ser importado en el servidor.");

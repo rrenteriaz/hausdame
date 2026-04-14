@@ -1,6 +1,6 @@
 import { getInviteLink } from "@/lib/invites/links";
 import prisma from "@/lib/prisma";
-import type { User } from "@prisma/client";
+import type { User } from "@/lib/generated/prisma";
 
 export type TeamInviteItem = {
   id: string;

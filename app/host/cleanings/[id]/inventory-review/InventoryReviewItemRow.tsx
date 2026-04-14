@@ -1,6 +1,6 @@
 "use client";
 
-import { InventoryChangeReason, InventoryReportType, InventoryReportSeverity } from "@prisma/client";
+import { InventoryChangeReason, InventoryReportType, InventoryReportSeverity } from "@/lib/types/inventory-enums";
 import { changeReasonLabel } from "@/lib/inventory-i18n";
 import { InventoryReviewItemChange, InventoryReport } from "@/types/inventory";
 

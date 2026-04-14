@@ -3,7 +3,7 @@
 import { useState, useImperativeHandle, forwardRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { InventoryReviewStatus } from "@prisma/client";
+import { InventoryReviewStatus } from "@/lib/types/inventory-enums";
 import InventoryReviewPanel from "./inventory-review/InventoryReviewPanel";
 
 interface InventoryLine {

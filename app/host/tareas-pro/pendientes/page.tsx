@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { getOpenRecurringDues } from "@/lib/tareas-pro/recurring-due";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import Page from "@/lib/ui/Page";
-import SubmitConfirmButton from "@/app/host/tareas-pro/components/SubmitConfirmButton";
+import { SubmitConfirmButton } from "@/app/host/tareas-pro/components/SubmitConfirmButton";
 import { skipRecurringDueAction, assignRecurringDueAction } from "./actions";
 
 /** Convierte un periodKey a texto legible en español. */

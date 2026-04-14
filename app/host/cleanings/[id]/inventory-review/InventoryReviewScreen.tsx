@@ -11,12 +11,12 @@ import {
   deleteInventoryReportEvidence,
   uploadInventoryReportEvidence,
 } from "@/app/host/inventory-review/actions";
-import { 
-  InventoryReviewStatus, 
-  InventoryChangeReason, 
-  InventoryReportType, 
-  InventoryReportSeverity 
-} from "@prisma/client";
+import {
+  InventoryReviewStatus,
+  InventoryChangeReason,
+  InventoryReportType,
+  InventoryReportSeverity,
+} from "@/lib/types/inventory-enums";
 import {
   InventoryReview,
   InventoryReport,

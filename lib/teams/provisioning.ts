@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import type { PrismaClient, Prisma, TeamMembershipStatus, TeamRole } from "@prisma/client";
+import type { PrismaClient, Prisma, TeamMembershipStatus, TeamRole } from "@/lib/generated/prisma";
 import { assertServiceTenantById } from "@/lib/tenants/serviceTenant";
 
 type DbClient = any;

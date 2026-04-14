@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
-import { Cleaning, Property } from "@prisma/client";
+import { Cleaning, Property } from "@/lib/generated/prisma";
 import { getExecutorsForWorkGroups } from "@/lib/workgroups/resolveWorkGroupsForProperty";
 import CleaningHistory from "./CleaningHistory";
 import SyncIcalButton from "./SyncIcalButton";

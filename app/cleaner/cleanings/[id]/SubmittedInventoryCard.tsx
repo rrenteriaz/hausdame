@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { InventoryReviewStatus } from "@prisma/client";
+import { InventoryReviewStatus } from "@/lib/types/inventory-enums";
 import InventoryReviewPanel from "./inventory-review/InventoryReviewPanel";
 
 interface InventoryLine {

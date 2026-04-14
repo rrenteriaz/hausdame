@@ -6,7 +6,7 @@ import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isValidTimezone } from "@/lib/tareas-pro/domain/schedule-anchor";
-import { TaskTemplateStatus } from "@prisma/client";
+import { TaskTemplateStatus } from "@/lib/generated/prisma";
 
 // =====================================================================
 // TEMPLATE CRUD

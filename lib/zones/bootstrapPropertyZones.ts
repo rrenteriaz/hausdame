@@ -16,8 +16,8 @@
 
 import prisma from "@/lib/prisma";
 import { normalizeName } from "@/lib/inventory-normalize";
-import { PropertyZoneType, PropertyZoneVirtualKind } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import { PropertyZoneType, PropertyZoneVirtualKind } from "@/lib/generated/prisma";
+import type { Prisma } from "@/lib/generated/prisma";
 
 const CANONICAL_OPERATIONAL_ZONES = [
   { name: "Entrada",    sortOrder: 10 },

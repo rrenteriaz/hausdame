@@ -14,7 +14,7 @@ import {
   InventoryReportType,
   InventoryReportSeverity,
   InventoryReportStatus,
-} from "@prisma/client";
+} from "@/lib/generated/prisma";
 import { checkCleaningPropertyAccess } from "@/lib/cleaner/checkCleaningPropertyAccess";
 
 const HOST_ROLES = ["OWNER", "ADMIN", "MANAGER", "AUXILIAR"];

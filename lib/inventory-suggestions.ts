@@ -1,7 +1,7 @@
 // lib/inventory-suggestions.ts
 // Plantillas sugeridas por categoría (hardcode en frontend)
 
-import { InventoryCategory } from "@prisma/client";
+import { InventoryCategory } from "@/lib/generated/prisma";
 
 /**
  * Obtiene las categorías permitidas para un área específica.

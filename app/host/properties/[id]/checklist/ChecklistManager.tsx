@@ -10,7 +10,7 @@ import {
   deleteChecklistArea,
   createBaseChecklistTemplate,
 } from "../../checklist-actions";
-import { ChecklistArea } from "@prisma/client";
+import { ChecklistArea } from "@/lib/types/cleaning-enums";
 import AreaEditModal from "./AreaEditModal";
 import TaskPhotosModal from "./TaskPhotosModal";
 import Image from "next/image";

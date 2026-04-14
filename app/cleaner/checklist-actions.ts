@@ -7,7 +7,7 @@
 import prisma from "@/lib/prisma";
 import { getDefaultTenant } from "@/lib/tenant";
 import { revalidatePath } from "next/cache";
-import { NotCompletedReasonCode } from "@prisma/client";
+import { NotCompletedReasonCode } from "@/lib/generated/prisma";
 
 export async function updateChecklistItemCompletion(
   cleaningId: string,

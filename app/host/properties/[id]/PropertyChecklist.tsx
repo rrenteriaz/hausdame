@@ -8,7 +8,7 @@ import {
   deleteChecklistItem,
   copyChecklistToProperties,
 } from "../checklist-actions";
-import { ChecklistArea } from "@prisma/client";
+import { ChecklistArea } from "@/lib/types/cleaning-enums";
 
 interface PropertyChecklistItem {
   id: string;

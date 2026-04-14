@@ -2,7 +2,7 @@
 // Helpers tipados para includes/selects estándar de ChatThread
 // Evita errores de nombres de relaciones incorrectos y centraliza queries
 
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/lib/generated/prisma";
 
 /**
  * Select mínimo para validación de acceso (requireThreadAccess)

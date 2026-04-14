@@ -4,7 +4,7 @@
  * Retorna null si no hay match claro.
  */
 
-import { PropertyZoneOperationalCategory } from "@prisma/client";
+import { PropertyZoneOperationalCategory } from "@/lib/generated/prisma";
 import { normalizeName } from "@/lib/inventory-normalize";
 
 // Ordenadas de más específico a más general para evitar falsos positivos

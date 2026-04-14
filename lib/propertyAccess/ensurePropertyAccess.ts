@@ -4,7 +4,7 @@ import type {
   Prisma,
   PropertyAccessRole,
   PropertyMemberAccessStatus,
-} from "@prisma/client";
+} from "@/lib/generated/prisma";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import { completeCleaningWithReasons } from "../../checklist-actions";
-import { NotCompletedReasonCode } from "@prisma/client";
+import { NotCompletedReasonCode } from "@/lib/types/cleaning-enums";
 import { useRouter } from "next/navigation";
 import InventoryRequiredModal from "./InventoryRequiredModal";
 import { InventoryCardRef } from "./InventoryCard";

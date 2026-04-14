@@ -6,7 +6,7 @@ import { getDefaultTenant } from "@/lib/tenant";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createOrUpdateInventoryReview } from "@/app/host/inventory-review/actions";
-import { InventoryReviewStatus, type Prisma } from "@prisma/client";
+import { InventoryReviewStatus, type Prisma } from "@/lib/generated/prisma";
 import { requireCleanerAccessToCleaning } from "@/lib/cleaner/requireCleanerAccessToCleaning";
 import { assertCleanerCanOperateCleaning } from "@/lib/cleaner/assertCleanerCanOperateCleaning";
 import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";

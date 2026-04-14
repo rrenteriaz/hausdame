@@ -26,8 +26,8 @@ import {
   OPERATIONAL_CATEGORY_OPTIONS,
 } from "@/lib/inventory-zone-labels";
 import { inferZoneCategory } from "@/lib/zones/inferZoneCategory";
-import type { PropertyZoneOperationalCategory } from "@prisma/client";
-import { InventoryPriority } from "@prisma/client";
+import type { PropertyZoneOperationalCategory } from "@/lib/types/inventory-enums";
+import { InventoryPriority } from "@/lib/types/inventory-enums";
 import { inferInventoryData, type AttentionLevel } from "@/lib/inventory-inference";
 import { isBedSizeVariantable } from "@/lib/inventory-suggestions";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";

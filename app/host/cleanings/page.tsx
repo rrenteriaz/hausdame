@@ -2,7 +2,7 @@
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
-import { CleaningStatus, Cleaning, Property } from "@prisma/client";
+import { CleaningStatus, Cleaning, Property } from "@/lib/generated/prisma";
 import Link from "next/link";
 import { getCleaningUi, getPropertyColor } from "@/lib/cleaning-ui";
 import { getHostVisual, hostKindFromCleaning, HOST_LEGEND, firstNameOf, truncateBadge } from "@/lib/ui/cleaning-visual-state";
