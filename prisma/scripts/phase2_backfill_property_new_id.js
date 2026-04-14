@@ -5,7 +5,7 @@
 require('dotenv').config({ path: '.env.local' });
 require('dotenv').config({ path: '.env' });
 
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../../lib/generated/prisma');
 const { PrismaNeon } = require('@prisma/adapter-neon');
 const { neonConfig } = require('@neondatabase/serverless');
 const ws = require('ws');
