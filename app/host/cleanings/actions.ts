@@ -8,6 +8,10 @@ import { redirect } from "next/navigation";
 import { CleaningStatus } from "@/lib/generated/prisma";
 import { getEligibleMembersForCleaning } from "@/lib/cleaning-eligibility";
 import { createChecklistSnapshotForCleaning } from "@/lib/checklist-snapshot";
+import { resolveAutoAssignment } from "@/lib/cleanings/resolveAutoAssignment";
+import { assertCleaningIsNotFrozen } from "@/lib/cleanings/assertCleaningIsNotFrozen";
+import { assertValidScheduledDate, assertAssignmentCoherence } from "@/lib/cleanings/assertCleaningInvariants";
+import { buildCleaningScheduledDate } from "@/lib/datetime/buildCleaningScheduledDate";
 import { createOrUpdateInventoryReview } from "@/app/host/inventory-review/actions";
 import { InventoryReviewStatus } from "@/lib/generated/prisma";
 // FASE 5: property-id-helper eliminado, propertyId ahora es el PK directamente
@@ -30,7 +34,8 @@ export async function rescheduleCleaning(formData: FormData) {
 
   const [y, m, d] = dateStr.split("-").map(Number);
   const [h, min] = timeStr.split(":").map(Number);
-  const newDate = new Date(y, m - 1, d, h, min, 0, 0);
+  // buildCleaningScheduledDate interpreta la hora en CDMX (UTC-6) → UTC correcto
+  const newDate = buildCleaningScheduledDate(y, m - 1, d, h, min);
   if (isNaN(newDate.getTime())) throw new Error("Fecha u hora inválida");
 
   // Verificar que la limpieza es manual (reservationId === null) y PENDING
@@ -349,7 +354,6 @@ export async function addAssigneeToCleaning(formData: FormData) {
       select: {
         id: true,
         teamId: true,
-        assignedMemberId: true,
       },
     });
 
@@ -430,17 +434,6 @@ export async function addAssigneeToCleaning(formData: FormData) {
         });
       }
 
-      // Si cleaning.assignedMemberId es null, setearlo al primer asignado (primary)
-      // El primer cleaner asignado es automáticamente el principal
-      if (!cleaning.assignedMemberId) {
-        await tx.cleaning.update({
-          where: { id: cleaningId },
-          data: {
-            assignedMemberId: memberId,
-            assignmentStatus: "ASSIGNED",
-          },
-        });
-      }
     });
 
     revalidatePath("/host/cleanings");
@@ -465,10 +458,7 @@ export async function assignTeamMemberToCleaning(formData: FormData) {
   }
 
   const cleaningId = String(formData.get("cleaningId") || "");
-  // FASE 4.4.2: Soporte para assigneeType dual (MEMBERSHIP | TEAM_MEMBER)
-  const assigneeType = formData.get("assigneeType")?.toString() as "MEMBERSHIP" | "TEAM_MEMBER" | null;
   const assignedMembershipId = formData.get("assignedMembershipId")?.toString() || null;
-  const teamMemberId = formData.get("teamMemberId")?.toString() || null;
 
   if (!cleaningId) {
     redirectBack(formData);
@@ -485,6 +475,7 @@ export async function assignTeamMemberToCleaning(formData: FormData) {
       id: true,
       teamId: true,
       propertyId: true,
+      status: true,
       scheduledDate: true,
       scheduledAtPlanned: true,
       needsAttention: true,
@@ -497,23 +488,21 @@ export async function assignTeamMemberToCleaning(formData: FormData) {
     return;
   }
 
-  // FASE 4.4.2: Validar assignee según assigneeType
+  // Freeze guard: no reasignar si ya inició
+  assertCleaningIsNotFrozen(cleaningId, cleaning.status);
+
+  // Validar membership: debe ser ACTIVE y pertenecer al mismo team
   let finalAssigneeId: string | null = null;
-  
-  if (assigneeType === "MEMBERSHIP" && assignedMembershipId) {
-    // Validar que el TeamMembership existe, pertenece al tenant y al team de la limpieza
+
+  if (assignedMembershipId) {
     const membership = await prisma.teamMembership.findFirst({
       where: {
         id: assignedMembershipId,
         status: "ACTIVE",
-        role: "CLEANER",
         teamId: cleaning.teamId || undefined,
         Team: { tenantId },
       },
-      select: {
-        id: true,
-        teamId: true,
-      },
+      select: { id: true, teamId: true },
     });
 
     if (!membership || (cleaning.teamId && membership.teamId !== cleaning.teamId)) {
@@ -522,201 +511,52 @@ export async function assignTeamMemberToCleaning(formData: FormData) {
     }
 
     finalAssigneeId = assignedMembershipId;
-  } else if (assigneeType === "TEAM_MEMBER" && teamMemberId) {
-    // Validar que el TeamMember existe y pertenece al team de la limpieza (legacy)
-    const member = await (prisma as any).teamMember.findFirst({
-      where: {
-        id: teamMemberId,
-        isActive: true,
-        tenantId,
-        teamId: cleaning.teamId || undefined,
-      },
-      select: {
-        id: true,
-        teamId: true,
-      },
-    });
-
-    if (!member || (cleaning.teamId && member.teamId !== cleaning.teamId)) {
-      redirectBack(formData);
-      return;
-    }
-
-    finalAssigneeId = teamMemberId;
-  } else if (!assigneeType && teamMemberId) {
-    // Legacy: sin assigneeType, usar teamMemberId (compatibilidad hacia atrás)
-    finalAssigneeId = teamMemberId;
   }
 
-  // Calcular si necesita atención después de la asignación
-  let needsAttention = false;
-  let attentionReason: string | null = null;
+  // Calcular flags de atención post-asignación
+  let needsAttention = cleaning.needsAttention;
+  let attentionReason: string | null = cleaning.attentionReason;
 
   if (finalAssigneeId) {
-    // Se está asignando un miembro
-    const scheduledAt = cleaning.scheduledAtPlanned || cleaning.scheduledDate;
-    
-    // Verificar si el miembro asignado está disponible
-    // Nota: getEligibleMembersForCleaning solo funciona con TeamMember legacy
-    // Para membership mode, la validación de disponibilidad se puede hacer después si es necesario
-    try {
-      let assignedMemberIsEligible = true;
-      
-      // Solo validar disponibilidad si es legacy (TeamMember)
-      if (assigneeType === "TEAM_MEMBER" || (!assigneeType && teamMemberId)) {
-        const eligibleMembers = await getEligibleMembersForCleaning(
-          tenantId,
-          cleaning.propertyId,
-          scheduledAt
-        );
-
-        assignedMemberIsEligible = eligibleMembers.some(
-          (m) => m.id === finalAssigneeId
-        );
-      }
-      // Para membership mode, por ahora asumimos disponible (validación futura)
-
-      if (!assignedMemberIsEligible) {
-        // El miembro asignado no está disponible → marcar para atención
-        needsAttention = true;
-        attentionReason = "CLEANING_ASSIGNED_NOT_AVAILABLE";
-      } else {
-        // El miembro está disponible → limpiar flags de atención (si el motivo era NO_AVAILABLE_MEMBER)
-        if (cleaning.attentionReason === "NO_AVAILABLE_MEMBER") {
-          needsAttention = false;
-          attentionReason = null;
-        } else {
-          // Mantener el estado actual si el motivo es otro (ej: DECLINED_BY_ASSIGNEE)
-          needsAttention = cleaning.needsAttention;
-          attentionReason = cleaning.attentionReason;
-        }
-      }
-    } catch (error) {
-      console.error("[assignTeamMemberToCleaning] Error verificando disponibilidad:", error);
-      // En caso de error, limpiar flags si el motivo era NO_AVAILABLE_MEMBER
-      if (cleaning.attentionReason === "NO_AVAILABLE_MEMBER") {
-        needsAttention = false;
-        attentionReason = null;
-      } else {
-        needsAttention = cleaning.needsAttention;
-        attentionReason = cleaning.attentionReason;
-      }
+    // Se está asignando un miembro → limpiar flags de NO_AVAILABLE_MEMBER / DECLINED
+    const clearableReasons = ["NO_AVAILABLE_MEMBER", "DECLINED_BY_ASSIGNEE"];
+    if (attentionReason && clearableReasons.includes(attentionReason)) {
+      needsAttention = false;
+      attentionReason = null;
     }
   } else {
-    // Se está quitando la asignación → recalcular si necesita atención
-    const scheduledAt = cleaning.scheduledAtPlanned || cleaning.scheduledDate;
-    
-    try {
-      const eligibleMembers = await getEligibleMembersForCleaning(
-        tenantId,
-        cleaning.propertyId,
-        scheduledAt
-      );
-
-      if (eligibleMembers.length === 0) {
-        // No hay miembros disponibles → marcar para atención
+    // Se está quitando la asignación → verificar si hay memberships activas
+    if (cleaning.teamId) {
+      const activeCount = await prisma.teamMembership.count({
+        where: { teamId: cleaning.teamId, status: "ACTIVE" },
+      });
+      if (activeCount === 0) {
         needsAttention = true;
         attentionReason = "NO_AVAILABLE_MEMBER";
       } else {
-        // Hay miembros disponibles → limpiar flags
         needsAttention = false;
         attentionReason = null;
       }
-    } catch (error) {
-      console.error("[assignTeamMemberToCleaning] Error verificando disponibilidad:", error);
-      // En caso de error, mantener el estado actual
-      needsAttention = cleaning.needsAttention;
-      attentionReason = cleaning.attentionReason;
     }
   }
 
-  // Transacción para actualizar cleaning y sincronizar CleaningAssignee
-  await (prisma as any).$transaction(async (tx: any) => {
-    // FASE 4.4.2: Actualizar cleaning con assignedMembershipId o assignedMemberId según assigneeType
-    const updateData: any = {
+  assertAssignmentCoherence({ assignedMembershipId: finalAssigneeId, needsAttention, attentionReason }, "assignTeamMemberToCleaning");
+
+  // Actualizar cleaning con membership como único modelo de asignación
+  await (prisma as any).cleaning.updateMany({
+    where: { id: cleaningId, tenantId },
+    data: {
+      assignedMembershipId: finalAssigneeId ?? null,
       assignmentStatus: finalAssigneeId ? "ASSIGNED" : "OPEN",
       needsAttention,
       attentionReason,
-    };
-
-    if (assigneeType === "MEMBERSHIP") {
-      // Asignar membership: set assignedMembershipId, clear assignedMemberId
-      updateData.assignedMembershipId = finalAssigneeId;
-      updateData.assignedMemberId = null;
-      updateData.assignedTeamMemberId = null;
-    } else if (assigneeType === "TEAM_MEMBER" || (!assigneeType && teamMemberId)) {
-      // Asignar legacy: set assignedMemberId, clear assignedMembershipId
-      updateData.assignedMemberId = finalAssigneeId;
-      updateData.assignedTeamMemberId = finalAssigneeId; // Mantener compatibilidad legacy
-      updateData.assignedMembershipId = null;
-    } else {
-      // Sin asignación: clear ambos
-      updateData.assignedMemberId = null;
-      updateData.assignedTeamMemberId = null;
-      updateData.assignedMembershipId = null;
-    }
-
-    await tx.cleaning.updateMany({
-      where: {
-        id: cleaningId,
-        tenantId,
-      },
-      data: updateData,
-    });
-
-    // Sincronizar CleaningAssignee (solo para legacy TeamMember)
-    if (finalAssigneeId && (assigneeType === "TEAM_MEMBER" || (!assigneeType && teamMemberId))) {
-      // Upsert: crear o actualizar CleaningAssignee (solo para legacy)
-      // Verificar si ya existe
-      const existingAssignee = await tx.cleaningAssignee.findFirst({
-        where: {
-          cleaningId: cleaningId,
-          memberId: finalAssigneeId,
-        },
-      });
-
-      if (existingAssignee) {
-        // Actualizar si existe
-        await tx.cleaningAssignee.update({
-          where: { id: existingAssignee.id },
-          data: {
-            status: "ASSIGNED",
-            assignedAt: new Date(),
-          },
-        });
-      } else {
-        // Crear si no existe
-        await tx.cleaningAssignee.create({
-          data: {
-            tenantId,
-            cleaningId: cleaningId,
-            memberId: finalAssigneeId,
-            status: "ASSIGNED",
-            assignedAt: new Date(),
-            assignedByUserId: null, // TODO: obtener del usuario autenticado
-          },
-        });
-      }
-    } else if (!finalAssigneeId) {
-      // Si se quita la asignación, marcar todos los assignees como DECLINED o eliminar
-      // Por ahora, solo marcar como DECLINED si existían
-      await tx.cleaningAssignee.updateMany({
-        where: {
-          cleaningId: cleaningId,
-          status: "ASSIGNED",
-        },
-        data: {
-          status: "DECLINED",
-        },
-      });
-    }
-    // Nota: Para membership mode, no se usa CleaningAssignee (solo legacy)
+    },
   });
 
   revalidatePath("/host/cleanings");
   revalidatePath("/host/cleanings/needs-attention");
   const returnTo = formData.get("returnTo")?.toString();
-  
+
   // Revalidar la página del detalle de limpieza
   revalidatePath(`/host/cleanings/${cleaningId}`);
   
@@ -747,7 +587,12 @@ export async function createCleaning(formData: FormData) {
     return;
   }
 
-  const scheduledDate = new Date(scheduledAtStr);
+  // scheduledAtStr viene de DateTimePicker como "YYYY-MM-DDTHH:mm" sin timezone.
+  // Parsear manualmente para evitar ambigüedad de runtime, luego aplicar CDMX (UTC-6).
+  const [datePart, timePart] = scheduledAtStr.split("T");
+  const [syear, smonth, sday] = (datePart ?? "").split("-").map(Number);
+  const [shours, sminutes] = (timePart ?? "11:00").split(":").map(Number);
+  const scheduledDate = buildCleaningScheduledDate(syear, smonth - 1, sday, shours, sminutes);
 
   // Verificar que la propiedad existe y pertenece al tenant
   const property = await prisma.property.findFirst({
@@ -766,91 +611,36 @@ export async function createCleaning(formData: FormData) {
     return;
   }
 
-  // PASO 1: Determinar el equipo de limpieza de la propiedad (flag-aware: WGE o PropertyTeam legacy)
-  const useWorkGroupReads = process.env.WORKGROUP_READS_ENABLED === "1";
-  let teamId: string | null = null;
+  // PASO 1: Resolver team via WorkGroups (con fallback transparente a PropertyTeam legacy)
+  const { resolveEffectiveTeamsForProperty } = await import(
+    "@/lib/workgroups/resolveEffectiveTeamsForProperty"
+  );
+  const { teamIds } = await resolveEffectiveTeamsForProperty(tenantId, property.id);
+  // Exactamente 1 team → pasar a resolveAutoAssignment; 0 o 2+ → null (OPEN por contrato)
+  const teamId = teamIds.length === 1 ? teamIds[0] : null;
 
-  if (useWorkGroupReads) {
-    const { getServiceTeamsForPropertyViaWorkGroups } = await import(
-      "@/lib/workgroups/resolveWorkGroupsForProperty"
-    );
-    const wgeTeamIds = await getServiceTeamsForPropertyViaWorkGroups(tenantId, property.id);
-    if (wgeTeamIds.length === 1) {
-      teamId = wgeTeamIds[0];
-    } else if (wgeTeamIds.length > 1) {
-      // Un solo query para todos: preferir el primer equipo con al menos 1 membership ACTIVE
-      const membershipsPerTeam = await prisma.teamMembership.findMany({
-        where: { teamId: { in: wgeTeamIds }, status: "ACTIVE" },
-        select: { teamId: true },
-      });
-      const teamsWithMembers = new Set(membershipsPerTeam.map((m) => m.teamId));
-      // Mantener orden canónico (wgeTeamIds ya viene ordenado por ID)
-      teamId = wgeTeamIds.find((id) => teamsWithMembers.has(id)) ?? wgeTeamIds[0];
-    }
-    // wgeTeamIds.length === 0 → teamId permanece null → NO_TEAM_CONFIGURED
-  } else {
-    const propertyTeam = await (prisma as any).propertyTeam.findFirst({
-      where: {
-        propertyId: property.id,
-        tenantId,
-      },
-      select: {
-        teamId: true,
-      },
-    });
-    teamId = propertyTeam?.teamId ?? null;
-  }
+  // PASO 2+3: Resolver asignación automática (preferred executor → 1 membership → OPEN)
+  const assignment = await resolveAutoAssignment(property.id, teamId);
+  const { assignedMembershipId, assignmentStatus, needsAttention, attentionReason } = assignment;
+  // Usar el teamId resuelto por el helper (puede ser null si no hay team)
+  const resolvedTeamId = assignment.teamId;
 
-  const assignedMemberId: string | null = null;
-  let assignmentStatus: "OPEN" | "ASSIGNED" = "OPEN";
-  let needsAttention = false;
-  let attentionReason: string | null = null;
-
-  // PASO 2: Si hay equipo, obtener memberships activas del equipo
-  let assignedMembershipId: string | null = null;
-  if (teamId) {
-    // Obtener TeamMembership ACTIVE del equipo (estándar)
-    const activeMemberships = await prisma.teamMembership.findMany({
-      where: {
-        teamId: teamId!, // teamId no puede ser null aquí porque propertyTeam existe
-        status: "ACTIVE",
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    // PASO 3: Reglas de asignación según cantidad de memberships
-    if (activeMemberships.length === 1) {
-      // Solo 1 membership → auto-asignar usando assignedMembershipId
-      assignedMembershipId = activeMemberships[0].id;
-      assignmentStatus = "ASSIGNED";
-    } else if (activeMemberships.length === 0) {
-      // 0 memberships → marcar para atención
-      needsAttention = true;
-      attentionReason = "NO_AVAILABLE_MEMBER";
-    }
-    // Si hay 2+ memberships, queda OPEN (sin asignar) - requiere selección manual
-  } else {
-    // No hay equipo configurado → marcar para atención
-    needsAttention = true;
-    attentionReason = "NO_TEAM_CONFIGURED";
-  }
+  assertValidScheduledDate(scheduledDate, "createCleaning");
+  assertAssignmentCoherence({ assignedMembershipId, needsAttention, attentionReason }, "createCleaning");
 
   // PASO 4: Crear la limpieza con snapshot de propiedad (requisito técnico)
   const cleaning = await (prisma as any).cleaning.create({
     data: {
       tenantId,
       propertyId: property.id,
-      teamId: teamId,
+      teamId: resolvedTeamId,
       scheduledDate,
       status: "PENDING",
       notes,
       reservationId: null,
       assignedToId: null,
       assignmentStatus,
-      assignedMemberId: null, // Legacy - no usar para auto-asignación
-      assignedMembershipId: assignedMembershipId, // Estándar - usar para auto-asignación
+      assignedMembershipId: assignedMembershipId ?? null,
       needsAttention,
       attentionReason,
       // Snapshot de propiedad (requisito técnico para histórico sin depender de Property actual)
@@ -892,6 +682,14 @@ export async function createCleaning(formData: FormData) {
     }
   }
 
+  console.log("[assignment-model] createCleaning", {
+    cleaningId: cleaning.id,
+    origin: "manual",
+    teamId: resolvedTeamId ?? null,
+    assignedMembershipId: assignedMembershipId ?? null,
+    assignmentStatus,
+  });
+
   // Crear snapshot del checklist
   await createChecklistSnapshotForCleaning(tenantId, property.id, cleaning.id);
 
@@ -924,7 +722,7 @@ export async function setPrimaryAssignee(formData: FormData) {
       select: {
         id: true,
         teamId: true,
-        assignedMemberId: true,
+        status: true,
         needsAttention: true,
         attentionReason: true,
       },
@@ -934,6 +732,9 @@ export async function setPrimaryAssignee(formData: FormData) {
       redirectBack(formData);
       return;
     }
+
+    // Freeze guard: no reasignar si ya inició
+    assertCleaningIsNotFrozen(cleaningId, cleaning.status);
 
     // Obtener el miembro y su teamId
     const member = await (prisma as any).teamMember.findFirst({
@@ -991,33 +792,39 @@ export async function setPrimaryAssignee(formData: FormData) {
         });
       }
 
-      // Setear cleaning.assignedMemberId = memberId (primary)
-      const newNeedsAttention = cleaning.needsAttention;
-      const newAttentionReason = cleaning.attentionReason;
-      
+      // Resolver TeamMember → TeamMembership para usar modelo canónico
+      const tmRecord = await (prisma as any).teamMember.findFirst({
+        where: { id: memberId, tenantId },
+        select: { userId: true, teamId: true },
+      });
+      const activeMembership = tmRecord
+        ? await prisma.teamMembership.findFirst({
+            where: { userId: tmRecord.userId, teamId: tmRecord.teamId, status: "ACTIVE" },
+            select: { id: true },
+          })
+        : null;
+
       // Limpiar needsAttention si era NO_PRIMARY_ASSIGNEE o NO_AVAILABLE_MEMBER
-      let finalNeedsAttention = newNeedsAttention;
-      let finalAttentionReason = newAttentionReason;
-      
+      let finalNeedsAttention = cleaning.needsAttention;
+      let finalAttentionReason = cleaning.attentionReason;
       if (cleaning.attentionReason === "NO_PRIMARY_ASSIGNEE" || cleaning.attentionReason === "NO_AVAILABLE_MEMBER") {
-        // Verificar si hay otros motivos que requieran atención
-        // Por ahora, limpiar si era solo NO_PRIMARY_ASSIGNEE o NO_AVAILABLE_MEMBER
         finalNeedsAttention = false;
         finalAttentionReason = null;
       }
 
-      // Actualizar cleaning: setear primary y teamId si no existe
-      await tx.cleaning.update({
-        where: { id: cleaningId },
-        data: {
-          assignedMemberId: memberId,
-          assignmentStatus: "ASSIGNED",
-          needsAttention: finalNeedsAttention,
-          attentionReason: finalAttentionReason,
-          // Si cleaning.teamId es null, actualizarlo con el teamId del miembro
-          ...(cleaning.teamId ? {} : { teamId: member.teamId }),
-        },
-      });
+      if (activeMembership) {
+        assertAssignmentCoherence({ assignedMembershipId: activeMembership.id, needsAttention: finalNeedsAttention, attentionReason: finalAttentionReason }, "setPrimaryAssignee");
+        await tx.cleaning.update({
+          where: { id: cleaningId },
+          data: {
+            assignedMembershipId: activeMembership.id,
+            assignmentStatus: "ASSIGNED",
+            needsAttention: finalNeedsAttention,
+            attentionReason: finalAttentionReason,
+            ...(cleaning.teamId ? {} : { teamId: member.teamId }),
+          },
+        });
+      }
     });
 
     revalidatePath("/host/cleanings");
@@ -1072,11 +879,10 @@ export async function clearPrimaryAssignee(formData: FormData) {
         },
       });
 
-      // Setear cleaning.assignedMemberId = NULL
       await tx.cleaning.update({
         where: { id: cleaningId },
         data: {
-          assignedMemberId: null,
+          assignedMembershipId: null,
           assignmentStatus: "OPEN",
           needsAttention: true,
           attentionReason: "NO_PRIMARY_ASSIGNEE",
@@ -1093,6 +899,106 @@ export async function clearPrimaryAssignee(formData: FormData) {
     revalidatePath(`/host/cleanings/${cleaningId}`);
     const returnTo = formData.get("returnTo")?.toString();
     redirect(`/host/cleanings/${cleaningId}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`);
+  }
+}
+
+/**
+ * Cambia el equipo responsable de una limpieza PENDING.
+ *
+ * Reglas (contrato §FASE-F):
+ * - Solo aplica si cleaning.status === "PENDING"
+ * - El nuevo team debe tener cobertura válida sobre la propiedad (WGE o PropertyTeam)
+ * - Al cambiar team, recalcula el ejecutor con resolveAutoAssignment
+ */
+export async function changeCleaningTeam(formData: FormData) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) {
+    redirectBack(formData);
+    return;
+  }
+
+  const cleaningId = String(formData.get("cleaningId") || "");
+  const newTeamId = String(formData.get("teamId") || "");
+
+  if (!cleaningId || !newTeamId) {
+    redirectBack(formData);
+    return;
+  }
+
+  try {
+    const cleaning = await (prisma as any).cleaning.findFirst({
+      where: { id: cleaningId, tenantId },
+      select: { id: true, propertyId: true, status: true, teamId: true },
+    });
+
+    if (!cleaning) {
+      redirectBack(formData);
+      return;
+    }
+
+    // Freeze guard: no cambiar team si ya inició
+    assertCleaningIsNotFrozen(cleaningId, cleaning.status);
+
+    // Validar que el nuevo team tiene cobertura sobre la propiedad
+    const { getServiceTeamsForPropertyViaWorkGroupsWithFallback } = await import(
+      "@/lib/workgroups/getServiceTeamsForPropertyViaWorkGroups"
+    );
+    const eligibleTeamIds = await getServiceTeamsForPropertyViaWorkGroupsWithFallback(
+      tenantId,
+      cleaning.propertyId
+    );
+
+    if (!eligibleTeamIds.includes(newTeamId)) {
+      console.warn("[changeCleaningTeam] El team no tiene cobertura sobre la propiedad", {
+        cleaningId,
+        newTeamId,
+        propertyId: cleaning.propertyId,
+      });
+      redirectBack(formData);
+      return;
+    }
+
+    // Recalcular asignación automática para el nuevo team
+    const assignment = await resolveAutoAssignment(cleaning.propertyId, newTeamId);
+
+    assertAssignmentCoherence({ assignedMembershipId: assignment.assignedMembershipId, needsAttention: assignment.needsAttention, attentionReason: assignment.attentionReason }, "changeCleaningTeam");
+
+    await (prisma as any).cleaning.update({
+      where: { id: cleaningId },
+      data: {
+        teamId: newTeamId,
+        assignedMembershipId: assignment.assignedMembershipId,
+        assignmentStatus: assignment.assignmentStatus,
+        needsAttention: assignment.needsAttention,
+        attentionReason: assignment.attentionReason,
+      },
+    });
+
+    console.log("[assignment-model] changeCleaningTeam", {
+      cleaningId,
+      prevTeamId: cleaning.teamId,
+      newTeamId,
+      assignedMembershipId: assignment.assignedMembershipId,
+      assignmentStatus: assignment.assignmentStatus,
+    });
+
+    revalidatePath("/host/cleanings");
+    revalidatePath(`/host/cleanings/${cleaningId}`);
+    revalidatePath("/host/cleanings/needs-attention");
+    const returnTo = formData.get("returnTo")?.toString();
+    redirect(`/host/cleanings/${cleaningId}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`);
+  } catch (error: any) {
+    if (error?.name === "CleaningFrozenError") {
+      console.warn("[changeCleaningTeam] Intento de cambio en limpieza congelada:", error.message);
+      redirectBack(formData);
+      return;
+    }
+    if (error?.message === "NEXT_REDIRECT" || `${error?.digest || ""}`.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("[changeCleaningTeam] Error:", error);
+    throw error;
   }
 }
 

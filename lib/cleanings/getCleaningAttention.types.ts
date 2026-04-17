@@ -7,8 +7,6 @@ export interface CleaningAttentionLevelInput {
   teamId: string | null;
   /** ID del TeamMembership que aceptó la limpieza (null si no hay) */
   assignedMembershipId: string | null;
-  /** ID del TeamMember legacy asignado (null si no hay) */
-  assignedMemberId: string | null;
   /** Estado de ejecución de la limpieza */
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   /** Timestamp de inicio de ejecución (null si no ha iniciado) */

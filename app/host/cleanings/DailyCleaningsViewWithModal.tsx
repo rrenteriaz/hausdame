@@ -80,8 +80,8 @@ export default function DailyCleaningsViewWithModal({
       return `${dd.getFullYear()}-${dd.getMonth()}-${dd.getDate()}` === dayKey;
     })
     .sort((a, b) => {
-      const aAttn = (a as any).needsAttention && !(a as any).assignedMembershipId && !(a as any).assignedMemberId ? 1 : 0;
-      const bAttn = (b as any).needsAttention && !(b as any).assignedMembershipId && !(b as any).assignedMemberId ? 1 : 0;
+      const aAttn = (a as any).needsAttention && !(a as any).assignedMembershipId && a.status === "PENDING" ? 1 : 0;
+      const bAttn = (b as any).needsAttention && !(b as any).assignedMembershipId && b.status === "PENDING" ? 1 : 0;
       if (aAttn !== bAttn) return bAttn - aAttn;
       return a.scheduledDate.getTime() - b.scheduledDate.getTime();
     });
@@ -146,8 +146,8 @@ export default function DailyCleaningsViewWithModal({
               const kind = hostKindFromCleaning({
                 status: c.status,
                 assignmentStatus: (c as any).assignmentStatus,
-                assignedMemberId: (c as any).assignedMemberId,
                 assignedMembershipId: (c as any).assignedMembershipId,
+                scheduledDate: c.scheduledDate,
               });
               const visual = getHostVisual(kind);
               const detailsHref = `/host/cleanings/${c.id}?returnTo=${encodeURIComponent(returnTo)}`;
@@ -186,8 +186,8 @@ export default function DailyCleaningsViewWithModal({
                             ? `👤 ${firstNameOf(assigneeName) ?? assigneeName}`
                             : visual.badgeFull}
                         </span>
-                        {/* Badge de atención */}
-                        {needsAttention && (
+                        {/* Badge de atención — solo para PENDING; IN_PROGRESS, COMPLETED y OVERDUE tienen prioridad visual */}
+                        {needsAttention && kind !== "overdue" && c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" && (
                           <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700">
                             ⚠ Atención
                           </span>

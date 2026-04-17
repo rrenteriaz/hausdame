@@ -222,7 +222,8 @@ export default async function CleaningDetailPage({
   );
   const teamIds = availableTeamsResult.teamIds;
   let teamMembers: Array<{ id: string; name: string; team: { id: string; name: string }; assigneeType: "MEMBERSHIP" | "TEAM_MEMBER" }> = [];
-  
+  let teamLeaderMap = new Map<string, { name: string | null; email: string }>();
+
   if (teamIds.length > 0) {
     // Obtener TeamMembership ACTIVE role CLEANER
     const memberships = await prisma.teamMembership.findMany({
@@ -289,7 +290,7 @@ export default async function CleaningDetailPage({
         },
       },
     });
-    const teamLeaderMap = new Map(
+    teamLeaderMap = new Map(
       teamLeaders.map((tl) => [
         tl.teamId,
         { name: tl.User.name, email: tl.User.email },
@@ -403,7 +404,6 @@ export default async function CleaningDetailPage({
   const assignmentLevel = getCleaningAssignmentLevel({
     teamId: cleaningTyped.teamId || null,
     assignedMembershipId: cleaningTyped.assignedMembershipId || null,
-    assignedMemberId: cleaningTyped.assignedMemberId || null,
     status: cleaning.status,
     startedAt: cleaningTyped.startedAt || null,
     completedAt: cleaningTyped.completedAt || null,
@@ -418,7 +418,6 @@ export default async function CleaningDetailPage({
   const attentionResult = getCleaningAttention({
     teamId: cleaningTyped.teamId || null,
     assignedMembershipId: cleaningTyped.assignedMembershipId || null,
-    assignedMemberId: cleaningTyped.assignedMemberId || null,
     status: cleaning.status,
     startedAt: cleaningTyped.startedAt || null,
     completedAt: cleaningTyped.completedAt || null,
@@ -475,7 +474,6 @@ export default async function CleaningDetailPage({
     status: cleaning.status,
     scheduledDate: cleaning.scheduledDate,
     scheduledAtPlanned: scheduledAtPlanned,
-    assignedMemberId: cleaningTyped.assignedMemberId || null,
     assignedMembershipId: cleaningTyped.assignedMembershipId || null,
     assignedMember: assignedMemberWithDisplayName,
     propertyId: cleaning.propertyId,
@@ -510,22 +508,25 @@ export default async function CleaningDetailPage({
 
         {/* Sección de Asignación */}
         <AssignmentSection
+          cleaningId={cleaning.id}
           assignees={finalAssignees}
           teamMembers={teamMembers}
           propertyTeams={propertyTeams}
           hasError={false}
           primaryAssigneeId={
-            // FASE 4.4.2: primaryAssigneeId puede ser assignedMembershipId (prefijo "m:") o assignedMemberId (prefijo "t:")
-            cleaningTyped.assignedMembershipId 
-              ? `m:${cleaningTyped.assignedMembershipId}` 
-              : cleaningTyped.assignedMemberId 
-              ? `t:${cleaningTyped.assignedMemberId}` 
+            cleaningTyped.assignedMembershipId
+              ? `m:${cleaningTyped.assignedMembershipId}`
               : null
           }
           cleaningStatus={cleaning.status}
           assignmentLevel={assignmentLevel}
           teamId={cleaningTyped.teamId || null}
           teamName={cleaningTyped.team?.name || null}
+          tlName={
+            cleaningTyped.teamId
+              ? (teamLeaderMap.get(cleaningTyped.teamId)?.name ?? null)
+              : null
+          }
         />
 
         <section className={`rounded-2xl border border-neutral-200 bg-white p-4 space-y-3`}>

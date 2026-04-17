@@ -35,7 +35,6 @@ export async function checkCleaningPropertyAccess(
       },
       tenantId: true,
       assignedMembershipId: true,
-      assignedMemberId: true,
       assignmentStatus: true,
     },
   });
@@ -53,11 +52,6 @@ export async function checkCleaningPropertyAccess(
       (cleaning.assignedMembershipId &&
         membershipsAccess.membershipIds.includes(cleaning.assignedMembershipId)) ||
       false;
-  } else {
-    // Legacy mode
-    if (context.legacyMember && cleaning.assignedMemberId === context.legacyMember.id) {
-      isAssigned = true;
-    }
   }
 
   // Validar acceso a la propiedad

@@ -5,21 +5,26 @@
 import prisma from "../lib/prisma";
 import { getDefaultTenant } from "../lib/tenant";
 import { getEligibleMembersForCleaning } from "../lib/cleaning-eligibility";
+import { buildCleaningScheduledDate } from "../lib/datetime/buildCleaningScheduledDate";
+import { assertValidScheduledDate } from "../lib/cleanings/assertCleaningInvariants";
 
 function calculateCleaningDate(endDate: Date, checkOutTime: string | null | undefined): Date {
-  const cleaningDate = new Date(endDate);
-  
   let hours = 11; // Default 11:00
   let minutes = 0;
-  
+
   if (checkOutTime) {
     const [h, m] = checkOutTime.split(":").map(Number);
     if (!isNaN(h)) hours = h;
     if (!isNaN(m)) minutes = m;
   }
-  
-  cleaningDate.setHours(hours, minutes, 0, 0);
-  return cleaningDate;
+
+  return buildCleaningScheduledDate(
+    endDate.getUTCFullYear(),
+    endDate.getUTCMonth(),
+    endDate.getUTCDate(),
+    hours,
+    minutes
+  );
 }
 
 async function createMissingCleanings() {
@@ -72,6 +77,7 @@ async function createMissingCleanings() {
         reservation.property?.checkOutTime
       );
 
+      assertValidScheduledDate(scheduledAtOriginal, "scripts/create-missing-cleanings");
       console.log(`  - Calculated cleaning date: ${scheduledAtOriginal.toISOString()}`);
 
       // Obtener miembros elegibles

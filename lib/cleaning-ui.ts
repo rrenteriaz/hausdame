@@ -44,9 +44,9 @@ export function getCleaningUi(status: CleaningStatus | string, propertyColorClas
 
     case "COMPLETED":
       return {
-        pillClass: `${pillBase} bg-[#c9c9ca] text-black`,
-        rowClass: `${rowBase} bg-[#c9c9ca]`,
-        titleClass: "text-black",
+        pillClass: `${pillBase} bg-neutral-200 text-neutral-600`,
+        rowClass: `${rowBase}`,
+        titleClass: "text-neutral-500",
         statusText: "Completada",
         symbol: "✓ ",
       };

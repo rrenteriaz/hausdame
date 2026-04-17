@@ -90,16 +90,6 @@ export async function getCleanerCleanings(filters: CleaningFilters = {}, context
               coverAssetGroupId: true,
             },
           },
-          assignedMember: {
-            include: {
-              team: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
           TeamMembership: {
             include: {
               User: {
@@ -182,9 +172,9 @@ export async function getCleanerCleanings(filters: CleaningFilters = {}, context
         }
       }
 
-      // En legacy mode, si assignedOnly=true, filtrar por assignedMemberId
-      if (filters.assignedOnly && resolvedContext.legacyMember) {
-        whereClause.assignedMemberId = resolvedContext.legacyMember.id;
+      // En legacy mode, si assignedOnly=true, no hay membershipId — retornar vacío
+      if (filters.assignedOnly) {
+        return { cleanings: [], context: resolvedContext };
       }
 
       const cleanings = await (prisma as any).cleaning.findMany({
@@ -196,16 +186,6 @@ export async function getCleanerCleanings(filters: CleaningFilters = {}, context
               name: true,
               shortName: true,
               coverAssetGroupId: true,
-            },
-          },
-          assignedMember: {
-            include: {
-              team: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
             },
           },
         },
@@ -224,8 +204,8 @@ export async function getCleanerCleanings(filters: CleaningFilters = {}, context
 
 /**
  * Obtiene limpiezas asignadas al cleaner actual
- * En membership mode: todas las limpiezas del team (no filtradas por assignedMemberId aún)
- * En legacy mode: filtradas por assignedMemberId
+ * En membership mode: todas las limpiezas del team filtradas por assignedMembershipId
+ * En legacy mode: no hay memberships — retorna vacío si assignedOnly=true
  */
 export async function getAssignedCleanerCleanings(filters: CleaningFilters = {}) {
   const result = await getCleanerCleanings({

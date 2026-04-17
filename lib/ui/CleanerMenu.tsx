@@ -9,9 +9,10 @@ interface CleanerMenuProps {
   isOpen: boolean;
   onClose: () => void;
   user: { email: string; nickname: string | null; fullName: string | null };
+  isTeamLeader?: boolean;
 }
 
-export default function CleanerMenu({ isOpen, onClose, user }: CleanerMenuProps) {
+export default function CleanerMenu({ isOpen, onClose, user, isTeamLeader = false }: CleanerMenuProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -166,6 +167,15 @@ export default function CleanerMenu({ isOpen, onClose, user }: CleanerMenuProps)
           >
             Equipos
           </button>
+          {isTeamLeader && (
+            <button
+              type="button"
+              onClick={() => handleMenuNav("/cleaner/team-cleanings")}
+              className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+            >
+              Limpiezas del equipo
+            </button>
+          )}
           <div className="border-t border-neutral-200 my-2" />
           <button
             type="button"
@@ -260,6 +270,15 @@ export default function CleanerMenu({ isOpen, onClose, user }: CleanerMenuProps)
             >
               Equipos
             </button>
+            {isTeamLeader && (
+              <button
+                type="button"
+                onClick={() => handleMenuNav("/cleaner/team-cleanings")}
+                className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+              >
+                Limpiezas del equipo
+              </button>
+            )}
             <div className="border-t border-neutral-200 my-2" />
             <button
               type="button"

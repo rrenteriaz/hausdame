@@ -511,13 +511,22 @@ export async function deleteTeamMember(formData: FormData) {
   const id = String(formData.get("memberId") || "");
   if (!id) redirectBack(formData);
 
-  // Verificar si el miembro tiene limpiezas asignadas
-  const cleaningsCount = await (prisma as any).cleaning.count({
-    where: {
-      assignedTeamMemberId: id,
-      tenantId: tenantId,
-    },
+  // Verificar si el miembro tiene limpiezas asignadas (vía TeamMembership canónico)
+  const teamMember = await (prisma as any).teamMember.findFirst({
+    where: { id, tenantId },
+    select: { userId: true, teamId: true },
   });
+  const membership = teamMember
+    ? await prisma.teamMembership.findFirst({
+        where: { userId: teamMember.userId, teamId: teamMember.teamId, status: "ACTIVE" },
+        select: { id: true },
+      })
+    : null;
+  const cleaningsCount = membership
+    ? await (prisma as any).cleaning.count({
+        where: { assignedMembershipId: membership.id, tenantId, status: { in: ["PENDING", "IN_PROGRESS"] } },
+      })
+    : 0;
 
   if (cleaningsCount > 0) {
     // No se puede eliminar si tiene limpiezas asignadas

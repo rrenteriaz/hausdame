@@ -141,7 +141,6 @@ export default async function CleanerCleaningDetailPage({
         scheduledDate: true,
         status: true,
         notes: true,
-        assignedMemberId: true,
         assignedMembershipId: true,
         assignmentStatus: true,
         startedAt: true,
@@ -255,25 +254,16 @@ export default async function CleanerCleaningDetailPage({
     };
   }
 
-  // En membership mode: verificar si assignedMembershipId coincide con nuestra membership
-  // En legacy mode: verificar si assignedMemberId coincide con legacyMember
-  const membershipAccess =
-    mode === "membership" ? await getActiveMembershipsForUser(user.id) : null;
+  const membershipAccess = await getActiveMembershipsForUser(user.id);
   const canSeeSecrets =
     !isPreviewMode &&
-    (mode === "membership"
-      ? cleaning.assignmentStatus === "ASSIGNED" &&
-        !!cleaning.assignedMembershipId &&
-        (membershipAccess?.membershipIds || []).includes(cleaning.assignedMembershipId)
-      : !!currentMemberId && cleaning.assignedMemberId === currentMemberId);
+    cleaning.assignmentStatus === "ASSIGNED" &&
+    !!cleaning.assignedMembershipId &&
+    (membershipAccess?.membershipIds || []).includes(cleaning.assignedMembershipId);
 
   const isHistoricalMembership = membership?.status === "REMOVED";
-  const isAssignedByMembership =
-    !!membership && cleaning.assignedMembershipId === membership.id;
-  const isAssignedByMember =
-    !!currentMemberId && cleaning.assignedMemberId === currentMemberId;
-  const isAssignedToMe = isAssignedByMembership || isAssignedByMember;
-  
+  const isAssignedToMe = !!membership && cleaning.assignedMembershipId === membership.id;
+
   // En modo preview, no puede ver secretos
   if (!canSeeSecrets && !isPreviewMode) {
     (cleaning as any).property = {
@@ -288,8 +278,7 @@ export default async function CleanerCleaningDetailPage({
   const canAccept =
     !isHistoricalMembership &&
     isOpen &&
-    !cleaning.assignedMembershipId &&
-    !cleaning.assignedMemberId;
+    !cleaning.assignedMembershipId;
   const canOperate =
     !isPreviewMode &&
     isAssignedToMe &&

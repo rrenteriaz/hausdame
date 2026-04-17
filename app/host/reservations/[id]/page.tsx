@@ -122,7 +122,6 @@ export default async function ReservationDetailPage({
           status: true,
           scheduledDate: true,
           scheduledAtPlanned: true,
-          assignedMemberId: true,
           assignedMembershipId: true,
           teamId: true,
           propertyId: true,
@@ -263,10 +262,8 @@ export default async function ReservationDetailPage({
               {reservation.cleanings.map((cleaning) => {
                 const scheduledAt = (cleaning as any).scheduledAtPlanned || cleaning.scheduledDate;
                 const assignedMember = (cleaning as any).assignedMember;
-                // Alineado con getCleaningAttentionReasons() línea 188:
-                // Si hay alguien asignado (assignedMembershipId OR assignedMemberId), NO mostrar alerta
                 const needsAttention = (cleaning as any).needsAttention &&
-                  !cleaning.assignedMembershipId && !cleaning.assignedMemberId;
+                  !cleaning.assignedMembershipId;
 
                 return (
                   <li key={cleaning.id}>

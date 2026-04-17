@@ -204,6 +204,95 @@ export async function toggleTeamMemberStatus(formData: FormData) {
   return { ok: true as const };
 }
 
+/**
+ * El TL define el ejecutor preferido para una propiedad de su equipo.
+ * Crea o actualiza PropertyAssignmentConfig.
+ *
+ * FormData: teamId, propertyId, preferredMembershipId
+ */
+export async function setPreferredExecutor(formData: FormData) {
+  const ctx = await resolveCleanerContext();
+
+  const teamId = formData.get("teamId")?.toString();
+  const propertyId = formData.get("propertyId")?.toString();
+  const preferredMembershipId = formData.get("preferredMembershipId")?.toString();
+
+  if (!teamId || !propertyId || !preferredMembershipId) {
+    throw new Error("Faltan datos para configurar el ejecutor preferido.");
+  }
+
+  const leaderMembership = await prisma.teamMembership.findFirst({
+    where: { teamId, userId: ctx.user.id, role: "TEAM_LEADER", status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (!leaderMembership) {
+    throw new Error("No tienes permisos para configurar ejecutor preferido.");
+  }
+
+  // Validar que el membership preferido es ACTIVE y pertenece al mismo team
+  const targetMembership = await prisma.teamMembership.findFirst({
+    where: { id: preferredMembershipId, teamId, status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (!targetMembership) {
+    throw new Error("El miembro seleccionado no es válido.");
+  }
+
+  // Obtener hostTenantId y servicesTenantId desde WorkGroupExecutor
+  const wge = await prisma.workGroupExecutor.findFirst({
+    where: { teamId, status: "ACTIVE" },
+    select: { hostTenantId: true, servicesTenantId: true },
+  });
+  const hostTenantId = wge?.hostTenantId ?? "";
+  const servicesTenantId = wge?.servicesTenantId ?? ctx.homeTenantId ?? "";
+
+  await (prisma as any).propertyAssignmentConfig.upsert({
+    where: { propertyId_teamId: { propertyId, teamId } },
+    update: { preferredMembershipId, updatedAt: new Date() },
+    create: {
+      propertyId,
+      teamId,
+      preferredMembershipId,
+      hostTenantId,
+      servicesTenantId,
+    },
+  });
+
+  revalidatePath(`/cleaner/teams/${teamId}`);
+  return { ok: true as const };
+}
+
+/**
+ * El TL elimina la preferencia de ejecutor para una propiedad de su equipo.
+ *
+ * FormData: teamId, propertyId
+ */
+export async function removePreferredExecutor(formData: FormData) {
+  const ctx = await resolveCleanerContext();
+
+  const teamId = formData.get("teamId")?.toString();
+  const propertyId = formData.get("propertyId")?.toString();
+
+  if (!teamId || !propertyId) {
+    throw new Error("Faltan datos para eliminar el ejecutor preferido.");
+  }
+
+  const leaderMembership = await prisma.teamMembership.findFirst({
+    where: { teamId, userId: ctx.user.id, role: "TEAM_LEADER", status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (!leaderMembership) {
+    throw new Error("No tienes permisos para eliminar el ejecutor preferido.");
+  }
+
+  await (prisma as any).propertyAssignmentConfig.deleteMany({
+    where: { propertyId, teamId },
+  });
+
+  revalidatePath(`/cleaner/teams/${teamId}`);
+  return { ok: true as const };
+}
+
 export async function updateTeamStatus(formData: FormData) {
   const ctx = await resolveCleanerContext();
 

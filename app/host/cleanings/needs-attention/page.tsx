@@ -109,7 +109,6 @@ export default async function CleaningsNeedingAttentionPage() {
           id: true,
           teamId: true,
           assignedMembershipId: true,
-          assignedMemberId: true,
           status: true,
           startedAt: true,
           completedAt: true,
@@ -144,7 +143,6 @@ export default async function CleaningsNeedingAttentionPage() {
   type CleaningAssignmentDetails = {
     teamId: string | null;
     assignedMembershipId: string | null;
-    assignedMemberId: string | null;
     status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | null;
     startedAt: Date | null;
     completedAt: Date | null;
@@ -181,7 +179,6 @@ export default async function CleaningsNeedingAttentionPage() {
         assignmentLevel = getCleaningAssignmentLevel({
           teamId: details?.teamId || null,
           assignedMembershipId: details?.assignedMembershipId || null,
-          assignedMemberId: details?.assignedMemberId || null,
           status: (details?.status || cleaning.status) as "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
           startedAt: details?.startedAt || null,
           completedAt: details?.completedAt || null,
@@ -322,7 +319,7 @@ export default async function CleaningsNeedingAttentionPage() {
                     <div className="px-4 pb-4 bg-neutral-50 border-b border-neutral-200">
                       <TeamMemberSelect
                         teamMembers={cleaning.eligibleMembers}
-                        defaultValue={cleaning.assignedMemberId || ""}
+                        defaultValue={""}
                         cleaningId={cleaning.id}
                         returnTo={returnTo}
                       />

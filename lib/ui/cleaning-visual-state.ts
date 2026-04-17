@@ -5,22 +5,26 @@
  * NO contiene lógica de negocio — solo mapea estados a clases visuales.
  */
 
+import { hasEffectiveAssignee } from "@/lib/cleanings/getEffectiveAssignee";
+
 // ─── Tipos de estado ────────────────────────────────────────────────────────
 
 /** Perspectiva del Cleaner */
 export type CleanerKind =
-  | "mine_pending"      // Asignada a mí, PENDING
+  | "mine_pending"      // Asignada a mí, PENDING, fecha futura
   | "mine_inprogress"   // Asignada a mí, IN_PROGRESS
-  | "available"         // OPEN, PENDING, claimable, futura
-  | "available_overdue" // OPEN, PENDING, claimable, fecha pasada
+  | "mine_overdue"      // Asignada a mí, PENDING, fecha pasada (no completada)
+  | "available"         // OPEN, PENDING, claimable, fecha futura
+  | "available_overdue" // OPEN, PENDING, claimable, fecha pasada, dentro de ventana
   | "other_member"      // Asignada a otro del mismo equipo
   | "completed"         // COMPLETED
   | "lost"              // OPEN pero fuera de ventana temporal (no reclamable)
-  | "open_past"         // OPEN, PENDING, pasada, dentro de ventana (claimable)
+  | "open_past"         // alias legacy de available_overdue (no usar en código nuevo)
 
 /** Perspectiva del Host */
 export type HostKind =
-  | "unassigned"        // OPEN, sin cleaner, PENDING
+  | "unassigned"        // OPEN, sin cleaner, PENDING (futuro)
+  | "overdue"           // PENDING con fecha ya pasada (vencida)
   | "assigned_pending"  // ASSIGNED, PENDING
   | "in_progress"       // IN_PROGRESS
   | "completed"         // COMPLETED
@@ -77,19 +81,37 @@ export function truncateBadge(text: string, maxChars = 7): string {
 
 export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
   switch (kind) {
-    // ── Mía, pendiente: azul suave
+    // ── Mía, pendiente: texto neutro, sin badge
     case "mine_pending":
       return {
-        badgeFull: "Mía",
+        badgeFull: "",
         badgeShort: "Mía",
-        pillBg: "bg-blue-100",
-        pillText: "text-blue-900",
+        pillBg: "",
+        pillText: "text-neutral-900",
         cardBg: "bg-blue-50",
         cardBorder: "border-blue-200",
-        cardText: "text-blue-900",
+        cardText: "text-neutral-900",
         accentBorder: "border-l-blue-500",
-        badgeBg: "bg-blue-500",
-        badgeTextColor: "text-white",
+        badgeBg: "bg-neutral-100",
+        badgeTextColor: "text-neutral-600",
+        isActionable: false,
+        dimmed: false,
+        strikethrough: false,
+      };
+
+    // ── Mía, vencida: sin fondo, punto rojo en callsite
+    case "mine_overdue":
+      return {
+        badgeFull: "Vencida",
+        badgeShort: "Venc.",
+        pillBg: "",
+        pillText: "text-neutral-700",
+        cardBg: "bg-white",
+        cardBorder: "border-neutral-200",
+        cardText: "text-neutral-700",
+        accentBorder: "border-l-red-400",
+        badgeBg: "bg-red-50",
+        badgeTextColor: "text-red-600",
         isActionable: false,
         dimmed: false,
         strikethrough: false,
@@ -98,7 +120,7 @@ export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
     // ── Mía, en progreso: azul fuerte (MÁS peso visual)
     case "mine_inprogress":
       return {
-        badgeFull: "Mía · En progreso",
+        badgeFull: "En progreso",
         badgeShort: "Prog.",
         pillBg: "bg-blue-200",
         pillText: "text-blue-900",
@@ -113,28 +135,28 @@ export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
         strikethrough: false,
       };
 
-    // ── Disponible (futura): verde sólido — claramente accionable
+    // ── Disponible (futura): ámbar — mismo tratamiento que available_overdue
     case "available":
       return {
         badgeFull: "Disponible",
         badgeShort: "Libre",
-        pillBg: "bg-emerald-100",
-        pillText: "text-emerald-900",
-        cardBg: "bg-emerald-50",
-        cardBorder: "border-emerald-300",
-        cardText: "text-emerald-900",
-        accentBorder: "border-l-emerald-500",
-        badgeBg: "bg-emerald-500",
-        badgeTextColor: "text-white",
+        pillBg: "bg-amber-100",
+        pillText: "text-amber-900",
+        cardBg: "bg-amber-50",
+        cardBorder: "border-amber-300",
+        cardText: "text-amber-900",
+        accentBorder: "border-l-amber-500",
+        badgeBg: "bg-amber-100",
+        badgeTextColor: "text-amber-800",
         isActionable: true,
         dimmed: false,
         strikethrough: false,
       };
 
-    // ── Disponible, atrasada: ámbar sólido
+    // ── Disponible, atrasada: ámbar — visual unificado con available
     case "available_overdue":
       return {
-        badgeFull: "Disponible · Atrasada",
+        badgeFull: "Disponible",
         badgeShort: "Atras.",
         pillBg: "bg-amber-100",
         pillText: "text-amber-900",
@@ -142,8 +164,8 @@ export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
         cardBorder: "border-amber-300",
         cardText: "text-amber-900",
         accentBorder: "border-l-amber-500",
-        badgeBg: "bg-amber-500",
-        badgeTextColor: "text-white",
+        badgeBg: "bg-amber-100",
+        badgeTextColor: "text-amber-800",
         isActionable: true,
         dimmed: false,
         strikethrough: false,
@@ -152,7 +174,7 @@ export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
     // ── Open pasada (dentro de ventana): igual que available_overdue
     case "open_past":
       return {
-        badgeFull: "Disponible · Atrasada",
+        badgeFull: "Disponible",
         badgeShort: "Atras.",
         pillBg: "bg-amber-100",
         pillText: "text-amber-900",
@@ -160,8 +182,8 @@ export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
         cardBorder: "border-amber-300",
         cardText: "text-amber-900",
         accentBorder: "border-l-amber-500",
-        badgeBg: "bg-amber-500",
-        badgeTextColor: "text-white",
+        badgeBg: "bg-amber-100",
+        badgeTextColor: "text-amber-800",
         isActionable: true,
         dimmed: false,
         strikethrough: false,
@@ -227,71 +249,89 @@ export function getCleanerVisual(kind: CleanerKind): CleaningVisual {
 
 export function getHostVisual(kind: HostKind): CleaningVisual {
   switch (kind) {
-    // ── Sin cleaner: naranja sólido — requiere acción del Host
+    // ── Vencida: borde rojo suave, fondo blanco — el punto rojo lo añade el callsite
+    case "overdue":
+      return {
+        badgeFull: "Vencida",
+        badgeShort: "Venc.",
+        pillBg: "bg-white",
+        pillText: "text-neutral-700",
+        cardBg: "bg-white",
+        cardBorder: "border-neutral-200",
+        cardText: "text-neutral-700",
+        accentBorder: "border-l-red-400",
+        badgeBg: "bg-red-50",
+        badgeTextColor: "text-red-600",
+        isActionable: false,
+        dimmed: false,
+        strikethrough: false,
+      };
+
+    // ── Sin cleaner / requiere atención: ámbar — visualmente unificado con needsAttention
     case "unassigned":
       return {
         badgeFull: "Sin cleaner",
         badgeShort: "S/C",
-        pillBg: "bg-orange-100",
-        pillText: "text-orange-900",
-        cardBg: "bg-orange-50",
-        cardBorder: "border-orange-300",
-        cardText: "text-orange-900",
-        accentBorder: "border-l-orange-500",
-        badgeBg: "bg-orange-500",
+        pillBg: "bg-amber-100",
+        pillText: "text-amber-900",
+        cardBg: "bg-amber-50",
+        cardBorder: "border-amber-300",
+        cardText: "text-amber-900",
+        accentBorder: "border-l-amber-500",
+        badgeBg: "bg-amber-500",
         badgeTextColor: "text-white",
         isActionable: false,
         dimmed: false,
         strikethrough: false,
       };
 
-    // ── Asignada (pendiente): cielo azul — informativa (el nombre reemplaza "Asig." en callsite)
+    // ── Asignada (pendiente): texto plano, sin fondo ni color
     case "assigned_pending":
       return {
         badgeFull: "Asignada",
         badgeShort: "Asig.",
-        pillBg: "bg-sky-100",
-        pillText: "text-sky-900",
-        cardBg: "bg-sky-50",
-        cardBorder: "border-sky-200",
-        cardText: "text-sky-900",
-        accentBorder: "border-l-sky-500",
-        badgeBg: "bg-sky-600",
-        badgeTextColor: "text-white",
+        pillBg: "",
+        pillText: "text-neutral-700",
+        cardBg: "bg-white",
+        cardBorder: "border-neutral-200",
+        cardText: "text-neutral-900",
+        accentBorder: "border-l-neutral-200",
+        badgeBg: "bg-neutral-100",
+        badgeTextColor: "text-neutral-600",
         isActionable: false,
         dimmed: false,
         strikethrough: false,
       };
 
-    // ── En progreso: azul fuerte — más peso que "asignada"
+    // ── En progreso: neutro — punto verde + negrita se aplican en el callsite
     case "in_progress":
       return {
         badgeFull: "En progreso",
         badgeShort: "Prog.",
-        pillBg: "bg-blue-200",
-        pillText: "text-blue-900",
-        cardBg: "bg-blue-100",
-        cardBorder: "border-blue-400",
-        cardText: "text-blue-900",
-        accentBorder: "border-l-blue-700",
-        badgeBg: "bg-blue-700",
-        badgeTextColor: "text-white",
+        pillBg: "bg-white",
+        pillText: "text-neutral-900",
+        cardBg: "bg-white",
+        cardBorder: "border-neutral-200",
+        cardText: "text-neutral-900",
+        accentBorder: "border-l-neutral-300",
+        badgeBg: "bg-neutral-100",
+        badgeTextColor: "text-neutral-700",
         isActionable: false,
         dimmed: false,
         strikethrough: false,
       };
 
-    // ── Completada: verde suave
+    // ── Completada: neutro — pill verde SOLO en el nombre, aplicado en el callsite
     case "completed":
       return {
         badgeFull: "Completada",
         badgeShort: "OK",
-        pillBg: "bg-emerald-50",
-        pillText: "text-emerald-700",
-        cardBg: "bg-emerald-50",
-        cardBorder: "border-emerald-200",
-        cardText: "text-emerald-800",
-        accentBorder: "border-l-emerald-400",
+        pillBg: "bg-white",
+        pillText: "text-neutral-500",
+        cardBg: "bg-white",
+        cardBorder: "border-neutral-200",
+        cardText: "text-neutral-500",
+        accentBorder: "border-l-neutral-200",
         badgeBg: "bg-emerald-100",
         badgeTextColor: "text-emerald-700",
         isActionable: false,
@@ -329,9 +369,13 @@ export function calendarKindToCleanerKind(
   isOverdue?: boolean
 ): CleanerKind {
   switch (calendarKind) {
-    case "my":        return status === "IN_PROGRESS" ? "mine_inprogress" : "mine_pending";
+    case "my":
+      if (status === "COMPLETED")   return "completed";
+      if (status === "IN_PROGRESS") return "mine_inprogress";
+      if (isOverdue)                return "mine_overdue";
+      return "mine_pending";
     case "available": return isOverdue ? "available_overdue" : "available";
-    case "open":      return "open_past";
+    case "open":      return "available_overdue"; // past claimable = available_overdue
     case "member":    return "other_member";
     case "lost":      return "lost";
     default:          return "mine_pending";
@@ -341,16 +385,23 @@ export function calendarKindToCleanerKind(
 export function hostKindFromCleaning(cleaning: {
   status: string;
   assignmentStatus?: string | null;
-  assignedMemberId?: string | null;
   assignedMembershipId?: string | null;
+  /** Fecha programada. Si se proporciona y ya pasó en estado PENDING → "overdue". */
+  scheduledDate?: Date | null;
 }): HostKind {
   if (cleaning.status === "CANCELLED") return "cancelled";
   if (cleaning.status === "COMPLETED") return "completed";
   if (cleaning.status === "IN_PROGRESS") return "in_progress";
+  // PENDING con fecha ya pasada → vencida (prioridad sobre unassigned/assigned)
+  if (
+    cleaning.status === "PENDING" &&
+    cleaning.scheduledDate != null &&
+    cleaning.scheduledDate < new Date()
+  ) return "overdue";
+  // Usar helper canónico: prioriza membership, fallback a legacy
   if (
     (cleaning.assignmentStatus === "OPEN" || !cleaning.assignmentStatus) &&
-    !cleaning.assignedMemberId &&
-    !cleaning.assignedMembershipId
+    !hasEffectiveAssignee(cleaning)
   ) return "unassigned";
   return "assigned_pending";
 }
@@ -358,8 +409,9 @@ export function hostKindFromCleaning(cleaning: {
 // ─── Leyenda ─────────────────────────────────────────────────────────────────
 
 export const CLEANER_LEGEND = [
-  { kind: "mine_pending" as CleanerKind,      label: "Mía (pendiente)" },
+  { kind: "mine_pending" as CleanerKind,      label: "Mía" },
   { kind: "mine_inprogress" as CleanerKind,   label: "Mía · En progreso" },
+  { kind: "mine_overdue" as CleanerKind,      label: "Mía · Vencida" },
   { kind: "available" as CleanerKind,         label: "Disponible" },
   { kind: "available_overdue" as CleanerKind, label: "Disponible · Atrasada" },
   { kind: "other_member" as CleanerKind,      label: "Otro cleaner" },
@@ -368,8 +420,9 @@ export const CLEANER_LEGEND = [
 ] as const;
 
 export const HOST_LEGEND = [
-  { kind: "unassigned" as HostKind,       label: "Sin cleaner" },
-  { kind: "assigned_pending" as HostKind, label: "Asignada (nombre del cleaner)" },
+  { kind: "unassigned" as HostKind,       label: "Requiere atención / Sin cleaner" },
+  { kind: "overdue" as HostKind,          label: "Vencida (fecha pasada, pendiente)" },
+  { kind: "assigned_pending" as HostKind, label: "Asignada" },
   { kind: "in_progress" as HostKind,      label: "En progreso" },
   { kind: "completed" as HostKind,        label: "Completada" },
 ] as const;

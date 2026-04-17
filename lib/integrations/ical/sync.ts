@@ -6,8 +6,11 @@
 
 import prisma from "@/lib/prisma";
 import { parseIcalUrl } from "@/lib/ical-parser";
-import { getEligibleMembersForCleaning } from "@/lib/cleaning-eligibility";
 import { createChecklistSnapshotForCleaning } from "@/lib/checklist-snapshot";
+import { resolveAutoAssignment } from "@/lib/cleanings/resolveAutoAssignment";
+import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
+import { buildCleaningScheduledDate } from "@/lib/datetime/buildCleaningScheduledDate";
+import { assertValidScheduledDate, assertAssignmentCoherence } from "@/lib/cleanings/assertCleaningInvariants";
 
 export type SyncReason = "cron" | "bulk" | "manual";
 
@@ -24,16 +27,15 @@ function calculateCleaningDate(
     if (!isNaN(h)) hours = h;
     if (!isNaN(m)) minutes = m;
   }
-  // endDate es UTC midnight (VALUE=DATE). Extraer el día en UTC para construir
-  // la fecha de limpieza en hora local sobre ese día calendario correcto.
-  return new Date(
+  // endDate es UTC midnight (VALUE=DATE desde iCal con setUTCHours(0,0,0,0)).
+  // Extraer el día en UTC para obtener el día calendario correcto,
+  // luego aplicar la hora operativa en CDMX via buildCleaningScheduledDate.
+  return buildCleaningScheduledDate(
     endDate.getUTCFullYear(),
     endDate.getUTCMonth(),
     endDate.getUTCDate(),
     hours,
-    minutes,
-    0,
-    0
+    minutes
   );
 }
 
@@ -228,44 +230,43 @@ async function executeSyncCore(
             parsed.endDate,
             property.checkOutTime
           );
-          const eligibleMembers = await getEligibleMembersForCleaning(
-            tenantId,
-            propertyId,
-            scheduledAtOriginal
-          );
 
-          let assignedMemberId: string | null = null;
-          let assignmentStatus: "OPEN" | "ASSIGNED" = "OPEN";
-          let needsAttention = false;
-          let attentionReason: string | null = null;
+          // Resolver team para la propiedad (WGE + PropertyTeam legacy, sin flag)
+          const { teamIds } = await resolveAvailableTeamsForProperty(tenantId, propertyId);
+          const resolvedTeamId = teamIds.length > 0 ? teamIds[0] : null;
 
-          if (eligibleMembers.length === 1) {
-            assignedMemberId = eligibleMembers[0].id;
-            assignmentStatus = "ASSIGNED";
-          } else if (eligibleMembers.length === 0) {
-            needsAttention = true;
-            attentionReason = "NO_AVAILABLE_MEMBER";
-          }
+          // Auto-asignación con preferred executor → 1 membership → OPEN
+          const assignment = await resolveAutoAssignment(propertyId, resolvedTeamId);
 
-          const cleaningData = {
-            tenantId,
-            propertyId,
-            reservationId: newReservation.id,
-            scheduledAtOriginal,
-            scheduledAtPlanned: scheduledAtOriginal,
-            scheduledDate: scheduledAtOriginal,
-            status: "PENDING" as const,
-            assignmentStatus: assignmentStatus as "OPEN" | "ASSIGNED",
-            assignedMemberId: assignedMemberId || null,
-            needsAttention,
-            attentionReason: attentionReason || null,
-            propertyName: property.name,
-            propertyShortName: property.shortName ?? null,
-            propertyAddress: property.address ?? null,
-          };
+          assertValidScheduledDate(scheduledAtOriginal, "ical-sync createCleaning");
+          assertAssignmentCoherence({ assignedMembershipId: assignment.assignedMembershipId, needsAttention: assignment.needsAttention, attentionReason: assignment.attentionReason }, "ical-sync createCleaning");
 
           const createdCleaning = await (prisma as any).cleaning.create({
-            data: cleaningData,
+            data: {
+              tenantId,
+              propertyId,
+              reservationId: newReservation.id,
+              scheduledAtOriginal,
+              scheduledAtPlanned: scheduledAtOriginal,
+              scheduledDate: scheduledAtOriginal,
+              status: "PENDING" as const,
+              assignmentStatus: assignment.assignmentStatus,
+              teamId: assignment.teamId,
+              assignedMembershipId: assignment.assignedMembershipId,
+              needsAttention: assignment.needsAttention,
+              attentionReason: assignment.attentionReason,
+              propertyName: property.name,
+              propertyShortName: property.shortName ?? null,
+              propertyAddress: property.address ?? null,
+            },
+          });
+
+          console.log("[assignment-model] ical-sync createCleaning", {
+            cleaningId: createdCleaning.id,
+            origin: "ical",
+            teamId: assignment.teamId,
+            assignedMembershipId: assignment.assignedMembershipId,
+            assignmentStatus: assignment.assignmentStatus,
           });
 
           await createChecklistSnapshotForCleaning(

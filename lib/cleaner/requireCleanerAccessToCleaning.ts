@@ -19,7 +19,6 @@ export interface CleanerCleaningAccess {
     scheduledDate: Date;
     status: string;
     notes: string | null;
-    assignedMemberId: string | null;
     assignedMembershipId: string | null;
     assignmentStatus: string;
     startedAt: Date | null;
@@ -93,7 +92,6 @@ export async function requireCleanerAccessToCleaning(
       scheduledDate: true,
       status: true,
       notes: true,
-      assignedMemberId: true,
       assignedMembershipId: true,
       assignmentStatus: true,
       startedAt: true,
@@ -228,8 +226,7 @@ export async function requireCleanerAccessToCleaning(
       isAssignedToViewer;
     const isOpenUnassigned =
       cleaning.assignmentStatus === "OPEN" &&
-      !cleaning.assignedMembershipId &&
-      !cleaning.assignedMemberId;
+      !cleaning.assignedMembershipId;
 
     if (!isAssignedToMe && !isOpenUnassigned) {
       forbidden("No tienes acceso a esta limpieza.");

@@ -1,309 +1,178 @@
-// app/host/reservations/page.tsx
+// app/host/reservations/page.tsx — Vista timeline de reservas (principal)
+import { notFound } from "next/navigation";
+import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import ReservationFilters from "./ReservationFilters";
 import Page from "@/lib/ui/Page";
-import ListContainer from "@/lib/ui/ListContainer";
-import ListRow from "@/lib/ui/ListRow";
-import ListThumb from "@/lib/ui/ListThumb";
-import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
-import CollapsibleSection from "@/lib/ui/CollapsibleSection";
+import ReservationsTimelineGrid from "./timeline/ReservationsTimelineGrid";
+import TimelineScrollContainer from "./timeline/TimelineScrollContainer";
 import {
-  formatReservationDateRange,
-  getReservationMonthKey,
-  startOfUTCDay,
-  startOfUTCYear,
-} from "@/lib/ui/formatReservationDate";
-
-function formatStatus(status: string): string {
-  switch (status) {
-    case "CONFIRMED":
-      return "Confirmada";
-    case "CANCELLED":
-      return "Cancelada";
-    case "BLOCKED":
-      return "Bloqueada";
-    default:
-      return status;
-  }
-}
-
-function getStatusBadgeClass(status: string): string {
-  switch (status) {
-    case "CONFIRMED":
-      return "bg-emerald-100 text-emerald-800";
-    case "CANCELLED":
-      return "bg-red-100 text-red-800";
-    case "BLOCKED":
-      return "bg-neutral-100 text-neutral-800";
-    default:
-      return "bg-neutral-100 text-neutral-800";
-  }
-}
-
-function getCleaningStatusText(cleanings: Array<{ status: string; needsAttention: boolean; assignedMembershipId: string | null; assignedMemberId: string | null; attentionReason: string | null }>): {
-  text: string;
-  hasAttention: boolean;
-} {
-  if (cleanings.length === 0) {
-    return { text: "", hasAttention: false };
-  }
-
-  // Alineado con getCleaningAttentionReasons() línea 188:
-  // Si hay alguien asignado (assignedMembershipId OR assignedMemberId), NO mostrar alerta
-  // (la función canónica no agrega razones cuando la cleaning ya está asignada)
-  const hasAttention = cleanings.some((c) =>
-    c.needsAttention && !c.assignedMembershipId && !c.assignedMemberId
-  );
-  const pending = cleanings.filter((c) => c.status === "PENDING" || c.status === "IN_PROGRESS");
-  const completed = cleanings.filter((c) => c.status === "COMPLETED");
-  const cancelled = cleanings.filter((c) => c.status === "CANCELLED");
-
-  if (pending.length > 0) {
-    return { text: "Limpieza pendiente", hasAttention };
-  }
-  if (completed.length === cleanings.length) {
-    return { text: "Limpieza completada", hasAttention };
-  }
-  if (cancelled.length > 0) {
-    return { text: "Limpieza cancelada", hasAttention };
-  }
-  return { text: "", hasAttention };
-}
+  parseMonthParam,
+  buildMonthWindow,
+  monthParam,
+  DAY_W,
+} from "./timeline/timelineUtils";
 
 export default async function ReservationsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ propertyId?: string; status?: string; dateBucket?: string; year?: string }>;
+  searchParams?: Promise<{
+    month?: string;
+    propertyId?: string;
+  }>;
 }) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
   if (!tenantId) notFound();
 
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const params = searchParams ? await searchParams : undefined;
 
-  // Obtener propiedades para el filtro
-  const properties = await prisma.property.findMany({
-    where: { tenantId: tenantId },
+  // ── Mes enfocado (punto de scroll inicial) ────────────────────────────────
+  const { year, month } = parseMonthParam(params?.month);
+
+  // ── Filtros ────────────────────────────────────────────────────────────────
+  const propertyFilter = params?.propertyId || undefined;
+
+  // ── Ventana amplia: 18 meses atrás + actual + 12 adelante = 31 meses ──────
+  const win = buildMonthWindow(year, month, 18, 12);
+
+  // Scroll inicial al día de hoy
+  const todayUTC = new Date(
+    Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())
+  );
+  const daysToToday = Math.round(
+    (todayUTC.getTime() - win.windowStart.getTime()) / 86_400_000
+  );
+  const scrollToOffsetPx = Math.max(0, daysToToday) * DAY_W;
+
+  function buildUrl(
+    y: number,
+    m: number,
+    overrides: Record<string, string | undefined> = {}
+  ): string {
+    const p = new URLSearchParams();
+    p.set("month", monthParam(y, m));
+    const pid = "propertyId" in overrides ? overrides.propertyId : propertyFilter;
+    if (pid) p.set("propertyId", pid);
+    return `/host/reservations?${p.toString()}`;
+  }
+
+  // ── Datos ──────────────────────────────────────────────────────────────────
+  const allProperties = await prisma.property.findMany({
+    where: { tenantId },
     select: { id: true, name: true, shortName: true },
-    orderBy: { name: "asc" },
   });
 
-  // Límite UTC para filtros PAST/CURRENT_FUTURE (las fechas de reserva son UTC midnight)
-  const today = startOfUTCDay(new Date());
-
-  // Años disponibles (para chips) — usar UTC para evitar desfase en Jan 1
-  const allDates = await prisma.reservation.findMany({
-    where: { tenantId, status: { not: "BLOCKED" } },
-    select: { startDate: true },
+  // Ordenar por nombre de display (shortName || name) alfabéticamente
+  allProperties.sort((a, b) => {
+    const na = (a.shortName || a.name).toLowerCase();
+    const nb = (b.shortName || b.name).toLowerCase();
+    return na.localeCompare(nb, "es");
   });
-  const availableYears = [...new Set(allDates.map((r) => r.startDate.getUTCFullYear()))].sort() as number[];
 
-  const selectedYear = resolvedSearchParams?.year ? parseInt(resolvedSearchParams.year) : null;
+  const visibleProperties = propertyFilter
+    ? allProperties.filter((p) => p.id === propertyFilter)
+    : allProperties;
 
-  // Construir filtros
-  const where: any = { tenantId };
+  const where: any = {
+    tenantId,
+    status: "CONFIRMED",
+    startDate: { lt: win.windowEnd },
+    endDate: { gt: win.windowStart },
+  };
+  if (propertyFilter) where.propertyId = propertyFilter;
 
-  if (resolvedSearchParams?.propertyId) {
-    where.propertyId = resolvedSearchParams.propertyId;
-  }
-
-  // Status: por defecto CONFIRMED
-  const statusFilter = resolvedSearchParams?.status;
-  if (statusFilter === "all") {
-    where.status = { notIn: ["BLOCKED"] };
-  } else if (statusFilter) {
-    where.status = statusFilter;
-  } else {
-    where.status = "CONFIRMED";
-  }
-
-  // Año seleccionado — usar UTC para que Jan 1 T00:00Z quede dentro del año correcto
-  if (selectedYear) {
-    where.startDate = {
-      gte: startOfUTCYear(selectedYear),
-      lt: startOfUTCYear(selectedYear + 1),
-    };
-  }
-
-  // Período: por defecto Próximas (CURRENT_FUTURE)
-  const dateBucket = resolvedSearchParams?.dateBucket || "CURRENT_FUTURE";
-  if (dateBucket === "PAST") {
-    where.endDate = { lt: today };
-  } else if (dateBucket === "CURRENT_FUTURE") {
-    where.endDate = { gte: today };
-  }
-  // "ALL" — sin filtro de fecha
-
-  // Obtener reservas con property y cleanings
   const reservations = await prisma.reservation.findMany({
     where,
-    include: {
-      property: {
-        select: {
-          id: true,
-          name: true,
-          shortName: true,
-          coverAssetGroupId: true,
-        },
-      },
+    select: {
+      id: true,
+      propertyId: true,
+      startDate: true,
+      endDate: true,
+      status: true,
       cleanings: {
         select: {
           id: true,
           status: true,
           needsAttention: true,
           assignedMembershipId: true,
-          assignedMemberId: true,
-          attentionReason: true,
         },
       },
     },
-    orderBy: { startDate: "asc" }, // De más próximas a más futuras
-    take: 100, // Mostrar últimas 100
+    orderBy: { startDate: "asc" },
   });
-
-  // Obtener thumbnails en batch para propiedades de las reservas
-  const propertyIds = reservations.map((r) => r.property.id);
-  const thumbUrls = await getCoverThumbUrlsBatch(
-    reservations.map((r) => ({ 
-      id: r.property.id, 
-      coverAssetGroupId: (r.property as any).coverAssetGroupId || null 
-    }))
-  );
-
-  // Agrupar reservas por mes (usando UTC para evitar desfase por offset del servidor)
-  const reservationsByMonth = new Map<string, typeof reservations>();
-  reservations.forEach((reservation) => {
-    const monthKey = getReservationMonthKey(reservation.startDate);
-    if (!reservationsByMonth.has(monthKey)) {
-      reservationsByMonth.set(monthKey, []);
-    }
-    reservationsByMonth.get(monthKey)!.push(reservation);
-  });
-
-  // Convertir a array y ordenar por fecha del mes (más próximo primero)
-  const monthGroups = Array.from(reservationsByMonth.entries())
-    .map(([monthKey, monthReservations]) => {
-      const firstReservation = monthReservations[0];
-      const monthDate = new Date(
-        Date.UTC(
-          firstReservation.startDate.getUTCFullYear(),
-          firstReservation.startDate.getUTCMonth(),
-          1
-        )
-      );
-      return { monthKey, monthReservations, monthDate };
-    })
-    .sort((a, b) => a.monthDate.getTime() - b.monthDate.getTime());
-
-  // Mes actual para abrir por defecto (usar UTC para coincidir con getReservationMonthKey)
-  const currentMonthKey = getReservationMonthKey(new Date());
-  const hasCurrentMonth = monthGroups.some((g) => g.monthKey === currentMonthKey);
-
-  // Función para formatear el mes en español con capitalización
-  const formatMonthTitle = (monthKey: string): string => {
-    return monthKey.charAt(0).toUpperCase() + monthKey.slice(1);
-  };
 
   return (
-    <Page title="Reservas" subtitle="Sincronizadas desde iCal (solo lectura)">
-      <div className="space-y-6">
-
-      {/* Filtros */}
+    <Page title="Reservas">
       <div className="space-y-3">
-        <ReservationFilters
-          properties={properties}
-          currentPropertyId={resolvedSearchParams?.propertyId}
-          currentStatus={resolvedSearchParams?.status || "CONFIRMED"}
-          currentDateBucket={
-            resolvedSearchParams?.dateBucket === "PAST" ||
-            resolvedSearchParams?.dateBucket === "CURRENT_FUTURE" ||
-            resolvedSearchParams?.dateBucket === "ALL"
-              ? (resolvedSearchParams.dateBucket as "PAST" | "CURRENT_FUTURE" | "ALL")
-              : "CURRENT_FUTURE"
-          }
-          availableYears={availableYears}
-          currentYear={selectedYear}
-        />
-      </div>
 
-      {/* Lista de reservas agrupadas por mes */}
-      <section>
-        {reservations.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-            <p className="text-base text-neutral-600">
-              No se encontraron reservas con los filtros seleccionados.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {monthGroups.map(({ monthKey, monthReservations }, groupIndex) => {
-              const isCurrentMonth = monthKey === currentMonthKey;
-              const shouldOpen = isCurrentMonth || (!hasCurrentMonth && groupIndex === 0);
-              return (
-                <CollapsibleSection
-                  key={monthKey}
-                  title={formatMonthTitle(monthKey)}
-                  count={monthReservations.length}
-                  defaultOpen={shouldOpen}
-                >
-                  <ListContainer>
-                    {monthReservations.map((reservation, index) => {
-                      const cleaningStatus = getCleaningStatusText(reservation.cleanings);
-                      const propertyName = reservation.property.shortName || reservation.property.name;
-                      const isLast = index === monthReservations.length - 1;
-
-                      return (
-                        <ListRow
-                          key={reservation.id}
-                          href={`/host/reservations/${reservation.id}?returnTo=/host/reservations`}
-                          isLast={isLast}
-                          ariaLabel={`Ver detalles de reserva ${propertyName}`}
-                        >
-                          <ListThumb src={thumbUrls.get(reservation.property.id) || null} alt={propertyName} />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <h3 className="text-base font-medium text-neutral-900 truncate">
-                                {propertyName}
-                              </h3>
-                            </div>
-                            <p className="text-xs text-neutral-500 truncate mt-0.5">
-                              {formatReservationDateRange(reservation.startDate, reservation.endDate)}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                                  reservation.status
-                                )}`}
-                              >
-                                {formatStatus(reservation.status)}
-                              </span>
-                              {cleaningStatus.text && (
-                                <span className="text-xs text-neutral-600">
-                                  🧹 {cleaningStatus.text}
-                                </span>
-                              )}
-                              {cleaningStatus.hasAttention && (
-                                <span className="text-xs text-amber-600 font-medium">
-                                  ⚠️ Atención requerida
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </ListRow>
-                      );
-                    })}
-                  </ListContainer>
-                </CollapsibleSection>
-              );
-            })}
+        {/* ── Filtros de propiedad ──────────────────────────────────────── */}
+        {allProperties.length > 1 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Link
+              href={buildUrl(year, month, { propertyId: undefined })}
+              className={[
+                "px-3 py-1.5 text-xs rounded-lg border transition-colors",
+                !propertyFilter
+                  ? "bg-neutral-900 text-white border-neutral-900"
+                  : "border-neutral-200 text-neutral-600 hover:bg-neutral-50",
+              ].join(" ")}
+            >
+              Todas
+            </Link>
+            {allProperties.map((p) => (
+              <Link
+                key={p.id}
+                href={buildUrl(year, month, { propertyId: p.id })}
+                className={[
+                  "px-3 py-1.5 text-xs rounded-lg border transition-colors max-w-[130px] truncate",
+                  propertyFilter === p.id
+                    ? "bg-neutral-900 text-white border-neutral-900"
+                    : "border-neutral-200 text-neutral-600 hover:bg-neutral-50",
+                ].join(" ")}
+                title={p.name}
+              >
+                {p.shortName || p.name}
+              </Link>
+            ))}
           </div>
         )}
-      </section>
-    </div>
+
+        {/* ── Timeline — desplazamiento horizontal y vertical libre ─────── */}
+        <TimelineScrollContainer scrollToOffsetPx={scrollToOffsetPx}>
+          <ReservationsTimelineGrid
+            properties={visibleProperties}
+            reservations={reservations}
+            months={win.months}
+            windowStart={win.windowStart}
+            windowEnd={win.windowEnd}
+            totalDays={win.totalDays}
+          />
+        </TimelineScrollContainer>
+
+        {/* ── Estado vacío ──────────────────────────────────────────────── */}
+        {reservations.length === 0 && visibleProperties.length > 0 && (
+          <p className="text-sm text-neutral-400 text-center py-2">
+            Sin reservas confirmadas en el período seleccionado.
+          </p>
+        )}
+
+        {/* ── Leyenda mínima ────────────────────────────────────────────── */}
+        <div className="flex items-center gap-4 pt-0.5 text-xs text-neutral-400 flex-wrap">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-4 h-3 rounded-sm bg-neutral-800" />
+            Confirmada
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+            Atención requerida
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+            Limpieza pendiente
+          </span>
+        </div>
+      </div>
     </Page>
   );
 }
-

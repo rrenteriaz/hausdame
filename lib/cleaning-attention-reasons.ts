@@ -1,5 +1,4 @@
 // lib/cleaning-attention-reasons.ts
-import { getEligibleMembersForCleaning } from "./cleaning-eligibility";
 
 export type CleaningAttentionReasonCode =
   | "NO_AVAILABLE_MEMBER"
@@ -76,7 +75,6 @@ export async function getCleaningAttentionReasons(
     status: string;
     scheduledDate: Date;
     scheduledAtPlanned?: Date | null;
-    assignedMemberId: string | null;
     assignedMembershipId?: string | null;
     assignedMember?: {
       id: string;
@@ -94,8 +92,7 @@ export async function getCleaningAttentionReasons(
     teamMembershipsCount?: number;
     /** Si hay equipos disponibles (UNION de WorkGroups + PropertyTeam). Si no se proporciona, se calcula desde propertyTeamsCount. */
     hasAvailableTeams?: boolean;
-  },
-  eligibleMembers?: Array<{ id: string }>
+  }
 ): Promise<CleaningAttentionReason[]> {
   const reasons: CleaningAttentionReason[] = [];
   const now = new Date();
@@ -185,7 +182,7 @@ export async function getCleaningAttentionReasons(
 
   // 1) FUENTE PRINCIPAL: Si needsAttention es true, incluir motivos según el nivel
   // PERO: Solo para problemas operativos, NO para configuración cuando hay equipos disponibles
-  if (cleaning.needsAttention && !cleaning.assignedMemberId && !cleaning.assignedMembershipId) {
+  if (cleaning.needsAttention && !cleaning.assignedMembershipId) {
     const mappedReason = mapAttentionReasonToMessage(cleaning.attentionReason);
     // Usar hasAvailableTeams si se proporciona (UNION de WorkGroups + PropertyTeam)
     // Si no, calcular desde propertyTeamsCount (fallback para compatibilidad)
@@ -260,7 +257,6 @@ export async function getCleaningAttentionReasons(
   // B) Limpieza pendiente sin cleaner principal asignado (solo si no hay primary)
   if (
     cleaning.status === "PENDING" &&
-    !cleaning.assignedMemberId &&
     !cleaning.assignedMembershipId &&
     !reasons.some((r) => r.code === "CLEANING_PENDING_NO_ASSIGNMENT" || r.code === "NO_AVAILABLE_MEMBER" || r.code === "NO_PRIMARY_ASSIGNEE")
   ) {
@@ -285,45 +281,6 @@ export async function getCleaningAttentionReasons(
           minute: "2-digit",
         })}`,
       });
-    }
-  }
-
-  // C) Cleaner asignado pero no disponible (verificar disponibilidad)
-  if (
-    cleaning.status === "PENDING" &&
-    cleaning.assignedMemberId &&
-    !reasons.some((r) => r.code === "CLEANING_ASSIGNED_NOT_AVAILABLE" || r.code === "DECLINED_BY_ASSIGNEE")
-  ) {
-    try {
-      // Si no se pasaron eligibleMembers, calcularlos
-      const members = eligibleMembers || await getEligibleMembersForCleaning(
-        tenantId,
-        cleaning.propertyId,
-        scheduledAt
-      );
-
-      const assignedMemberIsEligible = members.some(
-        (m) => m.id === cleaning.assignedMemberId
-      );
-
-      if (!assignedMemberIsEligible && cleaning.assignedMember) {
-        reasons.push({
-          code: "CLEANING_ASSIGNED_NOT_AVAILABLE",
-          title: "El cleaner asignado no está disponible.",
-          severity: "CRITICAL",
-          detail: `${cleaning.assignedMember.name} está asignado pero no está disponible en el horario programado (${scheduledAt.toLocaleString("es-MX", {
-            weekday: "long",
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}).`,
-        });
-      }
-    } catch (error) {
-      // Si hay error al verificar disponibilidad, no agregar motivo (evitar errores en UI)
-      console.error("[getCleaningAttentionReasons] Error verificando disponibilidad:", error);
     }
   }
 

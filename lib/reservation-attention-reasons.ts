@@ -1,6 +1,5 @@
 // lib/reservation-attention-reasons.ts
 import { getCleaningAttentionReasons, CleaningAttentionReason, CleaningAttentionReasonCode } from "./cleaning-attention-reasons";
-import { getEligibleMembersForCleaning } from "./cleaning-eligibility";
 
 export type ReservationAttentionReasonCode = CleaningAttentionReasonCode | "NO_CLEANING_FOR_CHECKOUT" | "MULTIPLE_CLEANINGS";
 
@@ -30,7 +29,6 @@ export async function getReservationAttentionReasons(
       status: string;
       scheduledDate: Date;
       scheduledAtPlanned?: Date | null;
-      assignedMemberId: string | null;
       assignedMembershipId?: string | null;
       teamId?: string | null;
       assignedMember?: {
@@ -84,7 +82,6 @@ export async function getReservationAttentionReasons(
         status: cleaning.status,
         scheduledDate: cleaning.scheduledDate,
         scheduledAtPlanned: cleaning.scheduledAtPlanned || null,
-        assignedMemberId: cleaning.assignedMemberId,
         assignedMembershipId: cleaning.assignedMembershipId || null,
         teamId: cleaning.teamId || null,
         assignedMember: cleaning.assignedMember || null,

@@ -10,11 +10,9 @@ import { getAvailabilityStartDate } from "../availabilityWindow";
 
 export interface CleanerScope {
   propertyIds: string[];
-  tenantIds: string[]; // hostTenantIds cuando hay WGE, servicesTenantIds cuando hay PropertyTeam
+  tenantIds: string[];
   teamIds: string[];
   membershipIds: string[];
-  legacyMemberId: string | null;
-  mode: "membership" | "legacy";
 }
 
 export interface CleanerCleaningsQueryParams {
@@ -43,95 +41,49 @@ export async function getCleanerScope(
 ): Promise<CleanerScope> {
   const ctx = context || (await resolveCleanerContext());
 
+  const teamIds = ctx.mode === "membership" ? ctx.teamIds : (ctx.legacyMember ? [ctx.legacyMember.teamId] : []);
+
+  if (teamIds.length === 0) {
+    return { propertyIds: [], tenantIds: [], teamIds: [], membershipIds: [] };
+  }
+
+  const membershipsAccess = await getActiveMembershipsForUser(
+    ctx.user.id,
+    includeRemoved ? ["ACTIVE", "REMOVED"] : ["ACTIVE"]
+  );
+
+  let propertyIds: string[];
+  let tenantIds: string[];
+
   if (ctx.mode === "membership") {
-    const teamIds = ctx.teamIds;
-    if (teamIds.length === 0) {
-      return {
-        propertyIds: [],
-        tenantIds: [],
-        teamIds: [],
-        membershipIds: [],
-        legacyMemberId: null,
-        mode: "membership",
-      };
-    }
-
-    // Usar helper canónico para obtener propiedades y tenantIds
-    const { propertyIds, tenantIds } = await getAccessiblePropertiesAndTenants(ctx.user.id, teamIds);
-
-    const membershipsAccess = await getActiveMembershipsForUser(
-      ctx.user.id,
-      includeRemoved ? ["ACTIVE", "REMOVED"] : ["ACTIVE"]
-    );
-    const membershipIds = membershipsAccess.membershipIds;
-
-    return {
-      propertyIds,
-      tenantIds,
-      teamIds,
-      membershipIds,
-      legacyMemberId: null,
-      mode: "membership",
-    };
+    const accessible = await getAccessiblePropertiesAndTenants(ctx.user.id, teamIds);
+    propertyIds = accessible.propertyIds;
+    tenantIds = accessible.tenantIds;
   } else {
-    // Legacy mode
-    if (!ctx.legacyMember) {
-      return {
-        propertyIds: [],
-        tenantIds: [],
-        teamIds: [],
-        membershipIds: [],
-        legacyMemberId: null,
-        mode: "legacy",
-      };
-    }
-
+    // Legacy context: resolve via PropertyTeam
     const legacyTeam = await prisma.team.findUnique({
-      where: { id: ctx.legacyMember.teamId },
+      where: { id: teamIds[0] },
       select: { tenantId: true },
     });
-
     if (!legacyTeam?.tenantId) {
-      return {
-        propertyIds: [],
-        tenantIds: [],
-        teamIds: [],
-        membershipIds: [],
-        legacyMemberId: null,
-        mode: "legacy",
-      };
+      return { propertyIds: [], tenantIds: [], teamIds: [], membershipIds: [] };
     }
-
-    // Obtener propiedades vía PropertyTeam (legacy)
     const propertyTeams = await (prisma as any).propertyTeam.findMany({
-      where: {
-        tenantId: legacyTeam.tenantId,
-        teamId: ctx.legacyMember.teamId,
-      },
-      select: {
-        propertyId: true,
-        property: {
-          select: {
-            id: true,
-            isActive: true,
-          },
-        },
-      },
+      where: { tenantId: legacyTeam.tenantId, teamId: teamIds[0] },
+      select: { propertyId: true, property: { select: { id: true, isActive: true } } },
     });
-
-    const propertyIds = propertyTeams
+    propertyIds = propertyTeams
       .filter((pt: any) => pt.property?.isActive !== false)
       .map((pt: any) => pt.propertyId);
-
-    return {
-      propertyIds,
-      tenantIds: [legacyTeam.tenantId],
-      teamIds: [ctx.legacyMember.teamId],
-      membershipIds: [],
-      legacyMemberId: ctx.legacyMember.id,
-      mode: "legacy",
-    };
+    tenantIds = [legacyTeam.tenantId];
   }
+
+  return {
+    propertyIds,
+    tenantIds,
+    teamIds,
+    membershipIds: membershipsAccess.membershipIds,
+  };
 }
 
 /**
@@ -167,33 +119,23 @@ function buildBaseWhereClause(
 
   // Clasificación según scope
   if (params.scope === "assigned" || params.scope === "upcoming") {
-    // Mis limpiezas asignadas
-    if (scope.mode === "membership") {
+    // Mis limpiezas asignadas — único modelo: membershipId
+    if (scope.membershipIds.length > 0) {
       whereClause.assignedMembershipId = { in: scope.membershipIds };
     } else {
-      if (scope.legacyMemberId) {
-        whereClause.assignedMemberId = scope.legacyMemberId;
-      } else {
-        // No hay legacy member, retornar vacío
-        whereClause.id = "impossible-id";
-      }
+      whereClause.id = "impossible-id";
     }
     whereClause.assignmentStatus = "ASSIGNED";
   } else if (params.scope === "available") {
-    // Disponibles (OPEN, sin asignar)
+    // Disponibles (OPEN, sin ejecutor)
     whereClause.assignmentStatus = "OPEN";
     whereClause.assignedMembershipId = null;
-    whereClause.assignedMemberId = null;
   } else if (params.scope === "history") {
     // Historial (COMPLETED o CANCELLED)
-    if (scope.mode === "membership") {
+    if (scope.membershipIds.length > 0) {
       whereClause.assignedMembershipId = { in: scope.membershipIds };
     } else {
-      if (scope.legacyMemberId) {
-        whereClause.assignedMemberId = scope.legacyMemberId;
-      } else {
-        whereClause.id = "impossible-id";
-      }
+      whereClause.id = "impossible-id";
     }
     // Historial solo incluye COMPLETED (o CANCELLED si se especifica)
     if (!params.status || !params.status.includes("CANCELLED")) {
@@ -295,16 +237,6 @@ export async function getCleanerCleaningsList(
           coverAssetGroupId: true,
         },
       },
-      assignedMember: {
-        include: {
-          team: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
       TeamMembership: {
         include: {
           User: {
@@ -357,96 +289,59 @@ export async function getCleanerCleaningsCounts(
     propertyId: { in: scope.propertyIds },
   };
 
+  const membershipFilter = scope.membershipIds.length > 0
+    ? { assignedMembershipId: { in: scope.membershipIds } }
+    : { id: "impossible-id" };
+
   // 1. Asignadas a mí (PENDING o IN_PROGRESS)
-  const assignedWhere = {
-    ...baseWhere,
-    assignmentStatus: "ASSIGNED",
-    status: { in: ["PENDING", "IN_PROGRESS"] },
-  };
-  if (scope.mode === "membership") {
-    assignedWhere.assignedMembershipId = { in: scope.membershipIds };
-  } else {
-    if (scope.legacyMemberId) {
-      assignedWhere.assignedMemberId = scope.legacyMemberId;
-    } else {
-      assignedWhere.id = "impossible-id";
-    }
-  }
   const assignedToMeCount = await (prisma as any).cleaning.count({
-    where: assignedWhere,
+    where: {
+      ...baseWhere,
+      ...membershipFilter,
+      assignmentStatus: "ASSIGNED",
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
   });
 
   // 2. Disponibles (OPEN, sin asignar, ventanas permitidas)
-  const availableWhere = {
-    ...baseWhere,
-    assignmentStatus: "OPEN",
-    assignedMembershipId: null,
-    assignedMemberId: null,
-    status: "PENDING", // Regla: solo PENDING son reclamables (no IN_PROGRESS)
-    scheduledDate: { gte: availabilityStart },
-  };
   const availableCount = await (prisma as any).cleaning.count({
-    where: availableWhere,
+    where: {
+      ...baseWhere,
+      assignmentStatus: "OPEN",
+      assignedMembershipId: null,
+      status: "PENDING",
+      scheduledDate: { gte: availabilityStart },
+    },
   });
 
   // 3. Próximas 7 días (asignadas a mí, PENDING o IN_PROGRESS, desde inicio del día)
-  const upcomingWhere = {
-    ...baseWhere,
-    assignmentStatus: "ASSIGNED",
-    status: { in: ["PENDING", "IN_PROGRESS"] },
-    scheduledDate: {
-      gte: startOfToday,
-      lte: sevenDaysLater,
-    },
-  };
-  if (scope.mode === "membership") {
-    upcomingWhere.assignedMembershipId = { in: scope.membershipIds };
-  } else {
-    if (scope.legacyMemberId) {
-      upcomingWhere.assignedMemberId = scope.legacyMemberId;
-    } else {
-      upcomingWhere.id = "impossible-id";
-    }
-  }
   const upcoming7dCount = await (prisma as any).cleaning.count({
-    where: upcomingWhere,
+    where: {
+      ...baseWhere,
+      ...membershipFilter,
+      assignmentStatus: "ASSIGNED",
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+      scheduledDate: { gte: startOfToday, lte: sevenDaysLater },
+    },
   });
 
   // 4. En progreso (IN_PROGRESS asignadas a mí)
-  const inProgressWhere: any = {
-    ...baseWhere,
-    assignmentStatus: "ASSIGNED",
-    status: "IN_PROGRESS",
-  };
-  if (scope.mode === "membership") {
-    inProgressWhere.assignedMembershipId = { in: scope.membershipIds };
-  } else {
-    if (scope.legacyMemberId) {
-      inProgressWhere.assignedMemberId = scope.legacyMemberId;
-    } else {
-      inProgressWhere.id = "impossible-id";
-    }
-  }
   const inProgressCount = await (prisma as any).cleaning.count({
-    where: inProgressWhere,
+    where: {
+      ...baseWhere,
+      ...membershipFilter,
+      assignmentStatus: "ASSIGNED",
+      status: "IN_PROGRESS",
+    },
   });
 
   // 5. Historial (COMPLETED asignadas a mí)
-  const historyWhere = {
-    ...baseWhere,
-    status: "COMPLETED",
-  };
-  if (scope.mode === "membership") {
-    historyWhere.assignedMembershipId = { in: scope.membershipIds };
-  } else {
-    if (scope.legacyMemberId) {
-      historyWhere.assignedMemberId = scope.legacyMemberId;
-    } else {
-      historyWhere.id = "impossible-id";
-    }
-  }
   const historyCount = await (prisma as any).cleaning.count({
-    where: historyWhere,
+    where: {
+      ...baseWhere,
+      ...membershipFilter,
+      status: "COMPLETED",
+    },
   });
 
   return {

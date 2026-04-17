@@ -369,7 +369,6 @@ export default async function CleaningsPage({
                           const kind = hostKindFromCleaning({
                             status: c.status,
                             assignmentStatus: (c as any).assignmentStatus,
-                            assignedMemberId: (c as any).assignedMemberId,
                             assignedMembershipId: (c as any).assignedMembershipId,
                           });
                           const visual = getHostVisual(kind);
@@ -387,7 +386,7 @@ export default async function CleaningsPage({
                                   👁 {(c as any).viewsCount}
                                 </span>
                               )}
-                              {needsAttention && (
+                              {needsAttention && c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" && (
                                 <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700">
                                   ⚠ Atención
                                 </span>
@@ -663,23 +662,26 @@ function MonthlyCleaningsCalendar({
               date.getMonth() === today.getMonth() &&
               date.getDate() === today.getDate();
 
-            // ── Estilo de celda y chips por prioridad de cada limpieza ──
-            const hasCritical = dayCleanings.some(c => (c as any).needsAttention);
-            const hasWarning = dayCleanings.some(c =>
-              hostKindFromCleaning({
+            // ── Estilo de celda: ámbar solo para atención real; vencidas usan punto rojo ──
+            const hasAttention = dayCleanings.some(c => {
+              // IN_PROGRESS y COMPLETED tienen prioridad visual absoluta
+              if (c.status === "IN_PROGRESS" || c.status === "COMPLETED") return false;
+              const k = hostKindFromCleaning({
                 status: c.status,
                 assignmentStatus: (c as any).assignmentStatus,
-                assignedMemberId: (c as any).assignedMemberId,
                 assignedMembershipId: (c as any).assignedMembershipId,
-              }) === "unassigned"
-            );
+                scheduledDate: c.scheduledDate,
+              });
+              // Vencidas usan punto rojo; el borde ámbar es solo para atención operativa
+              if (k === "overdue") return false;
+              if ((c as any).needsAttention) return true;
+              return k === "unassigned";
+            });
             const cellBorder = isToday
               ? "border-black"
-              : hasCritical
+              : hasAttention
                 ? "border-amber-300"
-                : hasWarning
-                  ? "border-orange-200"
-                  : "border-neutral-200";
+                : "border-neutral-200";
 
             const MAX_CHIPS = 4;
             const visible = dayCleanings.slice(0, MAX_CHIPS);
@@ -705,26 +707,77 @@ function MonthlyCleaningsCalendar({
                       const kind = hostKindFromCleaning({
                         status: c.status,
                         assignmentStatus: (c as any).assignmentStatus,
-                        assignedMemberId: (c as any).assignedMemberId,
                         assignedMembershipId: (c as any).assignedMembershipId,
+                        scheduledDate: c.scheduledDate,
                       });
-                      const attention = (c as any).needsAttention;
-                      const chipStyle = attention
-                        ? "bg-amber-200 text-amber-900"
-                        : kind === "unassigned"
-                          ? "bg-orange-200 text-orange-900"
-                          : kind === "in_progress"
-                            ? "bg-blue-300 text-blue-900"
-                            : kind === "assigned_pending"
-                              ? "bg-violet-100 text-violet-800"
-                              : kind === "completed"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-neutral-100 text-neutral-400";
+                      // Ámbar solo para atención real (vencidas ya no activan ámbar)
+                      const isAttention =
+                        kind !== "overdue" &&
+                        c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" &&
+                        ((c as any).needsAttention || kind === "unassigned");
                       const name = c.property.shortName || c.property.name;
+
+                      // Atención / sin cleaner → ámbar dominante
+                      if (isAttention) {
+                        return (
+                          <span
+                            key={c.id}
+                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate self-start max-w-full bg-amber-200 text-amber-900"
+                            title={name}
+                          >
+                            {name}
+                          </span>
+                        );
+                      }
+
+                      // En progreso → punto verde + negrita
+                      if (kind === "in_progress") {
+                        return (
+                          <span
+                            key={c.id}
+                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight inline-flex items-center gap-[2px] bg-neutral-50 border border-neutral-200 self-start max-w-full"
+                            title={name}
+                          >
+                            <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 shrink-0" />
+                            <span className="font-bold truncate text-neutral-900">{name}</span>
+                          </span>
+                        );
+                      }
+
+                      // Completada → pill verde solo en el nombre
+                      if (kind === "completed") {
+                        return (
+                          <span
+                            key={c.id}
+                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight block"
+                            title={name}
+                          >
+                            <span className="rounded px-[3px] py-[1px] bg-emerald-100 text-emerald-700 font-medium">
+                              {name}
+                            </span>
+                          </span>
+                        );
+                      }
+
+                      // Vencida → punto rojo + nombre neutro
+                      if (kind === "overdue") {
+                        return (
+                          <span
+                            key={c.id}
+                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight flex items-center gap-[2px]"
+                            title={name}
+                          >
+                            <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 shrink-0" />
+                            <span className="truncate text-neutral-700">{name}</span>
+                          </span>
+                        );
+                      }
+
+                      // Asignada → neutro limpio
                       return (
                         <span
                           key={c.id}
-                          className={`rounded px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate block ${chipStyle}`}
+                          className="px-1 py-0 text-[7px] sm:text-[9px] leading-tight truncate block text-neutral-700"
                           title={name}
                         >
                           {name}
@@ -748,18 +801,39 @@ function MonthlyCleaningsCalendar({
       <div className="border-t border-neutral-100 pt-3 mt-1">
         <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">Leyenda</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-          {[
-            { chip: "bg-amber-200 text-amber-900",   label: "Requiere atención" },
-            { chip: "bg-orange-200 text-orange-900",  label: "Sin cleaner" },
-            { chip: "bg-blue-300 text-blue-900",      label: "En progreso" },
-            { chip: "bg-violet-100 text-violet-800",  label: "Asignada" },
-            { chip: "bg-emerald-100 text-emerald-700",label: "Completada" },
-          ].map(({ chip, label }) => (
-            <div key={label} className="flex items-center gap-1">
-              <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${chip}`}>Abc</span>
-              <span className="text-[9px] text-neutral-500">{label}</span>
-            </div>
-          ))}
+          {/* Atención / sin cleaner — ámbar unificado */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-amber-200 text-amber-900">Abc</span>
+            <span className="text-[9px] text-neutral-500">Requiere atención</span>
+          </div>
+          {/* Asignada — texto plano, sin fondo */}
+          <div className="flex items-center gap-1">
+            <span className="px-1.5 py-0.5 text-[9px] text-neutral-700">Abc</span>
+            <span className="text-[9px] text-neutral-500">Asignada</span>
+          </div>
+          {/* Vencida — punto rojo */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] leading-tight flex items-center gap-[3px] bg-white border border-neutral-200">
+              <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 shrink-0" />
+              <span className="text-neutral-700">Abc</span>
+            </span>
+            <span className="text-[9px] text-neutral-500">Vencida</span>
+          </div>
+          {/* En progreso — punto verde + negrita */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] leading-tight flex items-center gap-[3px] bg-neutral-50 border border-neutral-200">
+              <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 shrink-0" />
+              <span className="font-bold text-neutral-900">Abc</span>
+            </span>
+            <span className="text-[9px] text-neutral-500">En progreso</span>
+          </div>
+          {/* Completada — pill verde solo en nombre */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1 py-0.5 text-[9px] leading-tight">
+              <span className="rounded px-[3px] py-[1px] bg-emerald-100 text-emerald-700 font-medium text-[9px]">Abc</span>
+            </span>
+            <span className="text-[9px] text-neutral-500">Completada</span>
+          </div>
         </div>
       </div>
     </div>
@@ -872,34 +946,89 @@ function WeeklyCleaningsView({
                     const kind = hostKindFromCleaning({
                       status: c.status,
                       assignmentStatus: (c as any).assignmentStatus,
-                      assignedMemberId: (c as any).assignedMemberId,
                       assignedMembershipId: (c as any).assignedMembershipId,
+                      scheduledDate: c.scheduledDate,
                     });
-                    const visual = getHostVisual(kind);
+                    const isAttention =
+                      kind !== "overdue" &&
+                      c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" &&
+                      ((c as any).needsAttention || kind === "unassigned");
                     const assigneeName =
                       firstNameOf((c as any).assignedMember?.name ?? (c as any).TeamMembership?.User?.name);
-                    const badgeLabel =
-                      kind === "assigned_pending" && assigneeName
-                        ? truncateBadge(assigneeName)
-                        : visual.badgeShort;
                     const tooltipText = `${label} · ${
-                      kind === "assigned_pending" && assigneeName ? assigneeName : visual.badgeFull
+                      kind === "overdue" ? "Vencida" : kind === "assigned_pending" && assigneeName ? assigneeName : kind === "in_progress" ? "En progreso" : kind === "completed" ? "Completada" : "Sin cleaner"
                     }`;
 
+                    // Vencida → punto rojo + nombre neutro
+                    if (kind === "overdue") {
+                      return (
+                        <li
+                          key={c.id}
+                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-white border border-neutral-200"
+                          title={tooltipText}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
+                          <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 flex-shrink-0" />
+                          <span className="truncate text-neutral-700">{label}</span>
+                        </li>
+                      );
+                    }
+
+                    // Atención / sin cleaner → ámbar en todo el chip
+                    if (isAttention) {
+                      return (
+                        <li
+                          key={c.id}
+                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-amber-100 text-amber-900"
+                          title={tooltipText}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
+                          <span className="truncate font-medium">{label}</span>
+                        </li>
+                      );
+                    }
+
+                    // En progreso → punto verde + negrita
+                    if (kind === "in_progress") {
+                      return (
+                        <li
+                          key={c.id}
+                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-white border border-neutral-200"
+                          title={tooltipText}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
+                          <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 flex-shrink-0" />
+                          <span className="truncate font-bold text-neutral-900">{label}</span>
+                        </li>
+                      );
+                    }
+
+                    // Completada → pill verde solo en el nombre
+                    if (kind === "completed") {
+                      return (
+                        <li
+                          key={c.id}
+                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-white"
+                          title={tooltipText}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
+                          <span className="rounded px-[3px] py-[1px] bg-emerald-100 text-emerald-700 font-medium truncate">{label}</span>
+                        </li>
+                      );
+                    }
+
+                    // Asignada → neutro limpio con nombre (+ cleaner si existe)
                     return (
                       <li
                         key={c.id}
-                        className={`rounded px-1 py-[2px] text-[10px] flex items-center gap-1 ${visual.pillBg} ${visual.pillText} ${visual.strikethrough ? "line-through" : ""}`}
+                        className="px-1 py-[2px] text-[10px] flex items-center gap-1 text-neutral-700"
                         title={tooltipText}
                       >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: colorHex }}
-                        />
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
                         <span className="truncate font-medium">{label}</span>
-                        <span className={`shrink-0 rounded px-[3px] py-[1px] text-[8px] font-semibold leading-none ${visual.badgeBg} ${visual.badgeTextColor}`}>
-                          {badgeLabel}
-                        </span>
+                        {assigneeName && (
+                          <span className="shrink-0 text-neutral-400 text-[8px]">{truncateBadge(assigneeName)}</span>
+                        )}
                       </li>
                     );
                   })}
@@ -944,8 +1073,8 @@ function DailyCleaningsView({
     // Ordenar: las que requieren atención primero
     .sort((a, b) => {
       // Alineado con getCleaningAttentionReasons(): asignada = no mostrar alerta
-      const aEffective = (a as any).needsAttention && !(a as any).assignedMembershipId && !(a as any).assignedMemberId;
-      const bEffective = (b as any).needsAttention && !(b as any).assignedMembershipId && !(b as any).assignedMemberId;
+      const aEffective = (a as any).needsAttention && !(a as any).assignedMembershipId && a.status === "PENDING";
+      const bEffective = (b as any).needsAttention && !(b as any).assignedMembershipId && b.status === "PENDING";
       const aNeedsAttention = aEffective ? 1 : 0;
       const bNeedsAttention = bEffective ? 1 : 0;
       if (aNeedsAttention !== bNeedsAttention) {
@@ -1027,10 +1156,23 @@ function DailyCleaningsView({
 
             const clearConfirmHref = `/host/cleanings?${baseParams.toString()}`;
 
+            {/* Calcular variante de atención para la tarjeta diaria */}
+            const dailyKind = hostKindFromCleaning({
+              status: c.status,
+              assignmentStatus: (c as any).assignmentStatus,
+              assignedMembershipId: (c as any).assignedMembershipId,
+              scheduledDate: c.scheduledDate,
+            });
+            const dailyIsAttention =
+              dailyKind !== "overdue" &&
+              c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" &&
+              (((c as any).needsAttention && !(c as any).assignedMembershipId) || dailyKind === "unassigned");
+            const dailyRowExtra = dailyIsAttention ? " border-amber-300 bg-amber-50" : "";
+
             return (
               <li
                 key={c.id}
-                className={ui.rowClass}
+                className={`${ui.rowClass}${dailyRowExtra}`}
                 title={`${c.property.name} · ${formatStatus(c.status)}`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -1039,14 +1181,26 @@ function DailyCleaningsView({
                     className="min-w-0 flex-1 block rounded-lg -m-1 p-1 hover:bg-neutral-50 active:bg-neutral-100 transition"
                     aria-label={`Ver detalles de limpieza ${c.property.shortName || c.property.name}`}
                   >
-                    <p className={`text-base font-semibold text-black flex items-center gap-1.5 ${ui.titleClass || ""}`}>
-                      <span 
+                    <p className={`text-base flex items-center gap-1.5 ${c.status === "IN_PROGRESS" ? "font-bold text-neutral-900" : "font-semibold text-black"} ${ui.titleClass || ""}`}>
+                      <span
                         className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: colorHex }}
                       />
-                      {c.property.shortName || c.property.name}
-                      {(c as any).needsAttention && !(c as any).assignedMembershipId && !(c as any).assignedMemberId && (
-                        <span className="ml-2 text-amber-600" title="Requiere atención">
+                      {c.status === "IN_PROGRESS" && (
+                        <span className="inline-flex w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                      )}
+                      {dailyKind === "overdue" && (
+                        <span className="inline-flex w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="Vencida" />
+                      )}
+                      {c.status === "COMPLETED" ? (
+                        <span className="rounded px-2 py-0.5 bg-emerald-100 text-emerald-700 text-sm font-medium">
+                          {c.property.shortName || c.property.name}
+                        </span>
+                      ) : (
+                        c.property.shortName || c.property.name
+                      )}
+                      {dailyIsAttention && (
+                        <span className="ml-1 text-amber-600" title="Requiere atención">
                           ⚠️
                         </span>
                       )}

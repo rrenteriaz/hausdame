@@ -13,10 +13,12 @@ export default function CleanerLayoutClient({
   children,
   menuUser,
   inProgressCleanings = [],
+  isTeamLeader = false,
 }: {
   children: React.ReactNode;
   menuUser: { email: string; nickname: string | null; fullName: string | null };
   inProgressCleanings?: { id: string }[];
+  isTeamLeader?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -181,6 +183,7 @@ export default function CleanerLayoutClient({
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         user={menuUser}
+        isTeamLeader={isTeamLeader}
       />
     </div>
   );

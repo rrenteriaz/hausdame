@@ -452,6 +452,12 @@ export type TaskCarryForward = $Result.DefaultSelection<Prisma.$TaskCarryForward
  */
 export type TaskJobEventLog = $Result.DefaultSelection<Prisma.$TaskJobEventLogPayload>
 /**
+ * Model PropertyAssignmentConfig
+ * Configuración de ejecutor preferido por propiedad y equipo.
+ * El TL define qué miembro recibe automáticamente las limpiezas de una propiedad.
+ */
+export type PropertyAssignmentConfig = $Result.DefaultSelection<Prisma.$PropertyAssignmentConfigPayload>
+/**
  * Model TaskRecurringDue
  * Obligación operativa periódica — representa que una actividad ha vencido
  * y debe resolverse dentro de una limpieza real.
@@ -2132,6 +2138,16 @@ export class PrismaClient<
   get taskJobEventLog(): Prisma.TaskJobEventLogDelegate<ExtArgs, ClientOptions>;
 
   /**
+   * `prisma.propertyAssignmentConfig`: Exposes CRUD operations for the **PropertyAssignmentConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PropertyAssignmentConfigs
+    * const propertyAssignmentConfigs = await prisma.propertyAssignmentConfig.findMany()
+    * ```
+    */
+  get propertyAssignmentConfig(): Prisma.PropertyAssignmentConfigDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.taskRecurringDue`: Exposes CRUD operations for the **TaskRecurringDue** model.
     * Example usage:
     * ```ts
@@ -2645,6 +2661,7 @@ export namespace Prisma {
     TaskJobStepEvidenceAsset: 'TaskJobStepEvidenceAsset',
     TaskCarryForward: 'TaskCarryForward',
     TaskJobEventLog: 'TaskJobEventLog',
+    PropertyAssignmentConfig: 'PropertyAssignmentConfig',
     TaskRecurringDue: 'TaskRecurringDue'
   };
 
@@ -2661,7 +2678,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "tenant" | "user" | "cleanerProfile" | "cleanerVerificationDocument" | "cleanerAvailabilitySlot" | "cleanerReview" | "cleanerWorkFlag" | "property" | "propertyMemberAccess" | "propertyInvite" | "propertyAdmin" | "propertyCleaner" | "propertyHandyman" | "reservation" | "cleaning" | "lock" | "lockCode" | "metricEvent" | "team" | "teamMember" | "teamMemberScheduleDay" | "propertyTeam" | "hostWorkGroup" | "hostWorkGroupProperty" | "workGroupExecutor" | "hostWorkGroupInvite" | "cleaningAssignee" | "cleaningView" | "propertyChecklistItem" | "cleaningChecklistItem" | "asset" | "inventoryItemAsset" | "inventoryLineAsset" | "checklistItemAsset" | "inventoryItem" | "variantGroup" | "variantOption" | "inventoryItemVariantGroup" | "globalCatalogItem" | "inventoryLine" | "inventoryReview" | "inventoryCheck" | "inventoryReviewItemChange" | "inventoryReport" | "cleaningMedia" | "inventoryEvidence" | "propertyZone" | "inventoryLog" | "propertyOpening" | "propertyApplication" | "chatThread" | "chatParticipant" | "chatMessage" | "teamInvite" | "teamMembership" | "taskTemplate" | "taskTemplateSchedule" | "taskSectionTemplate" | "taskSectionReferenceAsset" | "taskStepTemplate" | "taskStepOption" | "taskStepReferenceAsset" | "taskJob" | "taskJobSection" | "taskJobSectionResponse" | "taskJobSectionEvidenceAsset" | "taskJobStep" | "taskJobStepResponse" | "taskJobStepEvidenceAsset" | "taskCarryForward" | "taskJobEventLog" | "taskRecurringDue"
+      modelProps: "tenant" | "user" | "cleanerProfile" | "cleanerVerificationDocument" | "cleanerAvailabilitySlot" | "cleanerReview" | "cleanerWorkFlag" | "property" | "propertyMemberAccess" | "propertyInvite" | "propertyAdmin" | "propertyCleaner" | "propertyHandyman" | "reservation" | "cleaning" | "lock" | "lockCode" | "metricEvent" | "team" | "teamMember" | "teamMemberScheduleDay" | "propertyTeam" | "hostWorkGroup" | "hostWorkGroupProperty" | "workGroupExecutor" | "hostWorkGroupInvite" | "cleaningAssignee" | "cleaningView" | "propertyChecklistItem" | "cleaningChecklistItem" | "asset" | "inventoryItemAsset" | "inventoryLineAsset" | "checklistItemAsset" | "inventoryItem" | "variantGroup" | "variantOption" | "inventoryItemVariantGroup" | "globalCatalogItem" | "inventoryLine" | "inventoryReview" | "inventoryCheck" | "inventoryReviewItemChange" | "inventoryReport" | "cleaningMedia" | "inventoryEvidence" | "propertyZone" | "inventoryLog" | "propertyOpening" | "propertyApplication" | "chatThread" | "chatParticipant" | "chatMessage" | "teamInvite" | "teamMembership" | "taskTemplate" | "taskTemplateSchedule" | "taskSectionTemplate" | "taskSectionReferenceAsset" | "taskStepTemplate" | "taskStepOption" | "taskStepReferenceAsset" | "taskJob" | "taskJobSection" | "taskJobSectionResponse" | "taskJobSectionEvidenceAsset" | "taskJobStep" | "taskJobStepResponse" | "taskJobStepEvidenceAsset" | "taskCarryForward" | "taskJobEventLog" | "propertyAssignmentConfig" | "taskRecurringDue"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -7919,6 +7936,80 @@ export namespace Prisma {
           }
         }
       }
+      PropertyAssignmentConfig: {
+        payload: Prisma.$PropertyAssignmentConfigPayload<ExtArgs>
+        fields: Prisma.PropertyAssignmentConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PropertyAssignmentConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PropertyAssignmentConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.PropertyAssignmentConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PropertyAssignmentConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>
+          }
+          findMany: {
+            args: Prisma.PropertyAssignmentConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>[]
+          }
+          create: {
+            args: Prisma.PropertyAssignmentConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>
+          }
+          createMany: {
+            args: Prisma.PropertyAssignmentConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PropertyAssignmentConfigCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>[]
+          }
+          delete: {
+            args: Prisma.PropertyAssignmentConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>
+          }
+          update: {
+            args: Prisma.PropertyAssignmentConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.PropertyAssignmentConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PropertyAssignmentConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PropertyAssignmentConfigUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>[]
+          }
+          upsert: {
+            args: Prisma.PropertyAssignmentConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PropertyAssignmentConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.PropertyAssignmentConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePropertyAssignmentConfig>
+          }
+          groupBy: {
+            args: Prisma.PropertyAssignmentConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PropertyAssignmentConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PropertyAssignmentConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<PropertyAssignmentConfigCountAggregateOutputType> | number
+          }
+        }
+      }
       TaskRecurringDue: {
         payload: Prisma.$TaskRecurringDuePayload<ExtArgs>
         fields: Prisma.TaskRecurringDueFieldRefs
@@ -8172,6 +8263,7 @@ export namespace Prisma {
     taskJobStepEvidenceAsset?: TaskJobStepEvidenceAssetOmit
     taskCarryForward?: TaskCarryForwardOmit
     taskJobEventLog?: TaskJobEventLogOmit
+    propertyAssignmentConfig?: PropertyAssignmentConfigOmit
     taskRecurringDue?: TaskRecurringDueOmit
   }
 
@@ -9180,6 +9272,7 @@ export namespace Prisma {
     taskJobs: number
     taskRecurringDues: number
     taskTemplates: number
+    assignmentConfigs: number
   }
 
   export type PropertyCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9207,6 +9300,7 @@ export namespace Prisma {
     taskJobs?: boolean | PropertyCountOutputTypeCountTaskJobsArgs
     taskRecurringDues?: boolean | PropertyCountOutputTypeCountTaskRecurringDuesArgs
     taskTemplates?: boolean | PropertyCountOutputTypeCountTaskTemplatesArgs
+    assignmentConfigs?: boolean | PropertyCountOutputTypeCountAssignmentConfigsArgs
   }
 
   // Custom InputTypes
@@ -9386,6 +9480,13 @@ export namespace Prisma {
    */
   export type PropertyCountOutputTypeCountTaskTemplatesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: TaskTemplateWhereInput
+  }
+
+  /**
+   * PropertyCountOutputType without action
+   */
+  export type PropertyCountOutputTypeCountAssignmentConfigsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropertyAssignmentConfigWhereInput
   }
 
 
@@ -9576,6 +9677,7 @@ export namespace Prisma {
     members: number
     TeamMembership: number
     workGroupExecutors: number
+    assignmentConfigs: number
   }
 
   export type TeamCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9587,6 +9689,7 @@ export namespace Prisma {
     members?: boolean | TeamCountOutputTypeCountMembersArgs
     TeamMembership?: boolean | TeamCountOutputTypeCountTeamMembershipArgs
     workGroupExecutors?: boolean | TeamCountOutputTypeCountWorkGroupExecutorsArgs
+    assignmentConfigs?: boolean | TeamCountOutputTypeCountAssignmentConfigsArgs
   }
 
   // Custom InputTypes
@@ -9654,6 +9757,13 @@ export namespace Prisma {
    */
   export type TeamCountOutputTypeCountWorkGroupExecutorsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WorkGroupExecutorWhereInput
+  }
+
+  /**
+   * TeamCountOutputType without action
+   */
+  export type TeamCountOutputTypeCountAssignmentConfigsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropertyAssignmentConfigWhereInput
   }
 
 
@@ -10329,12 +10439,14 @@ export namespace Prisma {
     chatParticipants: number
     Cleaning: number
     propertyAccesses: number
+    assignmentConfigs: number
   }
 
   export type TeamMembershipCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     chatParticipants?: boolean | TeamMembershipCountOutputTypeCountChatParticipantsArgs
     Cleaning?: boolean | TeamMembershipCountOutputTypeCountCleaningArgs
     propertyAccesses?: boolean | TeamMembershipCountOutputTypeCountPropertyAccessesArgs
+    assignmentConfigs?: boolean | TeamMembershipCountOutputTypeCountAssignmentConfigsArgs
   }
 
   // Custom InputTypes
@@ -10367,6 +10479,13 @@ export namespace Prisma {
    */
   export type TeamMembershipCountOutputTypeCountPropertyAccessesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PropertyMemberAccessWhereInput
+  }
+
+  /**
+   * TeamMembershipCountOutputType without action
+   */
+  export type TeamMembershipCountOutputTypeCountAssignmentConfigsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropertyAssignmentConfigWhereInput
   }
 
 
@@ -21761,6 +21880,7 @@ export namespace Prisma {
     taskJobs?: boolean | Property$taskJobsArgs<ExtArgs>
     taskRecurringDues?: boolean | Property$taskRecurringDuesArgs<ExtArgs>
     taskTemplates?: boolean | Property$taskTemplatesArgs<ExtArgs>
+    assignmentConfigs?: boolean | Property$assignmentConfigsArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["property"]>
 
@@ -21892,6 +22012,7 @@ export namespace Prisma {
     taskJobs?: boolean | Property$taskJobsArgs<ExtArgs>
     taskRecurringDues?: boolean | Property$taskRecurringDuesArgs<ExtArgs>
     taskTemplates?: boolean | Property$taskTemplatesArgs<ExtArgs>
+    assignmentConfigs?: boolean | Property$assignmentConfigsArgs<ExtArgs>
     _count?: boolean | PropertyCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type PropertyIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -21935,6 +22056,7 @@ export namespace Prisma {
       taskJobs: Prisma.$TaskJobPayload<ExtArgs>[]
       taskRecurringDues: Prisma.$TaskRecurringDuePayload<ExtArgs>[]
       taskTemplates: Prisma.$TaskTemplatePayload<ExtArgs>[]
+      assignmentConfigs: Prisma.$PropertyAssignmentConfigPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       tenantId: string
@@ -22386,6 +22508,7 @@ export namespace Prisma {
     taskJobs<T extends Property$taskJobsArgs<ExtArgs> = {}>(args?: Subset<T, Property$taskJobsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     taskRecurringDues<T extends Property$taskRecurringDuesArgs<ExtArgs> = {}>(args?: Subset<T, Property$taskRecurringDuesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskRecurringDuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     taskTemplates<T extends Property$taskTemplatesArgs<ExtArgs> = {}>(args?: Subset<T, Property$taskTemplatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TaskTemplatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    assignmentConfigs<T extends Property$assignmentConfigsArgs<ExtArgs> = {}>(args?: Subset<T, Property$assignmentConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -23431,6 +23554,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: TaskTemplateScalarFieldEnum | TaskTemplateScalarFieldEnum[]
+  }
+
+  /**
+   * Property.assignmentConfigs
+   */
+  export type Property$assignmentConfigsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    where?: PropertyAssignmentConfigWhereInput
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PropertyAssignmentConfigScalarFieldEnum | PropertyAssignmentConfigScalarFieldEnum[]
   }
 
   /**
@@ -35930,6 +36077,7 @@ export namespace Prisma {
     members?: boolean | Team$membersArgs<ExtArgs>
     TeamMembership?: boolean | Team$TeamMembershipArgs<ExtArgs>
     workGroupExecutors?: boolean | Team$workGroupExecutorsArgs<ExtArgs>
+    assignmentConfigs?: boolean | Team$assignmentConfigsArgs<ExtArgs>
     _count?: boolean | TeamCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["team"]>
 
@@ -35985,6 +36133,7 @@ export namespace Prisma {
     members?: boolean | Team$membersArgs<ExtArgs>
     TeamMembership?: boolean | Team$TeamMembershipArgs<ExtArgs>
     workGroupExecutors?: boolean | Team$workGroupExecutorsArgs<ExtArgs>
+    assignmentConfigs?: boolean | Team$assignmentConfigsArgs<ExtArgs>
     _count?: boolean | TeamCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type TeamIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -36009,6 +36158,7 @@ export namespace Prisma {
       members: Prisma.$TeamMemberPayload<ExtArgs>[]
       TeamMembership: Prisma.$TeamMembershipPayload<ExtArgs>[]
       workGroupExecutors: Prisma.$WorkGroupExecutorPayload<ExtArgs>[]
+      assignmentConfigs: Prisma.$PropertyAssignmentConfigPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -36424,6 +36574,7 @@ export namespace Prisma {
     members<T extends Team$membersArgs<ExtArgs> = {}>(args?: Subset<T, Team$membersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     TeamMembership<T extends Team$TeamMembershipArgs<ExtArgs> = {}>(args?: Subset<T, Team$TeamMembershipArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamMembershipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     workGroupExecutors<T extends Team$workGroupExecutorsArgs<ExtArgs> = {}>(args?: Subset<T, Team$workGroupExecutorsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkGroupExecutorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    assignmentConfigs<T extends Team$assignmentConfigsArgs<ExtArgs> = {}>(args?: Subset<T, Team$assignmentConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -37066,6 +37217,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WorkGroupExecutorScalarFieldEnum | WorkGroupExecutorScalarFieldEnum[]
+  }
+
+  /**
+   * Team.assignmentConfigs
+   */
+  export type Team$assignmentConfigsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    where?: PropertyAssignmentConfigWhereInput
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PropertyAssignmentConfigScalarFieldEnum | PropertyAssignmentConfigScalarFieldEnum[]
   }
 
   /**
@@ -79402,6 +79577,7 @@ export namespace Prisma {
     chatParticipants?: boolean | TeamMembership$chatParticipantsArgs<ExtArgs>
     Cleaning?: boolean | TeamMembership$CleaningArgs<ExtArgs>
     propertyAccesses?: boolean | TeamMembership$propertyAccessesArgs<ExtArgs>
+    assignmentConfigs?: boolean | TeamMembership$assignmentConfigsArgs<ExtArgs>
     Team?: boolean | TeamDefaultArgs<ExtArgs>
     User?: boolean | UserDefaultArgs<ExtArgs>
     _count?: boolean | TeamMembershipCountOutputTypeDefaultArgs<ExtArgs>
@@ -79446,6 +79622,7 @@ export namespace Prisma {
     chatParticipants?: boolean | TeamMembership$chatParticipantsArgs<ExtArgs>
     Cleaning?: boolean | TeamMembership$CleaningArgs<ExtArgs>
     propertyAccesses?: boolean | TeamMembership$propertyAccessesArgs<ExtArgs>
+    assignmentConfigs?: boolean | TeamMembership$assignmentConfigsArgs<ExtArgs>
     Team?: boolean | TeamDefaultArgs<ExtArgs>
     User?: boolean | UserDefaultArgs<ExtArgs>
     _count?: boolean | TeamMembershipCountOutputTypeDefaultArgs<ExtArgs>
@@ -79465,6 +79642,7 @@ export namespace Prisma {
       chatParticipants: Prisma.$ChatParticipantPayload<ExtArgs>[]
       Cleaning: Prisma.$CleaningPayload<ExtArgs>[]
       propertyAccesses: Prisma.$PropertyMemberAccessPayload<ExtArgs>[]
+      assignmentConfigs: Prisma.$PropertyAssignmentConfigPayload<ExtArgs>[]
       Team: Prisma.$TeamPayload<ExtArgs>
       User: Prisma.$UserPayload<ExtArgs>
     }
@@ -79873,6 +80051,7 @@ export namespace Prisma {
     chatParticipants<T extends TeamMembership$chatParticipantsArgs<ExtArgs> = {}>(args?: Subset<T, TeamMembership$chatParticipantsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChatParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     Cleaning<T extends TeamMembership$CleaningArgs<ExtArgs> = {}>(args?: Subset<T, TeamMembership$CleaningArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CleaningPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     propertyAccesses<T extends TeamMembership$propertyAccessesArgs<ExtArgs> = {}>(args?: Subset<T, TeamMembership$propertyAccessesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyMemberAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    assignmentConfigs<T extends TeamMembership$assignmentConfigsArgs<ExtArgs> = {}>(args?: Subset<T, TeamMembership$assignmentConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     Team<T extends TeamDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TeamDefaultArgs<ExtArgs>>): Prisma__TeamClient<$Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     User<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
@@ -80376,6 +80555,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PropertyMemberAccessScalarFieldEnum | PropertyMemberAccessScalarFieldEnum[]
+  }
+
+  /**
+   * TeamMembership.assignmentConfigs
+   */
+  export type TeamMembership$assignmentConfigsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    where?: PropertyAssignmentConfigWhereInput
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PropertyAssignmentConfigScalarFieldEnum | PropertyAssignmentConfigScalarFieldEnum[]
   }
 
   /**
@@ -99842,6 +100045,1125 @@ export namespace Prisma {
 
 
   /**
+   * Model PropertyAssignmentConfig
+   */
+
+  export type AggregatePropertyAssignmentConfig = {
+    _count: PropertyAssignmentConfigCountAggregateOutputType | null
+    _min: PropertyAssignmentConfigMinAggregateOutputType | null
+    _max: PropertyAssignmentConfigMaxAggregateOutputType | null
+  }
+
+  export type PropertyAssignmentConfigMinAggregateOutputType = {
+    id: string | null
+    hostTenantId: string | null
+    servicesTenantId: string | null
+    propertyId: string | null
+    teamId: string | null
+    preferredMembershipId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PropertyAssignmentConfigMaxAggregateOutputType = {
+    id: string | null
+    hostTenantId: string | null
+    servicesTenantId: string | null
+    propertyId: string | null
+    teamId: string | null
+    preferredMembershipId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PropertyAssignmentConfigCountAggregateOutputType = {
+    id: number
+    hostTenantId: number
+    servicesTenantId: number
+    propertyId: number
+    teamId: number
+    preferredMembershipId: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type PropertyAssignmentConfigMinAggregateInputType = {
+    id?: true
+    hostTenantId?: true
+    servicesTenantId?: true
+    propertyId?: true
+    teamId?: true
+    preferredMembershipId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PropertyAssignmentConfigMaxAggregateInputType = {
+    id?: true
+    hostTenantId?: true
+    servicesTenantId?: true
+    propertyId?: true
+    teamId?: true
+    preferredMembershipId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PropertyAssignmentConfigCountAggregateInputType = {
+    id?: true
+    hostTenantId?: true
+    servicesTenantId?: true
+    propertyId?: true
+    teamId?: true
+    preferredMembershipId?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type PropertyAssignmentConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PropertyAssignmentConfig to aggregate.
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropertyAssignmentConfigs to fetch.
+     */
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropertyAssignmentConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropertyAssignmentConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PropertyAssignmentConfigs
+    **/
+    _count?: true | PropertyAssignmentConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PropertyAssignmentConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PropertyAssignmentConfigMaxAggregateInputType
+  }
+
+  export type GetPropertyAssignmentConfigAggregateType<T extends PropertyAssignmentConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregatePropertyAssignmentConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePropertyAssignmentConfig[P]>
+      : GetScalarType<T[P], AggregatePropertyAssignmentConfig[P]>
+  }
+
+
+
+
+  export type PropertyAssignmentConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PropertyAssignmentConfigWhereInput
+    orderBy?: PropertyAssignmentConfigOrderByWithAggregationInput | PropertyAssignmentConfigOrderByWithAggregationInput[]
+    by: PropertyAssignmentConfigScalarFieldEnum[] | PropertyAssignmentConfigScalarFieldEnum
+    having?: PropertyAssignmentConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PropertyAssignmentConfigCountAggregateInputType | true
+    _min?: PropertyAssignmentConfigMinAggregateInputType
+    _max?: PropertyAssignmentConfigMaxAggregateInputType
+  }
+
+  export type PropertyAssignmentConfigGroupByOutputType = {
+    id: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    teamId: string
+    preferredMembershipId: string
+    createdAt: Date
+    updatedAt: Date
+    _count: PropertyAssignmentConfigCountAggregateOutputType | null
+    _min: PropertyAssignmentConfigMinAggregateOutputType | null
+    _max: PropertyAssignmentConfigMaxAggregateOutputType | null
+  }
+
+  type GetPropertyAssignmentConfigGroupByPayload<T extends PropertyAssignmentConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PropertyAssignmentConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PropertyAssignmentConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PropertyAssignmentConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], PropertyAssignmentConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PropertyAssignmentConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    hostTenantId?: boolean
+    servicesTenantId?: boolean
+    propertyId?: boolean
+    teamId?: boolean
+    preferredMembershipId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    team?: boolean | TeamDefaultArgs<ExtArgs>
+    preferredMembership?: boolean | TeamMembershipDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["propertyAssignmentConfig"]>
+
+  export type PropertyAssignmentConfigSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    hostTenantId?: boolean
+    servicesTenantId?: boolean
+    propertyId?: boolean
+    teamId?: boolean
+    preferredMembershipId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    team?: boolean | TeamDefaultArgs<ExtArgs>
+    preferredMembership?: boolean | TeamMembershipDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["propertyAssignmentConfig"]>
+
+  export type PropertyAssignmentConfigSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    hostTenantId?: boolean
+    servicesTenantId?: boolean
+    propertyId?: boolean
+    teamId?: boolean
+    preferredMembershipId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    team?: boolean | TeamDefaultArgs<ExtArgs>
+    preferredMembership?: boolean | TeamMembershipDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["propertyAssignmentConfig"]>
+
+  export type PropertyAssignmentConfigSelectScalar = {
+    id?: boolean
+    hostTenantId?: boolean
+    servicesTenantId?: boolean
+    propertyId?: boolean
+    teamId?: boolean
+    preferredMembershipId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type PropertyAssignmentConfigOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "hostTenantId" | "servicesTenantId" | "propertyId" | "teamId" | "preferredMembershipId" | "createdAt" | "updatedAt", ExtArgs["result"]["propertyAssignmentConfig"]>
+  export type PropertyAssignmentConfigInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    team?: boolean | TeamDefaultArgs<ExtArgs>
+    preferredMembership?: boolean | TeamMembershipDefaultArgs<ExtArgs>
+  }
+  export type PropertyAssignmentConfigIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    team?: boolean | TeamDefaultArgs<ExtArgs>
+    preferredMembership?: boolean | TeamMembershipDefaultArgs<ExtArgs>
+  }
+  export type PropertyAssignmentConfigIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    property?: boolean | PropertyDefaultArgs<ExtArgs>
+    team?: boolean | TeamDefaultArgs<ExtArgs>
+    preferredMembership?: boolean | TeamMembershipDefaultArgs<ExtArgs>
+  }
+
+  export type $PropertyAssignmentConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PropertyAssignmentConfig"
+    objects: {
+      property: Prisma.$PropertyPayload<ExtArgs>
+      team: Prisma.$TeamPayload<ExtArgs>
+      preferredMembership: Prisma.$TeamMembershipPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * Tenant del Host (propietario de la propiedad)
+       */
+      hostTenantId: string
+      /**
+       * Tenant del equipo de servicios
+       */
+      servicesTenantId: string
+      propertyId: string
+      teamId: string
+      preferredMembershipId: string
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["propertyAssignmentConfig"]>
+    composites: {}
+  }
+
+  type PropertyAssignmentConfigGetPayload<S extends boolean | null | undefined | PropertyAssignmentConfigDefaultArgs> = $Result.GetResult<Prisma.$PropertyAssignmentConfigPayload, S>
+
+  type PropertyAssignmentConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PropertyAssignmentConfigFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PropertyAssignmentConfigCountAggregateInputType | true
+    }
+
+  export interface PropertyAssignmentConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PropertyAssignmentConfig'], meta: { name: 'PropertyAssignmentConfig' } }
+    /**
+     * Find zero or one PropertyAssignmentConfig that matches the filter.
+     * @param {PropertyAssignmentConfigFindUniqueArgs} args - Arguments to find a PropertyAssignmentConfig
+     * @example
+     * // Get one PropertyAssignmentConfig
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PropertyAssignmentConfigFindUniqueArgs>(args: SelectSubset<T, PropertyAssignmentConfigFindUniqueArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PropertyAssignmentConfig that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PropertyAssignmentConfigFindUniqueOrThrowArgs} args - Arguments to find a PropertyAssignmentConfig
+     * @example
+     * // Get one PropertyAssignmentConfig
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PropertyAssignmentConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, PropertyAssignmentConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PropertyAssignmentConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigFindFirstArgs} args - Arguments to find a PropertyAssignmentConfig
+     * @example
+     * // Get one PropertyAssignmentConfig
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PropertyAssignmentConfigFindFirstArgs>(args?: SelectSubset<T, PropertyAssignmentConfigFindFirstArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PropertyAssignmentConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigFindFirstOrThrowArgs} args - Arguments to find a PropertyAssignmentConfig
+     * @example
+     * // Get one PropertyAssignmentConfig
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PropertyAssignmentConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, PropertyAssignmentConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PropertyAssignmentConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PropertyAssignmentConfigs
+     * const propertyAssignmentConfigs = await prisma.propertyAssignmentConfig.findMany()
+     * 
+     * // Get first 10 PropertyAssignmentConfigs
+     * const propertyAssignmentConfigs = await prisma.propertyAssignmentConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const propertyAssignmentConfigWithIdOnly = await prisma.propertyAssignmentConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PropertyAssignmentConfigFindManyArgs>(args?: SelectSubset<T, PropertyAssignmentConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PropertyAssignmentConfig.
+     * @param {PropertyAssignmentConfigCreateArgs} args - Arguments to create a PropertyAssignmentConfig.
+     * @example
+     * // Create one PropertyAssignmentConfig
+     * const PropertyAssignmentConfig = await prisma.propertyAssignmentConfig.create({
+     *   data: {
+     *     // ... data to create a PropertyAssignmentConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends PropertyAssignmentConfigCreateArgs>(args: SelectSubset<T, PropertyAssignmentConfigCreateArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PropertyAssignmentConfigs.
+     * @param {PropertyAssignmentConfigCreateManyArgs} args - Arguments to create many PropertyAssignmentConfigs.
+     * @example
+     * // Create many PropertyAssignmentConfigs
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PropertyAssignmentConfigCreateManyArgs>(args?: SelectSubset<T, PropertyAssignmentConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PropertyAssignmentConfigs and returns the data saved in the database.
+     * @param {PropertyAssignmentConfigCreateManyAndReturnArgs} args - Arguments to create many PropertyAssignmentConfigs.
+     * @example
+     * // Create many PropertyAssignmentConfigs
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PropertyAssignmentConfigs and only return the `id`
+     * const propertyAssignmentConfigWithIdOnly = await prisma.propertyAssignmentConfig.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PropertyAssignmentConfigCreateManyAndReturnArgs>(args?: SelectSubset<T, PropertyAssignmentConfigCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PropertyAssignmentConfig.
+     * @param {PropertyAssignmentConfigDeleteArgs} args - Arguments to delete one PropertyAssignmentConfig.
+     * @example
+     * // Delete one PropertyAssignmentConfig
+     * const PropertyAssignmentConfig = await prisma.propertyAssignmentConfig.delete({
+     *   where: {
+     *     // ... filter to delete one PropertyAssignmentConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PropertyAssignmentConfigDeleteArgs>(args: SelectSubset<T, PropertyAssignmentConfigDeleteArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PropertyAssignmentConfig.
+     * @param {PropertyAssignmentConfigUpdateArgs} args - Arguments to update one PropertyAssignmentConfig.
+     * @example
+     * // Update one PropertyAssignmentConfig
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PropertyAssignmentConfigUpdateArgs>(args: SelectSubset<T, PropertyAssignmentConfigUpdateArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PropertyAssignmentConfigs.
+     * @param {PropertyAssignmentConfigDeleteManyArgs} args - Arguments to filter PropertyAssignmentConfigs to delete.
+     * @example
+     * // Delete a few PropertyAssignmentConfigs
+     * const { count } = await prisma.propertyAssignmentConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PropertyAssignmentConfigDeleteManyArgs>(args?: SelectSubset<T, PropertyAssignmentConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PropertyAssignmentConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PropertyAssignmentConfigs
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PropertyAssignmentConfigUpdateManyArgs>(args: SelectSubset<T, PropertyAssignmentConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PropertyAssignmentConfigs and returns the data updated in the database.
+     * @param {PropertyAssignmentConfigUpdateManyAndReturnArgs} args - Arguments to update many PropertyAssignmentConfigs.
+     * @example
+     * // Update many PropertyAssignmentConfigs
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PropertyAssignmentConfigs and only return the `id`
+     * const propertyAssignmentConfigWithIdOnly = await prisma.propertyAssignmentConfig.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PropertyAssignmentConfigUpdateManyAndReturnArgs>(args: SelectSubset<T, PropertyAssignmentConfigUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PropertyAssignmentConfig.
+     * @param {PropertyAssignmentConfigUpsertArgs} args - Arguments to update or create a PropertyAssignmentConfig.
+     * @example
+     * // Update or create a PropertyAssignmentConfig
+     * const propertyAssignmentConfig = await prisma.propertyAssignmentConfig.upsert({
+     *   create: {
+     *     // ... data to create a PropertyAssignmentConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PropertyAssignmentConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PropertyAssignmentConfigUpsertArgs>(args: SelectSubset<T, PropertyAssignmentConfigUpsertArgs<ExtArgs>>): Prisma__PropertyAssignmentConfigClient<$Result.GetResult<Prisma.$PropertyAssignmentConfigPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PropertyAssignmentConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigCountArgs} args - Arguments to filter PropertyAssignmentConfigs to count.
+     * @example
+     * // Count the number of PropertyAssignmentConfigs
+     * const count = await prisma.propertyAssignmentConfig.count({
+     *   where: {
+     *     // ... the filter for the PropertyAssignmentConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends PropertyAssignmentConfigCountArgs>(
+      args?: Subset<T, PropertyAssignmentConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PropertyAssignmentConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PropertyAssignmentConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PropertyAssignmentConfigAggregateArgs>(args: Subset<T, PropertyAssignmentConfigAggregateArgs>): Prisma.PrismaPromise<GetPropertyAssignmentConfigAggregateType<T>>
+
+    /**
+     * Group by PropertyAssignmentConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PropertyAssignmentConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PropertyAssignmentConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PropertyAssignmentConfigGroupByArgs['orderBy'] }
+        : { orderBy?: PropertyAssignmentConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PropertyAssignmentConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPropertyAssignmentConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PropertyAssignmentConfig model
+   */
+  readonly fields: PropertyAssignmentConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PropertyAssignmentConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PropertyAssignmentConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    property<T extends PropertyDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PropertyDefaultArgs<ExtArgs>>): Prisma__PropertyClient<$Result.GetResult<Prisma.$PropertyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    team<T extends TeamDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TeamDefaultArgs<ExtArgs>>): Prisma__TeamClient<$Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    preferredMembership<T extends TeamMembershipDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TeamMembershipDefaultArgs<ExtArgs>>): Prisma__TeamMembershipClient<$Result.GetResult<Prisma.$TeamMembershipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PropertyAssignmentConfig model
+   */
+  interface PropertyAssignmentConfigFieldRefs {
+    readonly id: FieldRef<"PropertyAssignmentConfig", 'String'>
+    readonly hostTenantId: FieldRef<"PropertyAssignmentConfig", 'String'>
+    readonly servicesTenantId: FieldRef<"PropertyAssignmentConfig", 'String'>
+    readonly propertyId: FieldRef<"PropertyAssignmentConfig", 'String'>
+    readonly teamId: FieldRef<"PropertyAssignmentConfig", 'String'>
+    readonly preferredMembershipId: FieldRef<"PropertyAssignmentConfig", 'String'>
+    readonly createdAt: FieldRef<"PropertyAssignmentConfig", 'DateTime'>
+    readonly updatedAt: FieldRef<"PropertyAssignmentConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PropertyAssignmentConfig findUnique
+   */
+  export type PropertyAssignmentConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which PropertyAssignmentConfig to fetch.
+     */
+    where: PropertyAssignmentConfigWhereUniqueInput
+  }
+
+  /**
+   * PropertyAssignmentConfig findUniqueOrThrow
+   */
+  export type PropertyAssignmentConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which PropertyAssignmentConfig to fetch.
+     */
+    where: PropertyAssignmentConfigWhereUniqueInput
+  }
+
+  /**
+   * PropertyAssignmentConfig findFirst
+   */
+  export type PropertyAssignmentConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which PropertyAssignmentConfig to fetch.
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropertyAssignmentConfigs to fetch.
+     */
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PropertyAssignmentConfigs.
+     */
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropertyAssignmentConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropertyAssignmentConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PropertyAssignmentConfigs.
+     */
+    distinct?: PropertyAssignmentConfigScalarFieldEnum | PropertyAssignmentConfigScalarFieldEnum[]
+  }
+
+  /**
+   * PropertyAssignmentConfig findFirstOrThrow
+   */
+  export type PropertyAssignmentConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which PropertyAssignmentConfig to fetch.
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropertyAssignmentConfigs to fetch.
+     */
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PropertyAssignmentConfigs.
+     */
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropertyAssignmentConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropertyAssignmentConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PropertyAssignmentConfigs.
+     */
+    distinct?: PropertyAssignmentConfigScalarFieldEnum | PropertyAssignmentConfigScalarFieldEnum[]
+  }
+
+  /**
+   * PropertyAssignmentConfig findMany
+   */
+  export type PropertyAssignmentConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which PropertyAssignmentConfigs to fetch.
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PropertyAssignmentConfigs to fetch.
+     */
+    orderBy?: PropertyAssignmentConfigOrderByWithRelationInput | PropertyAssignmentConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PropertyAssignmentConfigs.
+     */
+    cursor?: PropertyAssignmentConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PropertyAssignmentConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PropertyAssignmentConfigs.
+     */
+    skip?: number
+    distinct?: PropertyAssignmentConfigScalarFieldEnum | PropertyAssignmentConfigScalarFieldEnum[]
+  }
+
+  /**
+   * PropertyAssignmentConfig create
+   */
+  export type PropertyAssignmentConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PropertyAssignmentConfig.
+     */
+    data: XOR<PropertyAssignmentConfigCreateInput, PropertyAssignmentConfigUncheckedCreateInput>
+  }
+
+  /**
+   * PropertyAssignmentConfig createMany
+   */
+  export type PropertyAssignmentConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PropertyAssignmentConfigs.
+     */
+    data: PropertyAssignmentConfigCreateManyInput | PropertyAssignmentConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PropertyAssignmentConfig createManyAndReturn
+   */
+  export type PropertyAssignmentConfigCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * The data used to create many PropertyAssignmentConfigs.
+     */
+    data: PropertyAssignmentConfigCreateManyInput | PropertyAssignmentConfigCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PropertyAssignmentConfig update
+   */
+  export type PropertyAssignmentConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PropertyAssignmentConfig.
+     */
+    data: XOR<PropertyAssignmentConfigUpdateInput, PropertyAssignmentConfigUncheckedUpdateInput>
+    /**
+     * Choose, which PropertyAssignmentConfig to update.
+     */
+    where: PropertyAssignmentConfigWhereUniqueInput
+  }
+
+  /**
+   * PropertyAssignmentConfig updateMany
+   */
+  export type PropertyAssignmentConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PropertyAssignmentConfigs.
+     */
+    data: XOR<PropertyAssignmentConfigUpdateManyMutationInput, PropertyAssignmentConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which PropertyAssignmentConfigs to update
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * Limit how many PropertyAssignmentConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PropertyAssignmentConfig updateManyAndReturn
+   */
+  export type PropertyAssignmentConfigUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * The data used to update PropertyAssignmentConfigs.
+     */
+    data: XOR<PropertyAssignmentConfigUpdateManyMutationInput, PropertyAssignmentConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which PropertyAssignmentConfigs to update
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * Limit how many PropertyAssignmentConfigs to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PropertyAssignmentConfig upsert
+   */
+  export type PropertyAssignmentConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PropertyAssignmentConfig to update in case it exists.
+     */
+    where: PropertyAssignmentConfigWhereUniqueInput
+    /**
+     * In case the PropertyAssignmentConfig found by the `where` argument doesn't exist, create a new PropertyAssignmentConfig with this data.
+     */
+    create: XOR<PropertyAssignmentConfigCreateInput, PropertyAssignmentConfigUncheckedCreateInput>
+    /**
+     * In case the PropertyAssignmentConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PropertyAssignmentConfigUpdateInput, PropertyAssignmentConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * PropertyAssignmentConfig delete
+   */
+  export type PropertyAssignmentConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+    /**
+     * Filter which PropertyAssignmentConfig to delete.
+     */
+    where: PropertyAssignmentConfigWhereUniqueInput
+  }
+
+  /**
+   * PropertyAssignmentConfig deleteMany
+   */
+  export type PropertyAssignmentConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PropertyAssignmentConfigs to delete
+     */
+    where?: PropertyAssignmentConfigWhereInput
+    /**
+     * Limit how many PropertyAssignmentConfigs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PropertyAssignmentConfig without action
+   */
+  export type PropertyAssignmentConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PropertyAssignmentConfig
+     */
+    select?: PropertyAssignmentConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PropertyAssignmentConfig
+     */
+    omit?: PropertyAssignmentConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PropertyAssignmentConfigInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model TaskRecurringDue
    */
 
@@ -102313,6 +103635,20 @@ export namespace Prisma {
   export type TaskJobEventLogScalarFieldEnum = (typeof TaskJobEventLogScalarFieldEnum)[keyof typeof TaskJobEventLogScalarFieldEnum]
 
 
+  export const PropertyAssignmentConfigScalarFieldEnum: {
+    id: 'id',
+    hostTenantId: 'hostTenantId',
+    servicesTenantId: 'servicesTenantId',
+    propertyId: 'propertyId',
+    teamId: 'teamId',
+    preferredMembershipId: 'preferredMembershipId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type PropertyAssignmentConfigScalarFieldEnum = (typeof PropertyAssignmentConfigScalarFieldEnum)[keyof typeof PropertyAssignmentConfigScalarFieldEnum]
+
+
   export const TaskRecurringDueScalarFieldEnum: {
     id: 'id',
     tenantId: 'tenantId',
@@ -104225,6 +105561,7 @@ export namespace Prisma {
     taskJobs?: TaskJobListRelationFilter
     taskRecurringDues?: TaskRecurringDueListRelationFilter
     taskTemplates?: TaskTemplateListRelationFilter
+    assignmentConfigs?: PropertyAssignmentConfigListRelationFilter
   }
 
   export type PropertyOrderByWithRelationInput = {
@@ -104283,6 +105620,7 @@ export namespace Prisma {
     taskJobs?: TaskJobOrderByRelationAggregateInput
     taskRecurringDues?: TaskRecurringDueOrderByRelationAggregateInput
     taskTemplates?: TaskTemplateOrderByRelationAggregateInput
+    assignmentConfigs?: PropertyAssignmentConfigOrderByRelationAggregateInput
   }
 
   export type PropertyWhereUniqueInput = Prisma.AtLeast<{
@@ -104344,6 +105682,7 @@ export namespace Prisma {
     taskJobs?: TaskJobListRelationFilter
     taskRecurringDues?: TaskRecurringDueListRelationFilter
     taskTemplates?: TaskTemplateListRelationFilter
+    assignmentConfigs?: PropertyAssignmentConfigListRelationFilter
   }, "id" | "idOld" | "coverMediaId">
 
   export type PropertyOrderByWithAggregationInput = {
@@ -105441,6 +106780,7 @@ export namespace Prisma {
     members?: TeamMemberListRelationFilter
     TeamMembership?: TeamMembershipListRelationFilter
     workGroupExecutors?: WorkGroupExecutorListRelationFilter
+    assignmentConfigs?: PropertyAssignmentConfigListRelationFilter
   }
 
   export type TeamOrderByWithRelationInput = {
@@ -105463,6 +106803,7 @@ export namespace Prisma {
     members?: TeamMemberOrderByRelationAggregateInput
     TeamMembership?: TeamMembershipOrderByRelationAggregateInput
     workGroupExecutors?: WorkGroupExecutorOrderByRelationAggregateInput
+    assignmentConfigs?: PropertyAssignmentConfigOrderByRelationAggregateInput
   }
 
   export type TeamWhereUniqueInput = Prisma.AtLeast<{
@@ -105489,6 +106830,7 @@ export namespace Prisma {
     members?: TeamMemberListRelationFilter
     TeamMembership?: TeamMembershipListRelationFilter
     workGroupExecutors?: WorkGroupExecutorListRelationFilter
+    assignmentConfigs?: PropertyAssignmentConfigListRelationFilter
   }, "id" | "tenantId_name">
 
   export type TeamOrderByWithAggregationInput = {
@@ -108778,6 +110120,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantListRelationFilter
     Cleaning?: CleaningListRelationFilter
     propertyAccesses?: PropertyMemberAccessListRelationFilter
+    assignmentConfigs?: PropertyAssignmentConfigListRelationFilter
     Team?: XOR<TeamScalarRelationFilter, TeamWhereInput>
     User?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
@@ -108793,6 +110136,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantOrderByRelationAggregateInput
     Cleaning?: CleaningOrderByRelationAggregateInput
     propertyAccesses?: PropertyMemberAccessOrderByRelationAggregateInput
+    assignmentConfigs?: PropertyAssignmentConfigOrderByRelationAggregateInput
     Team?: TeamOrderByWithRelationInput
     User?: UserOrderByWithRelationInput
   }
@@ -108812,6 +110156,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantListRelationFilter
     Cleaning?: CleaningListRelationFilter
     propertyAccesses?: PropertyMemberAccessListRelationFilter
+    assignmentConfigs?: PropertyAssignmentConfigListRelationFilter
     Team?: XOR<TeamScalarRelationFilter, TeamWhereInput>
     User?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "id" | "teamId_userId">
@@ -110355,6 +111700,83 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"TaskJobEventLog"> | Date | string
   }
 
+  export type PropertyAssignmentConfigWhereInput = {
+    AND?: PropertyAssignmentConfigWhereInput | PropertyAssignmentConfigWhereInput[]
+    OR?: PropertyAssignmentConfigWhereInput[]
+    NOT?: PropertyAssignmentConfigWhereInput | PropertyAssignmentConfigWhereInput[]
+    id?: StringFilter<"PropertyAssignmentConfig"> | string
+    hostTenantId?: StringFilter<"PropertyAssignmentConfig"> | string
+    servicesTenantId?: StringFilter<"PropertyAssignmentConfig"> | string
+    propertyId?: StringFilter<"PropertyAssignmentConfig"> | string
+    teamId?: StringFilter<"PropertyAssignmentConfig"> | string
+    preferredMembershipId?: StringFilter<"PropertyAssignmentConfig"> | string
+    createdAt?: DateTimeFilter<"PropertyAssignmentConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"PropertyAssignmentConfig"> | Date | string
+    property?: XOR<PropertyScalarRelationFilter, PropertyWhereInput>
+    team?: XOR<TeamScalarRelationFilter, TeamWhereInput>
+    preferredMembership?: XOR<TeamMembershipScalarRelationFilter, TeamMembershipWhereInput>
+  }
+
+  export type PropertyAssignmentConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    hostTenantId?: SortOrder
+    servicesTenantId?: SortOrder
+    propertyId?: SortOrder
+    teamId?: SortOrder
+    preferredMembershipId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    property?: PropertyOrderByWithRelationInput
+    team?: TeamOrderByWithRelationInput
+    preferredMembership?: TeamMembershipOrderByWithRelationInput
+  }
+
+  export type PropertyAssignmentConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    propertyId_teamId?: PropertyAssignmentConfigPropertyIdTeamIdCompoundUniqueInput
+    AND?: PropertyAssignmentConfigWhereInput | PropertyAssignmentConfigWhereInput[]
+    OR?: PropertyAssignmentConfigWhereInput[]
+    NOT?: PropertyAssignmentConfigWhereInput | PropertyAssignmentConfigWhereInput[]
+    hostTenantId?: StringFilter<"PropertyAssignmentConfig"> | string
+    servicesTenantId?: StringFilter<"PropertyAssignmentConfig"> | string
+    propertyId?: StringFilter<"PropertyAssignmentConfig"> | string
+    teamId?: StringFilter<"PropertyAssignmentConfig"> | string
+    preferredMembershipId?: StringFilter<"PropertyAssignmentConfig"> | string
+    createdAt?: DateTimeFilter<"PropertyAssignmentConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"PropertyAssignmentConfig"> | Date | string
+    property?: XOR<PropertyScalarRelationFilter, PropertyWhereInput>
+    team?: XOR<TeamScalarRelationFilter, TeamWhereInput>
+    preferredMembership?: XOR<TeamMembershipScalarRelationFilter, TeamMembershipWhereInput>
+  }, "id" | "propertyId_teamId">
+
+  export type PropertyAssignmentConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    hostTenantId?: SortOrder
+    servicesTenantId?: SortOrder
+    propertyId?: SortOrder
+    teamId?: SortOrder
+    preferredMembershipId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: PropertyAssignmentConfigCountOrderByAggregateInput
+    _max?: PropertyAssignmentConfigMaxOrderByAggregateInput
+    _min?: PropertyAssignmentConfigMinOrderByAggregateInput
+  }
+
+  export type PropertyAssignmentConfigScalarWhereWithAggregatesInput = {
+    AND?: PropertyAssignmentConfigScalarWhereWithAggregatesInput | PropertyAssignmentConfigScalarWhereWithAggregatesInput[]
+    OR?: PropertyAssignmentConfigScalarWhereWithAggregatesInput[]
+    NOT?: PropertyAssignmentConfigScalarWhereWithAggregatesInput | PropertyAssignmentConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PropertyAssignmentConfig"> | string
+    hostTenantId?: StringWithAggregatesFilter<"PropertyAssignmentConfig"> | string
+    servicesTenantId?: StringWithAggregatesFilter<"PropertyAssignmentConfig"> | string
+    propertyId?: StringWithAggregatesFilter<"PropertyAssignmentConfig"> | string
+    teamId?: StringWithAggregatesFilter<"PropertyAssignmentConfig"> | string
+    preferredMembershipId?: StringWithAggregatesFilter<"PropertyAssignmentConfig"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"PropertyAssignmentConfig"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PropertyAssignmentConfig"> | Date | string
+  }
+
   export type TaskRecurringDueWhereInput = {
     AND?: TaskRecurringDueWhereInput | TaskRecurringDueWhereInput[]
     OR?: TaskRecurringDueWhereInput[]
@@ -111499,6 +112921,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateInput = {
@@ -111554,6 +112977,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUpdateInput = {
@@ -111609,6 +113033,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateInput = {
@@ -111664,6 +113089,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyCreateManyInput = {
@@ -112827,6 +114253,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateInput = {
@@ -112847,6 +114274,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUpdateInput = {
@@ -112867,6 +114295,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateInput = {
@@ -112887,6 +114316,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamCreateManyInput = {
@@ -116238,6 +117668,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput
     Team: TeamCreateNestedOneWithoutTeamMembershipInput
     User: UserCreateNestedOneWithoutTeamMembershipInput
   }
@@ -116253,6 +117684,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningUncheckedCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput
   }
 
   export type TeamMembershipUpdateInput = {
@@ -116264,6 +117696,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput
     Team?: TeamUpdateOneRequiredWithoutTeamMembershipNestedInput
     User?: UserUpdateOneRequiredWithoutTeamMembershipNestedInput
   }
@@ -116279,6 +117712,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUncheckedUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput
   }
 
   export type TeamMembershipCreateManyInput = {
@@ -117900,6 +119334,80 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type PropertyAssignmentConfigCreateInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    property: PropertyCreateNestedOneWithoutAssignmentConfigsInput
+    team: TeamCreateNestedOneWithoutAssignmentConfigsInput
+    preferredMembership: TeamMembershipCreateNestedOneWithoutAssignmentConfigsInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    teamId: string
+    preferredMembershipId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyAssignmentConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+    team?: TeamUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+    preferredMembership?: TeamMembershipUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    preferredMembershipId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyAssignmentConfigCreateManyInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    teamId: string
+    preferredMembershipId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyAssignmentConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    preferredMembershipId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type TaskRecurringDueCreateInput = {
     id?: string
     frequency: $Enums.TaskScheduleFrequency
@@ -119342,6 +120850,16 @@ export namespace Prisma {
   export type TenantScalarRelationFilter = {
     is?: TenantWhereInput
     isNot?: TenantWhereInput
+  }
+
+  export type PropertyAssignmentConfigListRelationFilter = {
+    every?: PropertyAssignmentConfigWhereInput
+    some?: PropertyAssignmentConfigWhereInput
+    none?: PropertyAssignmentConfigWhereInput
+  }
+
+  export type PropertyAssignmentConfigOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type PropertyCountOrderByAggregateInput = {
@@ -123743,6 +125261,49 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTaskEventLogTypeFilter<$PrismaModel>
     _max?: NestedEnumTaskEventLogTypeFilter<$PrismaModel>
+  }
+
+  export type TeamMembershipScalarRelationFilter = {
+    is?: TeamMembershipWhereInput
+    isNot?: TeamMembershipWhereInput
+  }
+
+  export type PropertyAssignmentConfigPropertyIdTeamIdCompoundUniqueInput = {
+    propertyId: string
+    teamId: string
+  }
+
+  export type PropertyAssignmentConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    hostTenantId?: SortOrder
+    servicesTenantId?: SortOrder
+    propertyId?: SortOrder
+    teamId?: SortOrder
+    preferredMembershipId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PropertyAssignmentConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    hostTenantId?: SortOrder
+    servicesTenantId?: SortOrder
+    propertyId?: SortOrder
+    teamId?: SortOrder
+    preferredMembershipId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PropertyAssignmentConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    hostTenantId?: SortOrder
+    servicesTenantId?: SortOrder
+    propertyId?: SortOrder
+    teamId?: SortOrder
+    preferredMembershipId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type EnumTaskRecurringDueStatusFilter<$PrismaModel = never> = {
@@ -128193,6 +129754,13 @@ export namespace Prisma {
     connect?: TaskTemplateWhereUniqueInput | TaskTemplateWhereUniqueInput[]
   }
 
+  export type PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPropertyInput, PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput> | PropertyAssignmentConfigCreateWithoutPropertyInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput | PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPropertyInputEnvelope
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+  }
+
   export type ChatThreadUncheckedCreateNestedManyWithoutPropertyInput = {
     create?: XOR<ChatThreadCreateWithoutPropertyInput, ChatThreadUncheckedCreateWithoutPropertyInput> | ChatThreadCreateWithoutPropertyInput[] | ChatThreadUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: ChatThreadCreateOrConnectWithoutPropertyInput | ChatThreadCreateOrConnectWithoutPropertyInput[]
@@ -128359,6 +129927,13 @@ export namespace Prisma {
     connectOrCreate?: TaskTemplateCreateOrConnectWithoutPropertyInput | TaskTemplateCreateOrConnectWithoutPropertyInput[]
     createMany?: TaskTemplateCreateManyPropertyInputEnvelope
     connect?: TaskTemplateWhereUniqueInput | TaskTemplateWhereUniqueInput[]
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPropertyInput, PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput> | PropertyAssignmentConfigCreateWithoutPropertyInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput | PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPropertyInputEnvelope
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
   }
 
   export type ChatThreadUpdateManyWithoutPropertyNestedInput = {
@@ -128723,6 +130298,20 @@ export namespace Prisma {
     deleteMany?: TaskTemplateScalarWhereInput | TaskTemplateScalarWhereInput[]
   }
 
+  export type PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPropertyInput, PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput> | PropertyAssignmentConfigCreateWithoutPropertyInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput | PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput[]
+    upsert?: PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPropertyInput | PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPropertyInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPropertyInputEnvelope
+    set?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    disconnect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    delete?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    update?: PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPropertyInput | PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPropertyInput[]
+    updateMany?: PropertyAssignmentConfigUpdateManyWithWhereWithoutPropertyInput | PropertyAssignmentConfigUpdateManyWithWhereWithoutPropertyInput[]
+    deleteMany?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
+  }
+
   export type ChatThreadUncheckedUpdateManyWithoutPropertyNestedInput = {
     create?: XOR<ChatThreadCreateWithoutPropertyInput, ChatThreadUncheckedCreateWithoutPropertyInput> | ChatThreadCreateWithoutPropertyInput[] | ChatThreadUncheckedCreateWithoutPropertyInput[]
     connectOrCreate?: ChatThreadCreateOrConnectWithoutPropertyInput | ChatThreadCreateOrConnectWithoutPropertyInput[]
@@ -129057,6 +130646,20 @@ export namespace Prisma {
     update?: TaskTemplateUpdateWithWhereUniqueWithoutPropertyInput | TaskTemplateUpdateWithWhereUniqueWithoutPropertyInput[]
     updateMany?: TaskTemplateUpdateManyWithWhereWithoutPropertyInput | TaskTemplateUpdateManyWithWhereWithoutPropertyInput[]
     deleteMany?: TaskTemplateScalarWhereInput | TaskTemplateScalarWhereInput[]
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPropertyInput, PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput> | PropertyAssignmentConfigCreateWithoutPropertyInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput | PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput[]
+    upsert?: PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPropertyInput | PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPropertyInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPropertyInputEnvelope
+    set?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    disconnect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    delete?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    update?: PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPropertyInput | PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPropertyInput[]
+    updateMany?: PropertyAssignmentConfigUpdateManyWithWhereWithoutPropertyInput | PropertyAssignmentConfigUpdateManyWithWhereWithoutPropertyInput[]
+    deleteMany?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
   }
 
   export type PropertyCreateNestedOneWithoutMemberAccessesInput = {
@@ -130211,6 +131814,13 @@ export namespace Prisma {
     connect?: WorkGroupExecutorWhereUniqueInput | WorkGroupExecutorWhereUniqueInput[]
   }
 
+  export type PropertyAssignmentConfigCreateNestedManyWithoutTeamInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutTeamInput, PropertyAssignmentConfigUncheckedCreateWithoutTeamInput> | PropertyAssignmentConfigCreateWithoutTeamInput[] | PropertyAssignmentConfigUncheckedCreateWithoutTeamInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutTeamInput | PropertyAssignmentConfigCreateOrConnectWithoutTeamInput[]
+    createMany?: PropertyAssignmentConfigCreateManyTeamInputEnvelope
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+  }
+
   export type ChatParticipantUncheckedCreateNestedManyWithoutTeamInput = {
     create?: XOR<ChatParticipantCreateWithoutTeamInput, ChatParticipantUncheckedCreateWithoutTeamInput> | ChatParticipantCreateWithoutTeamInput[] | ChatParticipantUncheckedCreateWithoutTeamInput[]
     connectOrCreate?: ChatParticipantCreateOrConnectWithoutTeamInput | ChatParticipantCreateOrConnectWithoutTeamInput[]
@@ -130265,6 +131875,13 @@ export namespace Prisma {
     connectOrCreate?: WorkGroupExecutorCreateOrConnectWithoutTeamInput | WorkGroupExecutorCreateOrConnectWithoutTeamInput[]
     createMany?: WorkGroupExecutorCreateManyTeamInputEnvelope
     connect?: WorkGroupExecutorWhereUniqueInput | WorkGroupExecutorWhereUniqueInput[]
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutTeamInput, PropertyAssignmentConfigUncheckedCreateWithoutTeamInput> | PropertyAssignmentConfigCreateWithoutTeamInput[] | PropertyAssignmentConfigUncheckedCreateWithoutTeamInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutTeamInput | PropertyAssignmentConfigCreateOrConnectWithoutTeamInput[]
+    createMany?: PropertyAssignmentConfigCreateManyTeamInputEnvelope
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
   }
 
   export type EnumTeamStatusFieldUpdateOperationsInput = {
@@ -130401,6 +132018,20 @@ export namespace Prisma {
     deleteMany?: WorkGroupExecutorScalarWhereInput | WorkGroupExecutorScalarWhereInput[]
   }
 
+  export type PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutTeamInput, PropertyAssignmentConfigUncheckedCreateWithoutTeamInput> | PropertyAssignmentConfigCreateWithoutTeamInput[] | PropertyAssignmentConfigUncheckedCreateWithoutTeamInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutTeamInput | PropertyAssignmentConfigCreateOrConnectWithoutTeamInput[]
+    upsert?: PropertyAssignmentConfigUpsertWithWhereUniqueWithoutTeamInput | PropertyAssignmentConfigUpsertWithWhereUniqueWithoutTeamInput[]
+    createMany?: PropertyAssignmentConfigCreateManyTeamInputEnvelope
+    set?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    disconnect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    delete?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    update?: PropertyAssignmentConfigUpdateWithWhereUniqueWithoutTeamInput | PropertyAssignmentConfigUpdateWithWhereUniqueWithoutTeamInput[]
+    updateMany?: PropertyAssignmentConfigUpdateManyWithWhereWithoutTeamInput | PropertyAssignmentConfigUpdateManyWithWhereWithoutTeamInput[]
+    deleteMany?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
+  }
+
   export type ChatParticipantUncheckedUpdateManyWithoutTeamNestedInput = {
     create?: XOR<ChatParticipantCreateWithoutTeamInput, ChatParticipantUncheckedCreateWithoutTeamInput> | ChatParticipantCreateWithoutTeamInput[] | ChatParticipantUncheckedCreateWithoutTeamInput[]
     connectOrCreate?: ChatParticipantCreateOrConnectWithoutTeamInput | ChatParticipantCreateOrConnectWithoutTeamInput[]
@@ -130511,6 +132142,20 @@ export namespace Prisma {
     update?: WorkGroupExecutorUpdateWithWhereUniqueWithoutTeamInput | WorkGroupExecutorUpdateWithWhereUniqueWithoutTeamInput[]
     updateMany?: WorkGroupExecutorUpdateManyWithWhereWithoutTeamInput | WorkGroupExecutorUpdateManyWithWhereWithoutTeamInput[]
     deleteMany?: WorkGroupExecutorScalarWhereInput | WorkGroupExecutorScalarWhereInput[]
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutTeamInput, PropertyAssignmentConfigUncheckedCreateWithoutTeamInput> | PropertyAssignmentConfigCreateWithoutTeamInput[] | PropertyAssignmentConfigUncheckedCreateWithoutTeamInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutTeamInput | PropertyAssignmentConfigCreateOrConnectWithoutTeamInput[]
+    upsert?: PropertyAssignmentConfigUpsertWithWhereUniqueWithoutTeamInput | PropertyAssignmentConfigUpsertWithWhereUniqueWithoutTeamInput[]
+    createMany?: PropertyAssignmentConfigCreateManyTeamInputEnvelope
+    set?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    disconnect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    delete?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    update?: PropertyAssignmentConfigUpdateWithWhereUniqueWithoutTeamInput | PropertyAssignmentConfigUpdateWithWhereUniqueWithoutTeamInput[]
+    updateMany?: PropertyAssignmentConfigUpdateManyWithWhereWithoutTeamInput | PropertyAssignmentConfigUpdateManyWithWhereWithoutTeamInput[]
+    deleteMany?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
   }
 
   export type TeamMemberCreateworkingDaysInput = {
@@ -134095,6 +135740,13 @@ export namespace Prisma {
     connect?: PropertyMemberAccessWhereUniqueInput | PropertyMemberAccessWhereUniqueInput[]
   }
 
+  export type PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput> | PropertyAssignmentConfigCreateWithoutPreferredMembershipInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput | PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPreferredMembershipInputEnvelope
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+  }
+
   export type TeamCreateNestedOneWithoutTeamMembershipInput = {
     create?: XOR<TeamCreateWithoutTeamMembershipInput, TeamUncheckedCreateWithoutTeamMembershipInput>
     connectOrCreate?: TeamCreateOrConnectWithoutTeamMembershipInput
@@ -134126,6 +135778,13 @@ export namespace Prisma {
     connectOrCreate?: PropertyMemberAccessCreateOrConnectWithoutTeamMembershipInput | PropertyMemberAccessCreateOrConnectWithoutTeamMembershipInput[]
     createMany?: PropertyMemberAccessCreateManyTeamMembershipInputEnvelope
     connect?: PropertyMemberAccessWhereUniqueInput | PropertyMemberAccessWhereUniqueInput[]
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput> | PropertyAssignmentConfigCreateWithoutPreferredMembershipInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput | PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPreferredMembershipInputEnvelope
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
   }
 
   export type EnumTeamRoleFieldUpdateOperationsInput = {
@@ -134176,6 +135835,20 @@ export namespace Prisma {
     update?: PropertyMemberAccessUpdateWithWhereUniqueWithoutTeamMembershipInput | PropertyMemberAccessUpdateWithWhereUniqueWithoutTeamMembershipInput[]
     updateMany?: PropertyMemberAccessUpdateManyWithWhereWithoutTeamMembershipInput | PropertyMemberAccessUpdateManyWithWhereWithoutTeamMembershipInput[]
     deleteMany?: PropertyMemberAccessScalarWhereInput | PropertyMemberAccessScalarWhereInput[]
+  }
+
+  export type PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput> | PropertyAssignmentConfigCreateWithoutPreferredMembershipInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput | PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput[]
+    upsert?: PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPreferredMembershipInput | PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPreferredMembershipInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPreferredMembershipInputEnvelope
+    set?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    disconnect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    delete?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    update?: PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPreferredMembershipInput | PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPreferredMembershipInput[]
+    updateMany?: PropertyAssignmentConfigUpdateManyWithWhereWithoutPreferredMembershipInput | PropertyAssignmentConfigUpdateManyWithWhereWithoutPreferredMembershipInput[]
+    deleteMany?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
   }
 
   export type TeamUpdateOneRequiredWithoutTeamMembershipNestedInput = {
@@ -134234,6 +135907,20 @@ export namespace Prisma {
     update?: PropertyMemberAccessUpdateWithWhereUniqueWithoutTeamMembershipInput | PropertyMemberAccessUpdateWithWhereUniqueWithoutTeamMembershipInput[]
     updateMany?: PropertyMemberAccessUpdateManyWithWhereWithoutTeamMembershipInput | PropertyMemberAccessUpdateManyWithWhereWithoutTeamMembershipInput[]
     deleteMany?: PropertyMemberAccessScalarWhereInput | PropertyMemberAccessScalarWhereInput[]
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput = {
+    create?: XOR<PropertyAssignmentConfigCreateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput> | PropertyAssignmentConfigCreateWithoutPreferredMembershipInput[] | PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput[]
+    connectOrCreate?: PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput | PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput[]
+    upsert?: PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPreferredMembershipInput | PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPreferredMembershipInput[]
+    createMany?: PropertyAssignmentConfigCreateManyPreferredMembershipInputEnvelope
+    set?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    disconnect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    delete?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    connect?: PropertyAssignmentConfigWhereUniqueInput | PropertyAssignmentConfigWhereUniqueInput[]
+    update?: PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPreferredMembershipInput | PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPreferredMembershipInput[]
+    updateMany?: PropertyAssignmentConfigUpdateManyWithWhereWithoutPreferredMembershipInput | PropertyAssignmentConfigUpdateManyWithWhereWithoutPreferredMembershipInput[]
+    deleteMany?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
   }
 
   export type TaskJobCreateNestedManyWithoutTemplateInput = {
@@ -135604,6 +137291,48 @@ export namespace Prisma {
     upsert?: TenantUpsertWithoutTaskJobEventLogsInput
     connect?: TenantWhereUniqueInput
     update?: XOR<XOR<TenantUpdateToOneWithWhereWithoutTaskJobEventLogsInput, TenantUpdateWithoutTaskJobEventLogsInput>, TenantUncheckedUpdateWithoutTaskJobEventLogsInput>
+  }
+
+  export type PropertyCreateNestedOneWithoutAssignmentConfigsInput = {
+    create?: XOR<PropertyCreateWithoutAssignmentConfigsInput, PropertyUncheckedCreateWithoutAssignmentConfigsInput>
+    connectOrCreate?: PropertyCreateOrConnectWithoutAssignmentConfigsInput
+    connect?: PropertyWhereUniqueInput
+  }
+
+  export type TeamCreateNestedOneWithoutAssignmentConfigsInput = {
+    create?: XOR<TeamCreateWithoutAssignmentConfigsInput, TeamUncheckedCreateWithoutAssignmentConfigsInput>
+    connectOrCreate?: TeamCreateOrConnectWithoutAssignmentConfigsInput
+    connect?: TeamWhereUniqueInput
+  }
+
+  export type TeamMembershipCreateNestedOneWithoutAssignmentConfigsInput = {
+    create?: XOR<TeamMembershipCreateWithoutAssignmentConfigsInput, TeamMembershipUncheckedCreateWithoutAssignmentConfigsInput>
+    connectOrCreate?: TeamMembershipCreateOrConnectWithoutAssignmentConfigsInput
+    connect?: TeamMembershipWhereUniqueInput
+  }
+
+  export type PropertyUpdateOneRequiredWithoutAssignmentConfigsNestedInput = {
+    create?: XOR<PropertyCreateWithoutAssignmentConfigsInput, PropertyUncheckedCreateWithoutAssignmentConfigsInput>
+    connectOrCreate?: PropertyCreateOrConnectWithoutAssignmentConfigsInput
+    upsert?: PropertyUpsertWithoutAssignmentConfigsInput
+    connect?: PropertyWhereUniqueInput
+    update?: XOR<XOR<PropertyUpdateToOneWithWhereWithoutAssignmentConfigsInput, PropertyUpdateWithoutAssignmentConfigsInput>, PropertyUncheckedUpdateWithoutAssignmentConfigsInput>
+  }
+
+  export type TeamUpdateOneRequiredWithoutAssignmentConfigsNestedInput = {
+    create?: XOR<TeamCreateWithoutAssignmentConfigsInput, TeamUncheckedCreateWithoutAssignmentConfigsInput>
+    connectOrCreate?: TeamCreateOrConnectWithoutAssignmentConfigsInput
+    upsert?: TeamUpsertWithoutAssignmentConfigsInput
+    connect?: TeamWhereUniqueInput
+    update?: XOR<XOR<TeamUpdateToOneWithWhereWithoutAssignmentConfigsInput, TeamUpdateWithoutAssignmentConfigsInput>, TeamUncheckedUpdateWithoutAssignmentConfigsInput>
+  }
+
+  export type TeamMembershipUpdateOneRequiredWithoutAssignmentConfigsNestedInput = {
+    create?: XOR<TeamMembershipCreateWithoutAssignmentConfigsInput, TeamMembershipUncheckedCreateWithoutAssignmentConfigsInput>
+    connectOrCreate?: TeamMembershipCreateOrConnectWithoutAssignmentConfigsInput
+    upsert?: TeamMembershipUpsertWithoutAssignmentConfigsInput
+    connect?: TeamMembershipWhereUniqueInput
+    update?: XOR<XOR<TeamMembershipUpdateToOneWithWhereWithoutAssignmentConfigsInput, TeamMembershipUpdateWithoutAssignmentConfigsInput>, TeamMembershipUncheckedUpdateWithoutAssignmentConfigsInput>
   }
 
   export type TaskTemplateCreateNestedOneWithoutRecurringDuesInput = {
@@ -138101,6 +139830,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutTenantInput = {
@@ -138155,6 +139885,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutTenantInput = {
@@ -139192,6 +140923,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutTenantInput = {
@@ -139211,6 +140943,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutTenantInput = {
@@ -142181,6 +143914,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutUserInput = {
@@ -142235,6 +143969,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutUserInput = {
@@ -142592,6 +144327,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutInactivatedByUserInput = {
@@ -142611,6 +144347,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutInactivatedByUserInput = {
@@ -142752,6 +144489,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput
     Team: TeamCreateNestedOneWithoutTeamMembershipInput
   }
 
@@ -142765,6 +144503,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningUncheckedCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput
   }
 
   export type TeamMembershipCreateOrConnectWithoutUserInput = {
@@ -144985,6 +146724,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutCleanerReviewsInput = {
@@ -145039,6 +146779,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutCleanerReviewsInput = {
@@ -145382,6 +147123,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutCleanerReviewsInput = {
@@ -145436,6 +147178,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UserUpsertWithoutCleanerReviewsGivenInput = {
@@ -146918,6 +148661,36 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PropertyAssignmentConfigCreateWithoutPropertyInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    team: TeamCreateNestedOneWithoutAssignmentConfigsInput
+    preferredMembership: TeamMembershipCreateNestedOneWithoutAssignmentConfigsInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    teamId: string
+    preferredMembershipId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyAssignmentConfigCreateOrConnectWithoutPropertyInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    create: XOR<PropertyAssignmentConfigCreateWithoutPropertyInput, PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput>
+  }
+
+  export type PropertyAssignmentConfigCreateManyPropertyInputEnvelope = {
+    data: PropertyAssignmentConfigCreateManyPropertyInput | PropertyAssignmentConfigCreateManyPropertyInput[]
+    skipDuplicates?: boolean
+  }
+
   export type ChatThreadUpsertWithWhereUniqueWithoutPropertyInput = {
     where: ChatThreadWhereUniqueInput
     update: XOR<ChatThreadUpdateWithoutPropertyInput, ChatThreadUncheckedUpdateWithoutPropertyInput>
@@ -147621,6 +149394,36 @@ export namespace Prisma {
     data: XOR<TaskTemplateUpdateManyMutationInput, TaskTemplateUncheckedUpdateManyWithoutPropertyInput>
   }
 
+  export type PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPropertyInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    update: XOR<PropertyAssignmentConfigUpdateWithoutPropertyInput, PropertyAssignmentConfigUncheckedUpdateWithoutPropertyInput>
+    create: XOR<PropertyAssignmentConfigCreateWithoutPropertyInput, PropertyAssignmentConfigUncheckedCreateWithoutPropertyInput>
+  }
+
+  export type PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPropertyInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    data: XOR<PropertyAssignmentConfigUpdateWithoutPropertyInput, PropertyAssignmentConfigUncheckedUpdateWithoutPropertyInput>
+  }
+
+  export type PropertyAssignmentConfigUpdateManyWithWhereWithoutPropertyInput = {
+    where: PropertyAssignmentConfigScalarWhereInput
+    data: XOR<PropertyAssignmentConfigUpdateManyMutationInput, PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyInput>
+  }
+
+  export type PropertyAssignmentConfigScalarWhereInput = {
+    AND?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
+    OR?: PropertyAssignmentConfigScalarWhereInput[]
+    NOT?: PropertyAssignmentConfigScalarWhereInput | PropertyAssignmentConfigScalarWhereInput[]
+    id?: StringFilter<"PropertyAssignmentConfig"> | string
+    hostTenantId?: StringFilter<"PropertyAssignmentConfig"> | string
+    servicesTenantId?: StringFilter<"PropertyAssignmentConfig"> | string
+    propertyId?: StringFilter<"PropertyAssignmentConfig"> | string
+    teamId?: StringFilter<"PropertyAssignmentConfig"> | string
+    preferredMembershipId?: StringFilter<"PropertyAssignmentConfig"> | string
+    createdAt?: DateTimeFilter<"PropertyAssignmentConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"PropertyAssignmentConfig"> | Date | string
+  }
+
   export type PropertyCreateWithoutMemberAccessesInput = {
     name: string
     shortName?: string | null
@@ -147673,6 +149476,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutMemberAccessesInput = {
@@ -147727,6 +149531,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutMemberAccessesInput = {
@@ -147742,6 +149547,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput
     Team: TeamCreateNestedOneWithoutTeamMembershipInput
     User: UserCreateNestedOneWithoutTeamMembershipInput
   }
@@ -147756,6 +149562,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningUncheckedCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput
   }
 
   export type TeamMembershipCreateOrConnectWithoutPropertyAccessesInput = {
@@ -147915,6 +149722,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutMemberAccessesInput = {
@@ -147969,6 +149777,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TeamMembershipUpsertWithoutPropertyAccessesInput = {
@@ -147990,6 +149799,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     chatParticipants?: ChatParticipantUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput
     Team?: TeamUpdateOneRequiredWithoutTeamMembershipNestedInput
     User?: UserUpdateOneRequiredWithoutTeamMembershipNestedInput
   }
@@ -148004,6 +149814,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput
   }
 
   export type UserUpsertWithoutPropertyMemberAccessesInput = {
@@ -148331,6 +150142,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyInvitesInput = {
@@ -148385,6 +150197,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyInvitesInput = {
@@ -148784,6 +150597,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyInvitesInput = {
@@ -148838,6 +150652,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyInvitesInput = {
@@ -149037,6 +150852,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutAdminsInput = {
@@ -149091,6 +150907,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutAdminsInput = {
@@ -149389,6 +151206,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutAdminsInput = {
@@ -149443,6 +151261,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyAdminsInput = {
@@ -149737,6 +151556,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutCleanersInput = {
@@ -149791,6 +151611,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutCleanersInput = {
@@ -150089,6 +151910,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutCleanersInput = {
@@ -150143,6 +151965,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyCleanersInput = {
@@ -150437,6 +152260,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutHandymenInput = {
@@ -150491,6 +152315,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutHandymenInput = {
@@ -150789,6 +152614,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutHandymenInput = {
@@ -150843,6 +152669,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyHandymenInput = {
@@ -151265,6 +153092,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutReservationsInput = {
@@ -151319,6 +153147,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutReservationsInput = {
@@ -151560,6 +153389,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutReservationsInput = {
@@ -151614,6 +153444,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutReservationsInput = {
@@ -151879,6 +153710,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput
     Team: TeamCreateNestedOneWithoutTeamMembershipInput
     User: UserCreateNestedOneWithoutTeamMembershipInput
   }
@@ -151893,6 +153725,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput
   }
 
   export type TeamMembershipCreateOrConnectWithoutCleaningInput = {
@@ -152084,6 +153917,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutCleaningsInput = {
@@ -152138,6 +153972,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutCleaningsInput = {
@@ -152225,6 +154060,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutCleaningsInput = {
@@ -152244,6 +154080,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutCleaningsInput = {
@@ -152858,6 +154695,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     chatParticipants?: ChatParticipantUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput
     Team?: TeamUpdateOneRequiredWithoutTeamMembershipNestedInput
     User?: UserUpdateOneRequiredWithoutTeamMembershipNestedInput
   }
@@ -152872,6 +154710,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput
   }
 
   export type TeamMemberUpsertWithoutCleaningsInput = {
@@ -153081,6 +154920,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutCleaningsInput = {
@@ -153135,6 +154975,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type ReservationUpsertWithoutCleaningsInput = {
@@ -153234,6 +155075,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutCleaningsInput = {
@@ -153253,6 +155095,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TenantUpsertWithoutCleaningsInput = {
@@ -153625,6 +155468,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutLocksInput = {
@@ -153679,6 +155523,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutLocksInput = {
@@ -153928,6 +155773,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutLocksInput = {
@@ -153982,6 +155828,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutLocksInput = {
@@ -155432,6 +157279,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput
     User: UserCreateNestedOneWithoutTeamMembershipInput
   }
 
@@ -155445,6 +157293,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamMembershipInput
     Cleaning?: CleaningUncheckedCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput
   }
 
   export type TeamMembershipCreateOrConnectWithoutTeamInput = {
@@ -155484,6 +157333,36 @@ export namespace Prisma {
 
   export type WorkGroupExecutorCreateManyTeamInputEnvelope = {
     data: WorkGroupExecutorCreateManyTeamInput | WorkGroupExecutorCreateManyTeamInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PropertyAssignmentConfigCreateWithoutTeamInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    property: PropertyCreateNestedOneWithoutAssignmentConfigsInput
+    preferredMembership: TeamMembershipCreateNestedOneWithoutAssignmentConfigsInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateWithoutTeamInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    preferredMembershipId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyAssignmentConfigCreateOrConnectWithoutTeamInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    create: XOR<PropertyAssignmentConfigCreateWithoutTeamInput, PropertyAssignmentConfigUncheckedCreateWithoutTeamInput>
+  }
+
+  export type PropertyAssignmentConfigCreateManyTeamInputEnvelope = {
+    data: PropertyAssignmentConfigCreateManyTeamInput | PropertyAssignmentConfigCreateManyTeamInput[]
     skipDuplicates?: boolean
   }
 
@@ -155855,6 +157734,22 @@ export namespace Prisma {
     data: XOR<WorkGroupExecutorUpdateManyMutationInput, WorkGroupExecutorUncheckedUpdateManyWithoutTeamInput>
   }
 
+  export type PropertyAssignmentConfigUpsertWithWhereUniqueWithoutTeamInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    update: XOR<PropertyAssignmentConfigUpdateWithoutTeamInput, PropertyAssignmentConfigUncheckedUpdateWithoutTeamInput>
+    create: XOR<PropertyAssignmentConfigCreateWithoutTeamInput, PropertyAssignmentConfigUncheckedCreateWithoutTeamInput>
+  }
+
+  export type PropertyAssignmentConfigUpdateWithWhereUniqueWithoutTeamInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    data: XOR<PropertyAssignmentConfigUpdateWithoutTeamInput, PropertyAssignmentConfigUncheckedUpdateWithoutTeamInput>
+  }
+
+  export type PropertyAssignmentConfigUpdateManyWithWhereWithoutTeamInput = {
+    where: PropertyAssignmentConfigScalarWhereInput
+    data: XOR<PropertyAssignmentConfigUpdateManyMutationInput, PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamInput>
+  }
+
   export type CleaningCreateWithoutAssignedMemberInput = {
     id?: string
     scheduledDate: Date | string
@@ -156100,6 +157995,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutMembersInput = {
@@ -156119,6 +158015,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutMembersInput = {
@@ -156478,6 +158375,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutMembersInput = {
@@ -156497,6 +158395,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TenantUpsertWithoutTeamMembersInput = {
@@ -157183,6 +159082,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutTeamsInput = {
@@ -157237,6 +159137,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutTeamsInput = {
@@ -157261,6 +159162,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutPropertiesInput = {
@@ -157280,6 +159182,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutPropertiesInput = {
@@ -157489,6 +159392,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutTeamsInput = {
@@ -157543,6 +159447,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TeamUpsertWithoutPropertiesInput = {
@@ -157573,6 +159478,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutPropertiesInput = {
@@ -157592,6 +159498,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TenantUpsertWithoutPropertyTeamsInput = {
@@ -158215,6 +160122,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutHostWorkGroupPropertiesInput = {
@@ -158269,6 +160177,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutHostWorkGroupPropertiesInput = {
@@ -158505,6 +160414,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutHostWorkGroupPropertiesInput = {
@@ -158559,6 +160469,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutHostWorkGroupPropertiesInput = {
@@ -159034,6 +160945,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteCreateNestedManyWithoutTeamInput
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutWorkGroupExecutorsInput = {
@@ -159053,6 +160965,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUncheckedCreateNestedManyWithoutTeamInput
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutWorkGroupExecutorsInput = {
@@ -159405,6 +161318,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUpdateManyWithoutTeamNestedInput
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutWorkGroupExecutorsInput = {
@@ -159424,6 +161338,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUncheckedUpdateManyWithoutTeamNestedInput
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type HostWorkGroupUpsertWithoutExecutorsInput = {
@@ -161391,6 +163306,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyChecklistItemsInput = {
@@ -161445,6 +163361,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyChecklistItemsInput = {
@@ -161686,6 +163603,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyChecklistItemsInput = {
@@ -161740,6 +163658,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyChecklistItemsInput = {
@@ -162901,6 +164820,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutCoverMediaInput = {
@@ -162955,6 +164875,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutCoverMediaInput = {
@@ -163586,6 +165507,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutCoverMediaInput = {
@@ -163640,6 +165562,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TaskJobSectionEvidenceAssetUpsertWithWhereUniqueWithoutAssetInput = {
@@ -166775,6 +168698,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutInventoryLinesInput = {
@@ -166829,6 +168753,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutInventoryLinesInput = {
@@ -167304,6 +169229,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutInventoryLinesInput = {
@@ -167358,6 +169284,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyZoneUpsertWithoutInventoryLinesInput = {
@@ -167795,6 +169722,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutInventoryReviewsInput = {
@@ -167849,6 +169777,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutInventoryReviewsInput = {
@@ -168294,6 +170223,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutInventoryReviewsInput = {
@@ -168348,6 +170278,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type UserUpsertWithoutInventoryReviewsAsReviewerInput = {
@@ -168895,6 +170826,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutInventoryChecksInput = {
@@ -168949,6 +170881,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutInventoryChecksInput = {
@@ -169413,6 +171346,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutInventoryChecksInput = {
@@ -169467,6 +171401,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutInventoryChecksInput = {
@@ -172840,6 +174775,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyZonesInput = {
@@ -172894,6 +174830,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyZonesInput = {
@@ -173135,6 +175072,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyZonesInput = {
@@ -173189,6 +175127,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyZonesInput = {
@@ -173453,6 +175392,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutInventoryLogsInput = {
@@ -173507,6 +175447,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutInventoryLogsInput = {
@@ -173824,6 +175765,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutInventoryLogsInput = {
@@ -173878,6 +175820,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyZoneUpsertWithoutInventoryLogsInput = {
@@ -174241,6 +176184,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyOpeningsInput = {
@@ -174295,6 +176239,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyOpeningsInput = {
@@ -174615,6 +176560,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyOpeningsInput = {
@@ -174669,6 +176615,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyOpeningsInput = {
@@ -175025,6 +176972,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutPropertyApplicationsInput = {
@@ -175079,6 +177027,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutPropertyApplicationsInput = {
@@ -175463,6 +177412,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutPropertyApplicationsInput = {
@@ -175517,6 +177467,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutPropertyApplicationsInput = {
@@ -175900,6 +177851,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutChatThreadsInput = {
@@ -175954,6 +177906,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutChatThreadsInput = {
@@ -175978,6 +177931,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutChatThreadsInput = {
@@ -175997,6 +177951,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutChatThreadsInput = {
@@ -176360,6 +178315,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutChatThreadsInput = {
@@ -176414,6 +178370,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TeamUpsertWithoutChatThreadsInput = {
@@ -176444,6 +178401,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutChatThreadsInput = {
@@ -176463,6 +178421,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TenantUpsertWithoutChatThreadsInput = {
@@ -176716,6 +178675,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutChatParticipantsInput = {
@@ -176735,6 +178695,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutChatParticipantsInput = {
@@ -176750,6 +178711,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     Cleaning?: CleaningCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPreferredMembershipInput
     Team: TeamCreateNestedOneWithoutTeamMembershipInput
     User: UserCreateNestedOneWithoutTeamMembershipInput
   }
@@ -176764,6 +178726,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     Cleaning?: CleaningUncheckedCreateNestedManyWithoutTeamMembershipInput
     propertyAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutTeamMembershipInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPreferredMembershipInput
   }
 
   export type TeamMembershipCreateOrConnectWithoutChatParticipantsInput = {
@@ -177020,6 +178983,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutChatParticipantsInput = {
@@ -177039,6 +179003,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamMembershipUpsertWithoutChatParticipantsInput = {
@@ -177060,6 +179025,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     Cleaning?: CleaningUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput
     Team?: TeamUpdateOneRequiredWithoutTeamMembershipNestedInput
     User?: UserUpdateOneRequiredWithoutTeamMembershipNestedInput
   }
@@ -177074,6 +179040,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     Cleaning?: CleaningUncheckedUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput
   }
 
   export type ChatThreadUpsertWithoutParticipantsInput = {
@@ -178109,6 +180076,7 @@ export namespace Prisma {
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutTeamInviteInput = {
@@ -178128,6 +180096,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutTeamInviteInput = {
@@ -178353,6 +180322,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutTeamInviteInput = {
@@ -178372,6 +180342,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type ChatParticipantCreateWithoutTeamMembershipInput = {
@@ -178528,6 +180499,36 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PropertyAssignmentConfigCreateWithoutPreferredMembershipInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    property: PropertyCreateNestedOneWithoutAssignmentConfigsInput
+    team: TeamCreateNestedOneWithoutAssignmentConfigsInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    teamId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyAssignmentConfigCreateOrConnectWithoutPreferredMembershipInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    create: XOR<PropertyAssignmentConfigCreateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput>
+  }
+
+  export type PropertyAssignmentConfigCreateManyPreferredMembershipInputEnvelope = {
+    data: PropertyAssignmentConfigCreateManyPreferredMembershipInput | PropertyAssignmentConfigCreateManyPreferredMembershipInput[]
+    skipDuplicates?: boolean
+  }
+
   export type TeamCreateWithoutTeamMembershipInput = {
     id?: string
     name: string
@@ -178545,6 +180546,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteCreateNestedManyWithoutTeamInput
     members?: TeamMemberCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutTeamInput
   }
 
   export type TeamUncheckedCreateWithoutTeamMembershipInput = {
@@ -178564,6 +180566,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUncheckedCreateNestedManyWithoutTeamInput
     members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
     workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutTeamInput
   }
 
   export type TeamCreateOrConnectWithoutTeamMembershipInput = {
@@ -178708,6 +180711,22 @@ export namespace Prisma {
     data: XOR<PropertyMemberAccessUpdateManyMutationInput, PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipInput>
   }
 
+  export type PropertyAssignmentConfigUpsertWithWhereUniqueWithoutPreferredMembershipInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    update: XOR<PropertyAssignmentConfigUpdateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedUpdateWithoutPreferredMembershipInput>
+    create: XOR<PropertyAssignmentConfigCreateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedCreateWithoutPreferredMembershipInput>
+  }
+
+  export type PropertyAssignmentConfigUpdateWithWhereUniqueWithoutPreferredMembershipInput = {
+    where: PropertyAssignmentConfigWhereUniqueInput
+    data: XOR<PropertyAssignmentConfigUpdateWithoutPreferredMembershipInput, PropertyAssignmentConfigUncheckedUpdateWithoutPreferredMembershipInput>
+  }
+
+  export type PropertyAssignmentConfigUpdateManyWithWhereWithoutPreferredMembershipInput = {
+    where: PropertyAssignmentConfigScalarWhereInput
+    data: XOR<PropertyAssignmentConfigUpdateManyMutationInput, PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipInput>
+  }
+
   export type TeamUpsertWithoutTeamMembershipInput = {
     update: XOR<TeamUpdateWithoutTeamMembershipInput, TeamUncheckedUpdateWithoutTeamMembershipInput>
     create: XOR<TeamCreateWithoutTeamMembershipInput, TeamUncheckedCreateWithoutTeamMembershipInput>
@@ -178736,6 +180755,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUpdateManyWithoutTeamNestedInput
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutTeamMembershipInput = {
@@ -178755,6 +180775,7 @@ export namespace Prisma {
     TeamInvite?: TeamInviteUncheckedUpdateManyWithoutTeamNestedInput
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type UserUpsertWithoutTeamMembershipInput = {
@@ -179036,6 +181057,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardCreateNestedManyWithoutPropertyInput
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutTaskTemplatesInput = {
@@ -179090,6 +181112,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUncheckedCreateNestedManyWithoutPropertyInput
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutTaskTemplatesInput = {
@@ -179374,6 +181397,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUpdateManyWithoutPropertyNestedInput
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutTaskTemplatesInput = {
@@ -179428,6 +181452,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUncheckedUpdateManyWithoutPropertyNestedInput
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutTaskTemplatesInput = {
@@ -182724,6 +184749,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutTaskJobsInput = {
@@ -182778,6 +184804,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutTaskJobsInput = {
@@ -183294,6 +185321,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutTaskJobsInput = {
@@ -183348,6 +185376,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TaskTemplateUpsertWithoutJobsInput = {
@@ -186582,6 +188611,7 @@ export namespace Prisma {
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutTaskCarryForwardsInput = {
@@ -186636,6 +188666,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutTaskCarryForwardsInput = {
@@ -186936,6 +188967,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutTaskCarryForwardsInput = {
@@ -186990,6 +189022,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TaskJobUpsertWithoutCarryForwardsCreatedInput = {
@@ -187768,6 +189801,406 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
   }
 
+  export type PropertyCreateWithoutAssignmentConfigsInput = {
+    name: string
+    shortName?: string | null
+    address?: string | null
+    notes?: string | null
+    icalUrl?: string | null
+    timeZone?: string | null
+    checkInTime?: string | null
+    checkOutTime?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    groupName?: string | null
+    notificationEmail?: string | null
+    isActive?: boolean
+    idOld?: string | null
+    id?: string
+    coverAssetGroupId?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    wifiSsid?: string | null
+    wifiPassword?: string | null
+    accessCode?: string | null
+    icalLastSyncedAt?: Date | string | null
+    icalLastSyncAttemptAt?: Date | string | null
+    icalSyncInProgressUntil?: Date | string | null
+    icalLastSyncError?: string | null
+    chatThreads?: ChatThreadCreateNestedManyWithoutPropertyInput
+    cleanerReviews?: CleanerReviewCreateNestedManyWithoutPropertyInput
+    cleanings?: CleaningCreateNestedManyWithoutPropertyInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyCreateNestedManyWithoutPropertyInput
+    inventoryChecks?: InventoryCheckCreateNestedManyWithoutPropertyInput
+    inventoryLines?: InventoryLineCreateNestedManyWithoutPropertyInput
+    inventoryLogs?: InventoryLogCreateNestedManyWithoutPropertyInput
+    inventoryReviews?: InventoryReviewCreateNestedManyWithoutPropertyInput
+    locks?: LockCreateNestedManyWithoutPropertyInput
+    coverMedia?: AssetCreateNestedOneWithoutPropertyCoverInput
+    tenant: TenantCreateNestedOneWithoutPropertiesInput
+    user: UserCreateNestedOneWithoutOwnedPropertiesInput
+    admins?: PropertyAdminCreateNestedManyWithoutPropertyInput
+    propertyApplications?: PropertyApplicationCreateNestedManyWithoutPropertyInput
+    propertyChecklistItems?: PropertyChecklistItemCreateNestedManyWithoutPropertyInput
+    cleaners?: PropertyCleanerCreateNestedManyWithoutPropertyInput
+    handymen?: PropertyHandymanCreateNestedManyWithoutPropertyInput
+    propertyInvites?: PropertyInviteCreateNestedManyWithoutPropertyInput
+    memberAccesses?: PropertyMemberAccessCreateNestedManyWithoutPropertyInput
+    propertyOpenings?: PropertyOpeningCreateNestedManyWithoutPropertyInput
+    teams?: PropertyTeamCreateNestedManyWithoutPropertyInput
+    propertyZones?: PropertyZoneCreateNestedManyWithoutPropertyInput
+    reservations?: ReservationCreateNestedManyWithoutPropertyInput
+    taskCarryForwards?: TaskCarryForwardCreateNestedManyWithoutPropertyInput
+    taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
+    taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutPropertyInput
+    taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyUncheckedCreateWithoutAssignmentConfigsInput = {
+    tenantId: string
+    name: string
+    shortName?: string | null
+    address?: string | null
+    notes?: string | null
+    icalUrl?: string | null
+    timeZone?: string | null
+    checkInTime?: string | null
+    checkOutTime?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    userId: string
+    groupName?: string | null
+    notificationEmail?: string | null
+    isActive?: boolean
+    idOld?: string | null
+    id?: string
+    coverAssetGroupId?: string | null
+    coverMediaId?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    wifiSsid?: string | null
+    wifiPassword?: string | null
+    accessCode?: string | null
+    icalLastSyncedAt?: Date | string | null
+    icalLastSyncAttemptAt?: Date | string | null
+    icalSyncInProgressUntil?: Date | string | null
+    icalLastSyncError?: string | null
+    chatThreads?: ChatThreadUncheckedCreateNestedManyWithoutPropertyInput
+    cleanerReviews?: CleanerReviewUncheckedCreateNestedManyWithoutPropertyInput
+    cleanings?: CleaningUncheckedCreateNestedManyWithoutPropertyInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyUncheckedCreateNestedManyWithoutPropertyInput
+    inventoryChecks?: InventoryCheckUncheckedCreateNestedManyWithoutPropertyInput
+    inventoryLines?: InventoryLineUncheckedCreateNestedManyWithoutPropertyInput
+    inventoryLogs?: InventoryLogUncheckedCreateNestedManyWithoutPropertyInput
+    inventoryReviews?: InventoryReviewUncheckedCreateNestedManyWithoutPropertyInput
+    locks?: LockUncheckedCreateNestedManyWithoutPropertyInput
+    admins?: PropertyAdminUncheckedCreateNestedManyWithoutPropertyInput
+    propertyApplications?: PropertyApplicationUncheckedCreateNestedManyWithoutPropertyInput
+    propertyChecklistItems?: PropertyChecklistItemUncheckedCreateNestedManyWithoutPropertyInput
+    cleaners?: PropertyCleanerUncheckedCreateNestedManyWithoutPropertyInput
+    handymen?: PropertyHandymanUncheckedCreateNestedManyWithoutPropertyInput
+    propertyInvites?: PropertyInviteUncheckedCreateNestedManyWithoutPropertyInput
+    memberAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutPropertyInput
+    propertyOpenings?: PropertyOpeningUncheckedCreateNestedManyWithoutPropertyInput
+    teams?: PropertyTeamUncheckedCreateNestedManyWithoutPropertyInput
+    propertyZones?: PropertyZoneUncheckedCreateNestedManyWithoutPropertyInput
+    reservations?: ReservationUncheckedCreateNestedManyWithoutPropertyInput
+    taskCarryForwards?: TaskCarryForwardUncheckedCreateNestedManyWithoutPropertyInput
+    taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
+    taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutPropertyInput
+    taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+  }
+
+  export type PropertyCreateOrConnectWithoutAssignmentConfigsInput = {
+    where: PropertyWhereUniqueInput
+    create: XOR<PropertyCreateWithoutAssignmentConfigsInput, PropertyUncheckedCreateWithoutAssignmentConfigsInput>
+  }
+
+  export type TeamCreateWithoutAssignmentConfigsInput = {
+    id?: string
+    name: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    inactivatedAt?: Date | string | null
+    status?: $Enums.TeamStatus
+    chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamInput
+    chatThreads?: ChatThreadCreateNestedManyWithoutTeamInput
+    cleanings?: CleaningCreateNestedManyWithoutTeamInput
+    properties?: PropertyTeamCreateNestedManyWithoutTeamInput
+    inactivatedByUser?: UserCreateNestedOneWithoutInactivatedTeamsInput
+    tenant: TenantCreateNestedOneWithoutTeamsInput
+    TeamInvite?: TeamInviteCreateNestedManyWithoutTeamInput
+    members?: TeamMemberCreateNestedManyWithoutTeamInput
+    TeamMembership?: TeamMembershipCreateNestedManyWithoutTeamInput
+    workGroupExecutors?: WorkGroupExecutorCreateNestedManyWithoutTeamInput
+  }
+
+  export type TeamUncheckedCreateWithoutAssignmentConfigsInput = {
+    id?: string
+    tenantId: string
+    name: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    inactivatedAt?: Date | string | null
+    inactivatedByUserId?: string | null
+    status?: $Enums.TeamStatus
+    chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamInput
+    chatThreads?: ChatThreadUncheckedCreateNestedManyWithoutTeamInput
+    cleanings?: CleaningUncheckedCreateNestedManyWithoutTeamInput
+    properties?: PropertyTeamUncheckedCreateNestedManyWithoutTeamInput
+    TeamInvite?: TeamInviteUncheckedCreateNestedManyWithoutTeamInput
+    members?: TeamMemberUncheckedCreateNestedManyWithoutTeamInput
+    TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutTeamInput
+    workGroupExecutors?: WorkGroupExecutorUncheckedCreateNestedManyWithoutTeamInput
+  }
+
+  export type TeamCreateOrConnectWithoutAssignmentConfigsInput = {
+    where: TeamWhereUniqueInput
+    create: XOR<TeamCreateWithoutAssignmentConfigsInput, TeamUncheckedCreateWithoutAssignmentConfigsInput>
+  }
+
+  export type TeamMembershipCreateWithoutAssignmentConfigsInput = {
+    id?: string
+    role: $Enums.TeamRole
+    status?: $Enums.TeamMembershipStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    chatParticipants?: ChatParticipantCreateNestedManyWithoutTeamMembershipInput
+    Cleaning?: CleaningCreateNestedManyWithoutTeamMembershipInput
+    propertyAccesses?: PropertyMemberAccessCreateNestedManyWithoutTeamMembershipInput
+    Team: TeamCreateNestedOneWithoutTeamMembershipInput
+    User: UserCreateNestedOneWithoutTeamMembershipInput
+  }
+
+  export type TeamMembershipUncheckedCreateWithoutAssignmentConfigsInput = {
+    id?: string
+    teamId: string
+    userId: string
+    role: $Enums.TeamRole
+    status?: $Enums.TeamMembershipStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutTeamMembershipInput
+    Cleaning?: CleaningUncheckedCreateNestedManyWithoutTeamMembershipInput
+    propertyAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutTeamMembershipInput
+  }
+
+  export type TeamMembershipCreateOrConnectWithoutAssignmentConfigsInput = {
+    where: TeamMembershipWhereUniqueInput
+    create: XOR<TeamMembershipCreateWithoutAssignmentConfigsInput, TeamMembershipUncheckedCreateWithoutAssignmentConfigsInput>
+  }
+
+  export type PropertyUpsertWithoutAssignmentConfigsInput = {
+    update: XOR<PropertyUpdateWithoutAssignmentConfigsInput, PropertyUncheckedUpdateWithoutAssignmentConfigsInput>
+    create: XOR<PropertyCreateWithoutAssignmentConfigsInput, PropertyUncheckedCreateWithoutAssignmentConfigsInput>
+    where?: PropertyWhereInput
+  }
+
+  export type PropertyUpdateToOneWithWhereWithoutAssignmentConfigsInput = {
+    where?: PropertyWhereInput
+    data: XOR<PropertyUpdateWithoutAssignmentConfigsInput, PropertyUncheckedUpdateWithoutAssignmentConfigsInput>
+  }
+
+  export type PropertyUpdateWithoutAssignmentConfigsInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    shortName?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    icalUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timeZone?: NullableStringFieldUpdateOperationsInput | string | null
+    checkInTime?: NullableStringFieldUpdateOperationsInput | string | null
+    checkOutTime?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    groupName?: NullableStringFieldUpdateOperationsInput | string | null
+    notificationEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    idOld?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    coverAssetGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    wifiSsid?: NullableStringFieldUpdateOperationsInput | string | null
+    wifiPassword?: NullableStringFieldUpdateOperationsInput | string | null
+    accessCode?: NullableStringFieldUpdateOperationsInput | string | null
+    icalLastSyncedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    icalLastSyncAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    icalSyncInProgressUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    icalLastSyncError?: NullableStringFieldUpdateOperationsInput | string | null
+    chatThreads?: ChatThreadUpdateManyWithoutPropertyNestedInput
+    cleanerReviews?: CleanerReviewUpdateManyWithoutPropertyNestedInput
+    cleanings?: CleaningUpdateManyWithoutPropertyNestedInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyUpdateManyWithoutPropertyNestedInput
+    inventoryChecks?: InventoryCheckUpdateManyWithoutPropertyNestedInput
+    inventoryLines?: InventoryLineUpdateManyWithoutPropertyNestedInput
+    inventoryLogs?: InventoryLogUpdateManyWithoutPropertyNestedInput
+    inventoryReviews?: InventoryReviewUpdateManyWithoutPropertyNestedInput
+    locks?: LockUpdateManyWithoutPropertyNestedInput
+    coverMedia?: AssetUpdateOneWithoutPropertyCoverNestedInput
+    tenant?: TenantUpdateOneRequiredWithoutPropertiesNestedInput
+    user?: UserUpdateOneRequiredWithoutOwnedPropertiesNestedInput
+    admins?: PropertyAdminUpdateManyWithoutPropertyNestedInput
+    propertyApplications?: PropertyApplicationUpdateManyWithoutPropertyNestedInput
+    propertyChecklistItems?: PropertyChecklistItemUpdateManyWithoutPropertyNestedInput
+    cleaners?: PropertyCleanerUpdateManyWithoutPropertyNestedInput
+    handymen?: PropertyHandymanUpdateManyWithoutPropertyNestedInput
+    propertyInvites?: PropertyInviteUpdateManyWithoutPropertyNestedInput
+    memberAccesses?: PropertyMemberAccessUpdateManyWithoutPropertyNestedInput
+    propertyOpenings?: PropertyOpeningUpdateManyWithoutPropertyNestedInput
+    teams?: PropertyTeamUpdateManyWithoutPropertyNestedInput
+    propertyZones?: PropertyZoneUpdateManyWithoutPropertyNestedInput
+    reservations?: ReservationUpdateManyWithoutPropertyNestedInput
+    taskCarryForwards?: TaskCarryForwardUpdateManyWithoutPropertyNestedInput
+    taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
+    taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
+    taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type PropertyUncheckedUpdateWithoutAssignmentConfigsInput = {
+    tenantId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    shortName?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    icalUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timeZone?: NullableStringFieldUpdateOperationsInput | string | null
+    checkInTime?: NullableStringFieldUpdateOperationsInput | string | null
+    checkOutTime?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    userId?: StringFieldUpdateOperationsInput | string
+    groupName?: NullableStringFieldUpdateOperationsInput | string | null
+    notificationEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    idOld?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    coverAssetGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    coverMediaId?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    wifiSsid?: NullableStringFieldUpdateOperationsInput | string | null
+    wifiPassword?: NullableStringFieldUpdateOperationsInput | string | null
+    accessCode?: NullableStringFieldUpdateOperationsInput | string | null
+    icalLastSyncedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    icalLastSyncAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    icalSyncInProgressUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    icalLastSyncError?: NullableStringFieldUpdateOperationsInput | string | null
+    chatThreads?: ChatThreadUncheckedUpdateManyWithoutPropertyNestedInput
+    cleanerReviews?: CleanerReviewUncheckedUpdateManyWithoutPropertyNestedInput
+    cleanings?: CleaningUncheckedUpdateManyWithoutPropertyNestedInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyUncheckedUpdateManyWithoutPropertyNestedInput
+    inventoryChecks?: InventoryCheckUncheckedUpdateManyWithoutPropertyNestedInput
+    inventoryLines?: InventoryLineUncheckedUpdateManyWithoutPropertyNestedInput
+    inventoryLogs?: InventoryLogUncheckedUpdateManyWithoutPropertyNestedInput
+    inventoryReviews?: InventoryReviewUncheckedUpdateManyWithoutPropertyNestedInput
+    locks?: LockUncheckedUpdateManyWithoutPropertyNestedInput
+    admins?: PropertyAdminUncheckedUpdateManyWithoutPropertyNestedInput
+    propertyApplications?: PropertyApplicationUncheckedUpdateManyWithoutPropertyNestedInput
+    propertyChecklistItems?: PropertyChecklistItemUncheckedUpdateManyWithoutPropertyNestedInput
+    cleaners?: PropertyCleanerUncheckedUpdateManyWithoutPropertyNestedInput
+    handymen?: PropertyHandymanUncheckedUpdateManyWithoutPropertyNestedInput
+    propertyInvites?: PropertyInviteUncheckedUpdateManyWithoutPropertyNestedInput
+    memberAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutPropertyNestedInput
+    propertyOpenings?: PropertyOpeningUncheckedUpdateManyWithoutPropertyNestedInput
+    teams?: PropertyTeamUncheckedUpdateManyWithoutPropertyNestedInput
+    propertyZones?: PropertyZoneUncheckedUpdateManyWithoutPropertyNestedInput
+    reservations?: ReservationUncheckedUpdateManyWithoutPropertyNestedInput
+    taskCarryForwards?: TaskCarryForwardUncheckedUpdateManyWithoutPropertyNestedInput
+    taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
+    taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
+    taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+  }
+
+  export type TeamUpsertWithoutAssignmentConfigsInput = {
+    update: XOR<TeamUpdateWithoutAssignmentConfigsInput, TeamUncheckedUpdateWithoutAssignmentConfigsInput>
+    create: XOR<TeamCreateWithoutAssignmentConfigsInput, TeamUncheckedCreateWithoutAssignmentConfigsInput>
+    where?: TeamWhereInput
+  }
+
+  export type TeamUpdateToOneWithWhereWithoutAssignmentConfigsInput = {
+    where?: TeamWhereInput
+    data: XOR<TeamUpdateWithoutAssignmentConfigsInput, TeamUncheckedUpdateWithoutAssignmentConfigsInput>
+  }
+
+  export type TeamUpdateWithoutAssignmentConfigsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    inactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumTeamStatusFieldUpdateOperationsInput | $Enums.TeamStatus
+    chatParticipants?: ChatParticipantUpdateManyWithoutTeamNestedInput
+    chatThreads?: ChatThreadUpdateManyWithoutTeamNestedInput
+    cleanings?: CleaningUpdateManyWithoutTeamNestedInput
+    properties?: PropertyTeamUpdateManyWithoutTeamNestedInput
+    inactivatedByUser?: UserUpdateOneWithoutInactivatedTeamsNestedInput
+    tenant?: TenantUpdateOneRequiredWithoutTeamsNestedInput
+    TeamInvite?: TeamInviteUpdateManyWithoutTeamNestedInput
+    members?: TeamMemberUpdateManyWithoutTeamNestedInput
+    TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
+    workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+  }
+
+  export type TeamUncheckedUpdateWithoutAssignmentConfigsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenantId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    inactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    inactivatedByUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTeamStatusFieldUpdateOperationsInput | $Enums.TeamStatus
+    chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamNestedInput
+    chatThreads?: ChatThreadUncheckedUpdateManyWithoutTeamNestedInput
+    cleanings?: CleaningUncheckedUpdateManyWithoutTeamNestedInput
+    properties?: PropertyTeamUncheckedUpdateManyWithoutTeamNestedInput
+    TeamInvite?: TeamInviteUncheckedUpdateManyWithoutTeamNestedInput
+    members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
+    TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
+    workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+  }
+
+  export type TeamMembershipUpsertWithoutAssignmentConfigsInput = {
+    update: XOR<TeamMembershipUpdateWithoutAssignmentConfigsInput, TeamMembershipUncheckedUpdateWithoutAssignmentConfigsInput>
+    create: XOR<TeamMembershipCreateWithoutAssignmentConfigsInput, TeamMembershipUncheckedCreateWithoutAssignmentConfigsInput>
+    where?: TeamMembershipWhereInput
+  }
+
+  export type TeamMembershipUpdateToOneWithWhereWithoutAssignmentConfigsInput = {
+    where?: TeamMembershipWhereInput
+    data: XOR<TeamMembershipUpdateWithoutAssignmentConfigsInput, TeamMembershipUncheckedUpdateWithoutAssignmentConfigsInput>
+  }
+
+  export type TeamMembershipUpdateWithoutAssignmentConfigsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    role?: EnumTeamRoleFieldUpdateOperationsInput | $Enums.TeamRole
+    status?: EnumTeamMembershipStatusFieldUpdateOperationsInput | $Enums.TeamMembershipStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    chatParticipants?: ChatParticipantUpdateManyWithoutTeamMembershipNestedInput
+    Cleaning?: CleaningUpdateManyWithoutTeamMembershipNestedInput
+    propertyAccesses?: PropertyMemberAccessUpdateManyWithoutTeamMembershipNestedInput
+    Team?: TeamUpdateOneRequiredWithoutTeamMembershipNestedInput
+    User?: UserUpdateOneRequiredWithoutTeamMembershipNestedInput
+  }
+
+  export type TeamMembershipUncheckedUpdateWithoutAssignmentConfigsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    role?: EnumTeamRoleFieldUpdateOperationsInput | $Enums.TeamRole
+    status?: EnumTeamMembershipStatusFieldUpdateOperationsInput | $Enums.TeamMembershipStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    Cleaning?: CleaningUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    propertyAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipNestedInput
+  }
+
   export type TaskTemplateCreateWithoutRecurringDuesInput = {
     id?: string
     name: string
@@ -187853,6 +190286,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardCreateNestedManyWithoutPropertyInput
     taskJobs?: TaskJobCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyUncheckedCreateWithoutTaskRecurringDuesInput = {
@@ -187907,6 +190341,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUncheckedCreateNestedManyWithoutPropertyInput
     taskJobs?: TaskJobUncheckedCreateNestedManyWithoutPropertyInput
     taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutPropertyInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedCreateNestedManyWithoutPropertyInput
   }
 
   export type PropertyCreateOrConnectWithoutTaskRecurringDuesInput = {
@@ -188305,6 +190740,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUpdateManyWithoutPropertyNestedInput
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutTaskRecurringDuesInput = {
@@ -188359,6 +190795,7 @@ export namespace Prisma {
     taskCarryForwards?: TaskCarryForwardUncheckedUpdateManyWithoutPropertyNestedInput
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type TenantUpsertWithoutTaskRecurringDuesInput = {
@@ -190596,6 +193033,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutTenantInput = {
@@ -190650,6 +193088,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateManyWithoutTenantInput = {
@@ -191780,6 +194219,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutTenantInput = {
@@ -191799,6 +194239,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateManyWithoutTenantInput = {
@@ -193231,6 +195672,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateWithoutUserInput = {
@@ -193285,6 +195727,7 @@ export namespace Prisma {
     taskJobs?: TaskJobUncheckedUpdateManyWithoutPropertyNestedInput
     taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutPropertyNestedInput
     taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutPropertyNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyNestedInput
   }
 
   export type PropertyUncheckedUpdateManyWithoutUserInput = {
@@ -193671,6 +196114,7 @@ export namespace Prisma {
     members?: TeamMemberUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateWithoutInactivatedByUserInput = {
@@ -193690,6 +196134,7 @@ export namespace Prisma {
     members?: TeamMemberUncheckedUpdateManyWithoutTeamNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutTeamNestedInput
     workGroupExecutors?: WorkGroupExecutorUncheckedUpdateManyWithoutTeamNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamNestedInput
   }
 
   export type TeamUncheckedUpdateManyWithoutInactivatedByUserInput = {
@@ -193842,6 +196287,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput
     Team?: TeamUpdateOneRequiredWithoutTeamMembershipNestedInput
   }
 
@@ -193855,6 +196301,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUncheckedUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput
   }
 
   export type TeamMembershipUncheckedUpdateManyWithoutUserInput = {
@@ -194309,6 +196756,16 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PropertyAssignmentConfigCreateManyPropertyInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    teamId: string
+    preferredMembershipId: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -195368,6 +197825,36 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type PropertyAssignmentConfigUpdateWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    team?: TeamUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+    preferredMembership?: TeamMembershipUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    preferredMembershipId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyWithoutPropertyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    preferredMembershipId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type CleaningCreateManyReservationInput = {
     id?: string
     tenantId: string
@@ -196206,6 +198693,16 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type PropertyAssignmentConfigCreateManyTeamInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    preferredMembershipId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type ChatParticipantUpdateWithoutTeamInput = {
     id?: StringFieldUpdateOperationsInput | string
     joinedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -196518,6 +199015,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUpdateManyWithoutPreferredMembershipNestedInput
     User?: UserUpdateOneRequiredWithoutTeamMembershipNestedInput
   }
 
@@ -196531,6 +199029,7 @@ export namespace Prisma {
     chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutTeamMembershipNestedInput
     Cleaning?: CleaningUncheckedUpdateManyWithoutTeamMembershipNestedInput
     propertyAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutTeamMembershipNestedInput
+    assignmentConfigs?: PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipNestedInput
   }
 
   export type TeamMembershipUncheckedUpdateManyWithoutTeamInput = {
@@ -196568,6 +199067,36 @@ export namespace Prisma {
     workGroupId?: StringFieldUpdateOperationsInput | string
     servicesTenantId?: StringFieldUpdateOperationsInput | string
     status?: EnumWorkGroupExecutorStatusFieldUpdateOperationsInput | $Enums.WorkGroupExecutorStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyAssignmentConfigUpdateWithoutTeamInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+    preferredMembership?: TeamMembershipUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateWithoutTeamInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    preferredMembershipId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyWithoutTeamInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    preferredMembershipId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -198853,6 +201382,16 @@ export namespace Prisma {
     accessRole?: $Enums.PropertyAccessRole | null
   }
 
+  export type PropertyAssignmentConfigCreateManyPreferredMembershipInput = {
+    id?: string
+    hostTenantId: string
+    servicesTenantId: string
+    propertyId: string
+    teamId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type ChatParticipantUpdateWithoutTeamMembershipInput = {
     id?: StringFieldUpdateOperationsInput | string
     joinedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -199026,6 +201565,36 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     userId?: NullableStringFieldUpdateOperationsInput | string | null
     accessRole?: NullableEnumPropertyAccessRoleFieldUpdateOperationsInput | $Enums.PropertyAccessRole | null
+  }
+
+  export type PropertyAssignmentConfigUpdateWithoutPreferredMembershipInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    property?: PropertyUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+    team?: TeamUpdateOneRequiredWithoutAssignmentConfigsNestedInput
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateWithoutPreferredMembershipInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PropertyAssignmentConfigUncheckedUpdateManyWithoutPreferredMembershipInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    hostTenantId?: StringFieldUpdateOperationsInput | string
+    servicesTenantId?: StringFieldUpdateOperationsInput | string
+    propertyId?: StringFieldUpdateOperationsInput | string
+    teamId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TaskJobCreateManyTemplateInput = {

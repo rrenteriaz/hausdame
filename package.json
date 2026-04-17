@@ -9,6 +9,7 @@
     "dev": "next dev --webpack -H 0.0.0.0",
     "build": "prisma generate && next build",
     "start": "next start",
+    "test": "vitest run",
     "lint": "eslint",
     "create-missing-cleanings": "tsx scripts/create-missing-cleanings.ts",
     "seed:dev": "tsx scripts/seed-dev-users.ts",
@@ -59,6 +60,7 @@
     "set-cookie-parser": "^2.7.2",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.4"
   }
 }

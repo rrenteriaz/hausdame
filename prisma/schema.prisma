@@ -296,6 +296,7 @@ model Property {
   taskJobs                TaskJob[]
   taskRecurringDues       TaskRecurringDue[]
   taskTemplates           TaskTemplate[]
+  assignmentConfigs       PropertyAssignmentConfig[]
 
   @@index([tenantId])
 }
@@ -587,6 +588,7 @@ model Team {
   members             TeamMember[]
   TeamMembership      TeamMembership[]
   workGroupExecutors  WorkGroupExecutor[] @relation("Team_WorkGroupExecutors")
+  assignmentConfigs   PropertyAssignmentConfig[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1500,6 +1502,7 @@ model TeamMembership {
   chatParticipants ChatParticipant[]
   Cleaning         Cleaning[]
   propertyAccesses PropertyMemberAccess[]
+  assignmentConfigs PropertyAssignmentConfig[]
   Team             Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   User             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -2126,6 +2129,29 @@ enum TeamMembershipStatus {
   PENDING
   ACTIVE
   REMOVED
+}
+
+/// Configuración de ejecutor preferido por propiedad y equipo.
+/// El TL define qué miembro recibe automáticamente las limpiezas de una propiedad.
+model PropertyAssignmentConfig {
+  id                    String         @id @default(cuid())
+  /// Tenant del Host (propietario de la propiedad)
+  hostTenantId          String
+  /// Tenant del equipo de servicios
+  servicesTenantId      String
+  propertyId            String
+  teamId                String
+  preferredMembershipId String
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  property              Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  team                  Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  preferredMembership   TeamMembership @relation(fields: [preferredMembershipId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, teamId])
+  @@index([hostTenantId])
+  @@index([servicesTenantId])
+  @@index([teamId])
 }
 
 enum TeamStatus {

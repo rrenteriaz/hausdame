@@ -118,8 +118,9 @@ export default function CleanerDailyCalendar({
               const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
               const isInProgress = cleaning.status === "IN_PROGRESS";
-              const visual = getCleanerVisual(isInProgress ? "mine_inprogress" : "mine_pending");
-              const isOverdue = !isInProgress && cleaning.scheduledDate < now;
+              const isOverdue = !isInProgress && cleaning.status !== "COMPLETED" && cleaning.scheduledDate < now;
+              const myKind = isInProgress ? "mine_inprogress" : isOverdue ? "mine_overdue" : "mine_pending";
+              const visual = getCleanerVisual(myKind);
 
               return (
                 <CleanerCleaningLink
@@ -136,13 +137,15 @@ export default function CleanerDailyCalendar({
                   <ListThumb src={myThumbUrls.get(cleaning.property.id) || null} alt={propertyName} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className={`text-base font-medium truncate ${visual.cardText}`}>
+                      {isInProgress && (
+                        <span className="inline-flex h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                      )}
+                      {isOverdue && (
+                        <span className="inline-flex h-2 w-2 rounded-full bg-red-500 shrink-0" />
+                      )}
+                      <h4 className={`text-base truncate ${isInProgress ? "font-semibold" : "font-medium"} ${visual.cardText}`}>
                         {propertyName}
                       </h4>
-                      <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
-                      {isOverdue && (
-                        <StatusBadge bg="bg-amber-100" text="text-amber-700" label="Atrasada" />
-                      )}
                     </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
                       {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}

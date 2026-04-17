@@ -161,9 +161,7 @@ export async function toggleExecutorStatus(
           data: {
             assignmentStatus: "OPEN",
             assignedMembershipId: null,
-            assignedMemberId: null, // Legacy
-            assignedTeamMemberId: null, // Legacy
-            teamId: null, // Remover teamId
+            teamId: null,
             needsAttention: true,
             attentionReason: "NO_TEAM_EXECUTING",
           },

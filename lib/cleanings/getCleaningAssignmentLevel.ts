@@ -1,11 +1,13 @@
 /**
  * Helper canónico para determinar el nivel de asignación de una limpieza.
- * 
- * Basado en: docs/contracts/CLEANING_ASSIGNMENT_V1.md — Sección 2 (Niveles de asignación)
- * 
+ *
+ * Basado en: docs/contracts/cleaning-assignment-model.md
+ *
  * Este helper es la única fuente de verdad para el nivel de asignación.
  * NO infiere estados, NO lee UI, NO toca DB.
  */
+
+import { hasEffectiveAssignee } from "./getEffectiveAssignee";
 
 export type CleaningAssignmentLevel = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -14,8 +16,6 @@ export interface CleaningAssignmentLevelInput {
   teamId: string | null;
   /** ID del TeamMembership que aceptó la limpieza (null si no hay) */
   assignedMembershipId: string | null;
-  /** ID del TeamMember legacy asignado (null si no hay) */
-  assignedMemberId: string | null;
   /** Estado de ejecución de la limpieza */
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   /** Timestamp de inicio de ejecución (null si no ha iniciado) */
@@ -43,7 +43,6 @@ export function getCleaningAssignmentLevel(
   const {
     teamId,
     assignedMembershipId,
-    assignedMemberId,
     status,
     startedAt,
     completedAt,
@@ -61,13 +60,12 @@ export function getCleaningAssignmentLevel(
   }
 
   // Nivel 3: Aceptada por Cleaner
-  // Tiene assignedMembershipId O assignedMemberId (legacy)
-  if (assignedMembershipId !== null || assignedMemberId !== null) {
+  if (hasEffectiveAssignee({ assignedMembershipId })) {
     return 3;
   }
 
   // Nivel 2: Asignada a Team
-  // Tiene teamId pero no tiene assignedMembershipId ni assignedMemberId
+  // Tiene teamId pero no tiene assignedMembershipId
   if (teamId !== null) {
     return 2;
   }

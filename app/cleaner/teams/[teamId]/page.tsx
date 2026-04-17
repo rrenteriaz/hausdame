@@ -6,7 +6,7 @@ import Page from "@/lib/ui/Page";
 import PropertyAssignmentsSection from "./PropertyAssignmentsSection";
 import InviteMemberButton from "../InviteMemberButton";
 import TeamStatusActions from "./TeamStatusActions";
-import { toggleTeamMemberStatus } from "../actions";
+import { toggleTeamMemberStatus, setPreferredExecutor, removePreferredExecutor } from "../actions";
 import TeamInvitesList, { type TeamInviteItem } from "./TeamInvitesList";
 import { getTeamInvites } from "@/lib/teams/getTeamInvites";
 import { getTeamDisplayName } from "@/lib/cleaner/teamDisplayName";
@@ -22,6 +22,16 @@ function formatDate(date: Date) {
 async function toggleMemberStatusAction(formData: FormData) {
   "use server";
   await toggleTeamMemberStatus(formData);
+}
+
+async function setPreferredExecutorAction(formData: FormData) {
+  "use server";
+  await setPreferredExecutor(formData);
+}
+
+async function removePreferredExecutorAction(formData: FormData) {
+  "use server";
+  await removePreferredExecutor(formData);
 }
 
 export default async function CleanerTeamDetailPage({
@@ -311,6 +321,25 @@ export default async function CleanerTeamDetailPage({
       })
     : [];
 
+  // Cargar configuraciones de ejecutor preferido por propiedad (solo para TL)
+  const preferredConfigs: Array<{ propertyId: string; preferredMembershipId: string }> =
+    isTeamLeader && propertiesForUi.length > 0
+      ? await (async () => {
+          try {
+            return await (prisma as any).propertyAssignmentConfig.findMany({
+              where: { teamId: team.id },
+              select: { propertyId: true, preferredMembershipId: true },
+            });
+          } catch {
+            return [];
+          }
+        })()
+      : [];
+
+  const preferredByProperty = new Map(
+    preferredConfigs.map((c) => [c.propertyId, c.preferredMembershipId])
+  );
+
   return (
     <Page title={teamTitle} showBack backHref="/cleaner/teams" subtitle="Equipo de limpieza">
 
@@ -388,6 +417,93 @@ export default async function CleanerTeamDetailPage({
           members={membersForUi}
           properties={propertiesForUi}
         />
+
+        {/* Ejecutor preferido por propiedad — solo visible para TL */}
+        {isTeamLeader && propertiesForUi.length > 0 && (
+          <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-800">
+                Ejecutor preferido por propiedad
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                El miembro seleccionado recibirá automáticamente las nuevas limpiezas de cada propiedad.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {propertiesForUi.map((property) => {
+                const currentPreferredId = preferredByProperty.get(property.id) ?? null;
+                const currentMember = currentPreferredId
+                  ? membersForUi.find((m) => m.membershipId === currentPreferredId) ?? null
+                  : null;
+                const cleanerMembers = membersForUi.filter((m) => !m.isLeader);
+
+                return (
+                  <div key={property.id} className="space-y-2">
+                    <p className="text-sm font-medium text-neutral-900">
+                      {property.shortName || property.name}
+                    </p>
+
+                    {currentMember ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                        <span className="text-sm text-neutral-700">
+                          {currentMember.name || currentMember.email}
+                        </span>
+                        <span className="text-xs text-blue-600 bg-blue-50 rounded px-1.5 py-0.5">
+                          Preferido
+                        </span>
+                        <form action={removePreferredExecutorAction} className="ml-auto">
+                          <input type="hidden" name="teamId" value={team.id} />
+                          <input type="hidden" name="propertyId" value={property.id} />
+                          <button
+                            type="submit"
+                            className="text-xs text-neutral-400 hover:text-red-600 underline underline-offset-2 transition"
+                          >
+                            Quitar
+                          </button>
+                        </form>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-neutral-400">Sin preferencia — selección automática</p>
+                    )}
+
+                    {cleanerMembers.length > 0 && (
+                      <form action={setPreferredExecutorAction} className="flex gap-2">
+                        <input type="hidden" name="teamId" value={team.id} />
+                        <input type="hidden" name="propertyId" value={property.id} />
+                        <select
+                          name="preferredMembershipId"
+                          required
+                          defaultValue=""
+                          className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 bg-white min-w-0"
+                        >
+                          <option value="" disabled>
+                            {currentMember ? "— Cambiar a —" : "— Asignar preferido —"}
+                          </option>
+                          {cleanerMembers.map((m) => (
+                            <option
+                              key={m.membershipId}
+                              value={m.membershipId}
+                            >
+                              {m.name || m.email}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 shrink-0"
+                        >
+                          {currentMember ? "Cambiar" : "Asignar"}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Info del equipo */}
         <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-2">

@@ -304,7 +304,7 @@ export default async function AllCleaningsPage({
               const detailsHref = `/cleaner/cleanings/${cleaning.id}?memberId=${encodeURIComponent(
                 memberIdParam || currentMemberId
               )}&returnTo=${encodeURIComponent(returnTo)}`;
-              const isAssigned = cleaning.assignedMembershipId != null || cleaning.assignedMemberId != null;
+              const isAssigned = cleaning.assignedMembershipId != null;
               const isOverdue =
                 (cleaning.status === "PENDING" || cleaning.status === "IN_PROGRESS") &&
                 new Date(cleaning.scheduledDate) < now;

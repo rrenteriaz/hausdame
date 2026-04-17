@@ -36,6 +36,7 @@ export default async function CleanerLayout({
   // Resolver contexto del cleaner (sin crear nada)
   // REGLA DE ORO: resolveCleanerContext NO crea Team ni TeamMembership
   let hasActiveMembership = false;
+  let isTeamLeader = false;
   let inProgressCleanings: { id: string }[] = [];
   try {
     const { resolveCleanerContext } = await import("@/lib/cleaner/resolveCleanerContext");
@@ -44,6 +45,7 @@ export default async function CleanerLayout({
 
     if (context.hasMembership && context.memberships.length > 0) {
       const membershipIds = context.memberships.map((m) => m.id);
+      isTeamLeader = context.memberships.some((m) => m.role === "TEAM_LEADER");
       inProgressCleanings = await prisma.cleaning.findMany({
         where: { status: "IN_PROGRESS", assignedMembershipId: { in: membershipIds } },
         select: { id: true },
@@ -70,6 +72,7 @@ export default async function CleanerLayout({
           fullName: cleanerProfile?.fullName ?? null,
         }}
         inProgressCleanings={inProgressCleanings}
+        isTeamLeader={isTeamLeader}
       >
         {children}
       </CleanerLayoutClient>

@@ -638,54 +638,16 @@ export default async function CleanerPage({
   myCleanings = assignedResult.cleanings;
   eligibleCleanings = availableResult.cleanings;
 
-  // Compatibilidad de lectura legacy: registros previos a la migración WGE
-  // usan assignedMemberId (TeamMember.id) en vez de assignedMembershipId (TeamMembership.id).
-  // Se consultan por separado y se unen a los resultados WGE para el calendario.
-  //
-  // Usamos findMany sin filtro isActive para obtener TODOS los TeamMember históricos del user
-  // en sus equipos (puede haber >1 si hubo rotaciones: baja + reingreso al equipo).
-  let legacyCalendarCleanings: any[] = [];
-  if (cleanerScope.propertyIds.length > 0 && teamIds.length > 0) {
-    const allUserLegacyMemberRows = await (prisma as any).teamMember.findMany({
-      where: { userId: user.id, teamId: { in: teamIds } },
-      select: { id: true },
-    });
-    const allUserLegacyMemberIds: string[] = allUserLegacyMemberRows.map((m: any) => m.id);
+  const myCleaningsCalendarSource = calendarAssignedResult.cleanings;
 
-    if (allUserLegacyMemberIds.length > 0) {
-      legacyCalendarCleanings = await prisma.cleaning.findMany({
-        where: {
-          tenantId: { in: cleanerScope.tenantIds },
-          propertyId: { in: cleanerScope.propertyIds },
-          scheduledDate: { gte: dateRangeStart, lte: dateRangeEnd },
-          status: { in: ["PENDING", "IN_PROGRESS", "COMPLETED"] },
-          assignedMemberId: { in: allUserLegacyMemberIds },
-          assignedMembershipId: null, // solo legacy, evita duplicados con WGE
-        },
-        include: {
-          property: {
-            select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
-          },
-        },
-        orderBy: { scheduledDate: "asc" },
-      });
-    }
-
-  }
-
-  // Unión WGE + legacy deduplicada por id
-  const wgeCalendarIds = new Set(calendarAssignedResult.cleanings.map((c: any) => c.id));
-  const mergedCalendarCleanings = [
-    ...calendarAssignedResult.cleanings,
-    ...legacyCalendarCleanings.filter((c: any) => !wgeCalendarIds.has(c.id)),
-  ];
-  const myCleaningsCalendarSource = mergedCalendarCleanings;
-
-  // El query layer ya filtra por availabilityStart cuando scope="available"
-  // Pero necesitamos separar para el calendario (lostCleaningsForCalendar)
-  const eligibleFuture = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) >= availabilityStart);
-  const eligibleLost = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) < availabilityStart);
-  // eligibleCleanings = eligibleFuture; // REMOVIDO: Ahora permitimos ver y reclamar pasadas (hasta 30 días) en la lista de disponibles
+  // Separar disponibles en: futuras (available) vs pasadas-dentro-de-ventana (available_overdue).
+  // FIX: antes se usaba availabilityStart como cutoff, haciendo que eligibleLost fuera siempre vacío
+  // porque eligibleCleanings ya viene con scheduledDate >= availabilityStart.
+  // Ahora usamos startOfToday como cutoff correcto: future = >= hoy, past = < hoy.
+  const startOfTodayForSplit = new Date(now);
+  startOfTodayForSplit.setHours(0, 0, 0, 0);
+  const eligibleFuture = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) >= startOfTodayForSplit);
+  const eligiblePast   = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) <  startOfTodayForSplit);
 
   // Para memberCleanings (limpiezas del equipo asignadas a otros), necesitamos una query adicional
   // LEGACY RETIRADO: Ya no existe modo legacy, siempre usar memberships
@@ -715,52 +677,7 @@ export default async function CleanerPage({
         orderBy: { scheduledDate: "asc" },
       });
 
-      // Compatibilidad legacy: limpiezas de otros miembros del equipo asignadas
-      // con el sistema anterior (assignedMemberId = TeamMember.id, assignedMembershipId = null).
-      // Sin filtro isActive: los TeamMember del equipo pueden estar desactivados tras la migración
-      // pero sus IDs siguen siendo referenciados en limpiezas históricas.
-      // Excluimos los propios IDs del usuario para no duplicar con myCleaningsForCalendar.
-      const allUserOwnMemberRows = await (prisma as any).teamMember.findMany({
-        where: { userId: user.id, teamId: { in: activeTeamIds } },
-        select: { id: true },
-      });
-      const allUserOwnMemberIds: string[] = allUserOwnMemberRows.map((m: any) => m.id);
-
-      const otherTeamMembers = await prisma.teamMember.findMany({
-        where: {
-          teamId: { in: activeTeamIds },
-          ...(allUserOwnMemberIds.length > 0 ? { id: { notIn: allUserOwnMemberIds } } : {}),
-        },
-        select: { id: true },
-      });
-      const otherMemberIds = otherTeamMembers.map((m: any) => m.id);
-
-      let legacyMemberCleanings: any[] = [];
-      if (otherMemberIds.length > 0) {
-        legacyMemberCleanings = await prisma.cleaning.findMany({
-          where: {
-            tenantId: { in: cleanerScope.tenantIds },
-            propertyId: { in: cleanerScope.propertyIds },
-            scheduledDate: { gte: extendedRangeStart, lte: extendedRangeEnd },
-            status: { not: "CANCELLED" },
-            assignedMemberId: { in: otherMemberIds },
-            assignedMembershipId: null, // solo legacy, evita duplicados con WGE
-          },
-          include: {
-            property: {
-              select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
-            },
-          },
-          orderBy: { scheduledDate: "asc" },
-        });
-      }
-
-      // Unión WGE + legacy deduplicada por id
-      const wgeMemberIds = new Set(wgeMemberCleanings.map((c: any) => c.id));
-      memberCleanings = [
-        ...wgeMemberCleanings,
-        ...legacyMemberCleanings.filter((c: any) => !wgeMemberIds.has(c.id)),
-      ];
+      memberCleanings = wgeMemberCleanings;
     }
   }
 
@@ -770,33 +687,31 @@ export default async function CleanerPage({
     return d >= dateRangeStart && d <= dateRangeEnd;
   });
 
+  // Futuras reclamables → availableCleanings prop (kind "available")
   eligibleCleaningsForCalendar = eligibleFuture.filter((c: any) => {
     const d = new Date(c.scheduledDate);
     return d >= dateRangeStart && d <= dateRangeEnd;
   });
-  lostCleaningsForCalendar = eligibleLost.filter((c: any) => {
-    const d = new Date(c.scheduledDate);
-    return d >= dateRangeStart && d <= dateRangeEnd;
-  });
-  memberCleaningsForCalendar = memberCleanings.filter((c: any) => {
+
+  // Pasadas dentro de ventana → openPastCleanings prop (kind "open" → available_overdue)
+  // FIX: reemplaza la query separada openPastCleaningsForCalendar que solapaba con eligiblePast.
+  const openPastCleaningsForCalendar = eligiblePast.filter((c: any) => {
     const d = new Date(c.scheduledDate);
     return d >= dateRangeStart && d <= dateRangeEnd;
   });
 
-  // Limpiezas OPEN pasadas del equipo (sin asignar) — solo para calendario mensual
-  // Criterios: ningún asignado, pasadas, status activo, dentro del rango de fechas del calendario
-  let openPastCleaningsForCalendar: any[] = [];
-  if (cleanerScope.propertyIds.length > 0 && view === "month") {
-    const todayStart = new Date(today);
-    todayStart.setHours(0, 0, 0, 0);
-    openPastCleaningsForCalendar = await prisma.cleaning.findMany({
+  // Fuera de ventana de reclamación → lostCleanings prop (kind "lost")
+  // FIX: antes se derivaba de eligibleLost (siempre vacío). Ahora es una query real
+  // que busca OPEN PENDING sin asignar con scheduledDate < availabilityStart.
+  if (cleanerScope.propertyIds.length > 0) {
+    const lostRaw = await prisma.cleaning.findMany({
       where: {
         tenantId: { in: cleanerScope.tenantIds },
         propertyId: { in: cleanerScope.propertyIds },
-        scheduledDate: { gte: dateRangeStart, lt: todayStart },
+        scheduledDate: { gte: dateRangeStart, lt: availabilityStart },
         assignedMembershipId: null,
-        assignedMemberId: null,
-        status: { in: ["PENDING", "IN_PROGRESS"] },
+        assignmentStatus: "OPEN",
+        status: "PENDING",
       },
       include: {
         property: {
@@ -805,7 +720,13 @@ export default async function CleanerPage({
       },
       orderBy: { scheduledDate: "asc" },
     });
+    lostCleaningsForCalendar = lostRaw; // ya filtrado por dateRangeStart en la query
   }
+
+  memberCleaningsForCalendar = memberCleanings.filter((c: any) => {
+    const d = new Date(c.scheduledDate);
+    return d >= dateRangeStart && d <= dateRangeEnd;
+  });
 
   // Filtro para "Mis limpiezas" - por defecto "pending"
   const myFilter = params?.myFilter || "pending";

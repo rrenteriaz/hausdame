@@ -7,24 +7,33 @@
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
-import { getEligibleMembersForCleaning } from "@/lib/cleaning-eligibility";
 import { createChecklistSnapshotForCleaning } from "@/lib/checklist-snapshot";
+import { resolveAutoAssignment } from "@/lib/cleanings/resolveAutoAssignment";
+import { buildCleaningScheduledDate } from "@/lib/datetime/buildCleaningScheduledDate";
+import { assertValidScheduledDate, assertAssignmentCoherence } from "@/lib/cleanings/assertCleaningInvariants";
+import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
 // FASE 4: propertyId ahora es el nuevo PK directamente, no necesitamos helper
 
 function calculateCleaningDate(endDate: Date, checkOutTime: string | null | undefined): Date {
-  const cleaningDate = new Date(endDate);
-  
   let hours = 11; // Default 11:00
   let minutes = 0;
-  
+
   if (checkOutTime) {
     const [h, m] = checkOutTime.split(":").map(Number);
     if (!isNaN(h)) hours = h;
     if (!isNaN(m)) minutes = m;
   }
-  
-  cleaningDate.setHours(hours, minutes, 0, 0);
-  return cleaningDate;
+
+  // endDate viene de Prisma: almacenado como UTC midnight via iCal sync.
+  // Extraer día en UTC para obtener el día calendario correcto,
+  // luego aplicar hora operativa en CDMX via buildCleaningScheduledDate.
+  return buildCleaningScheduledDate(
+    endDate.getUTCFullYear(),
+    endDate.getUTCMonth(),
+    endDate.getUTCDate(),
+    hours,
+    minutes
+  );
 }
 
 export async function createMissingCleaningsForReservations(): Promise<{
@@ -94,44 +103,42 @@ export async function createMissingCleaningsForReservations(): Promise<{
           throw new Error(`Property not found for propertyId: ${reservation.propertyId}`);
         }
 
-        // FASE 4: Obtener miembros elegibles (usar propertyId)
-        const eligibleMembers = await getEligibleMembersForCleaning(
-          tenantId,
-          property.id, // FASE 4: propertyId ahora es el nuevo PK
-          scheduledAtOriginal
-        );
+        // Resolver team de la propiedad (WGE + PropertyTeam legacy, sin flag)
+        const { teamIds } = await resolveAvailableTeamsForProperty(tenantId, property.id);
+        const resolvedTeamId = teamIds.length > 0 ? teamIds[0] : null;
 
-        let assignedMemberId: string | null = null;
-        let assignmentStatus: "OPEN" | "ASSIGNED" = "OPEN";
-        let needsAttention = false;
-        let attentionReason: string | null = null;
+        // Auto-asignación con preferred executor → 1 membership → OPEN
+        const assignment = await resolveAutoAssignment(property.id, resolvedTeamId);
 
-        if (eligibleMembers.length === 1) {
-          assignedMemberId = eligibleMembers[0].id;
-          assignmentStatus = "ASSIGNED";
-        } else if (eligibleMembers.length === 0) {
-          needsAttention = true;
-          attentionReason = "NO_AVAILABLE_MEMBER";
-        }
+        assertValidScheduledDate(scheduledAtOriginal, "create-missing-cleanings");
+        assertAssignmentCoherence({ assignedMembershipId: assignment.assignedMembershipId, needsAttention: assignment.needsAttention, attentionReason: assignment.attentionReason }, "create-missing-cleanings");
 
         const cleaning = await (prisma as any).cleaning.create({
           data: {
             tenantId,
-            propertyId: property.id, // FASE 4: propertyId ahora apunta directamente a Property.id
+            propertyId: property.id,
             reservationId: reservation.id,
             scheduledAtOriginal,
             scheduledAtPlanned: scheduledAtOriginal,
             scheduledDate: scheduledAtOriginal,
             status: "PENDING",
-            assignmentStatus,
-            assignedMemberId,
-            needsAttention,
-            attentionReason,
-            // Snapshot de propiedad (requisito técnico para histórico sin depender de Property actual)
+            assignmentStatus: assignment.assignmentStatus,
+            teamId: assignment.teamId,
+            assignedMembershipId: assignment.assignedMembershipId,
+            needsAttention: assignment.needsAttention,
+            attentionReason: assignment.attentionReason,
             propertyName: property.name,
             propertyShortName: property.shortName ?? null,
             propertyAddress: property.address ?? null,
           },
+        });
+
+        console.log("[assignment-model] create-missing-cleanings createCleaning", {
+          cleaningId: cleaning.id,
+          origin: "batch",
+          teamId: assignment.teamId,
+          assignedMembershipId: assignment.assignedMembershipId,
+          assignmentStatus: assignment.assignmentStatus,
         });
 
         // FASE 4: Crear snapshot del checklist (usar propertyId)

@@ -33,15 +33,19 @@ export function getCleaningAttention(
   const level = getCleaningAssignmentLevel({
     teamId: input.teamId,
     assignedMembershipId: input.assignedMembershipId,
-    assignedMemberId: input.assignedMemberId,
     status: input.status,
     startedAt: input.startedAt,
     completedAt: input.completedAt,
     hasAvailableTeams: input.hasAvailableTeams,
   });
 
-  // Limpiezas completadas o canceladas no requieren atención
-  if (input.status === "COMPLETED" || input.status === "CANCELLED") {
+  // Prioridad de status: IN_PROGRESS, COMPLETED y CANCELLED nunca requieren atención visual.
+  // El status de ejecución tiene precedencia absoluta sobre el flag persisted needsAttention.
+  if (
+    input.status === "IN_PROGRESS" ||
+    input.status === "COMPLETED" ||
+    input.status === "CANCELLED"
+  ) {
     return {
       needsAttention: false,
       attentionType: null,

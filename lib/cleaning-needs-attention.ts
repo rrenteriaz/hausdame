@@ -1,6 +1,7 @@
 // lib/cleaning-needs-attention.ts
 import prisma from "@/lib/prisma";
 import { getEligibleMembersForCleaning } from "./cleaning-eligibility";
+import { hasEffectiveAssignee } from "./cleanings/getEffectiveAssignee";
 
 export type CleaningNeedsAttentionReason =
   | "NO_ASSIGNED_TEAM"
@@ -19,7 +20,6 @@ export interface CleaningNeedsAttention {
     shortName: string | null;
     coverAssetGroupId: string | null;
   };
-  assignedMemberId: string | null;
   assignedMember: {
     id: string;
     name: string;
@@ -36,7 +36,7 @@ export interface CleaningNeedsAttention {
  * Obtiene las limpiezas que requieren atención por problemas de asignación de cleaner.
  * 
  * Una limpieza requiere atención si:
- * 1. No tiene cleaner asignado (assignedMemberId IS NULL)
+ * 1. No tiene cleaner asignado (assignedMembershipId IS NULL)
  * 2. Tiene cleaner asignado pero no está disponible en el horario programado
  */
 /**
@@ -49,7 +49,7 @@ export const HOST_OVERDUE_WINDOW_DAYS = 45;
  * 
  * Una limpieza requiere atención si:
  * 1. Está vencida (scheduledDate < hoy) y sigue OPEN o IN_PROGRESS sin asignar.
- * 2. No tiene cleaner asignado (assignedMemberId IS NULL)
+ * 2. No tiene cleaner asignado (assignedMembershipId IS NULL)
  * 3. Tiene inconsistencias críticas de asignación
  */
 export async function getCleaningsNeedingAttention(
@@ -201,21 +201,25 @@ export async function getCleaningsNeedingAttention(
     let reason: CleaningNeedsAttentionReason | null = null;
     const propertyTeamsCount = propertyTeamsCountMap.get(cleaning.propertyId) ?? 0;
     const isOverdue = new Date(cleaning.scheduledDate) < now;
-    const isUnassigned = !cleaning.assignedMemberId && !cleaning.assignedMembershipId;
+    const isUnassigned = !hasEffectiveAssignee(cleaning);
 
     // Regla de inclusión:
-    // 1. PENDING: seguir lógica de atención existente (sin equipo o sin cleaner).
-    // 2. IN_PROGRESS: incluir SOLO si está totalmente sin asignar (OPEN pasadas que se marcaron IN_PROGRESS por error o manualmente).
-    // 3. OVERDUE: incluir si es OPEN (sin asignar) incluso si no tiene flag de atención explícito.
+    // 0. Guardia canónica: si ya tiene ejecutor efectivo (assignedMembershipId != null)
+    //    la limpieza está resuelta — nunca entra en ninguna categoría de alerta,
+    //    independientemente de propertyTeamsCount u otros flags.
+    // 1. PENDING sin ejecutor: sin equipo configurado → NO_ASSIGNED_TEAM;
+    //    con equipo pero sin miembro → NO_ASSIGNED_MEMBER.
+    // 2. IN_PROGRESS sin ejecutor: caso crítico → NO_ASSIGNED_MEMBER.
 
-    if (cleaning.status === "PENDING") {
-      if (propertyTeamsCount === 0 && !wgeCoveredPropertyIds.has(cleaning.propertyId)) {
-        reason = "NO_ASSIGNED_TEAM";
-      } else if (isUnassigned) {
-        reason = "NO_ASSIGNED_MEMBER";
-      }
-    } else if (cleaning.status === "IN_PROGRESS" && isUnassigned) {
-      // Caso crítico: En progreso pero nadie la tiene asignada
+    if (!isUnassigned) continue; // ejecutor efectivo presente — sin alerta
+
+    // IN_PROGRESS nunca entra en atención: el status de ejecución tiene prioridad absoluta.
+    // PENDING sin ejecutor es el único estado que genera alerta operativa.
+    if (cleaning.status !== "PENDING") continue;
+
+    if (propertyTeamsCount === 0 && !wgeCoveredPropertyIds.has(cleaning.propertyId)) {
+      reason = "NO_ASSIGNED_TEAM";
+    } else {
       reason = "NO_ASSIGNED_MEMBER";
     }
 
@@ -227,7 +231,6 @@ export async function getCleaningsNeedingAttention(
         scheduledDate: cleaning.scheduledDate,
         status: cleaning.status,
         property: cleaning.property,
-        assignedMemberId: cleaning.assignedMemberId,
         assignedMembershipId: cleaning.assignedMembershipId ?? null,
         assignedMember: cleaning.assignedMember,
         propertyTeamsCount,

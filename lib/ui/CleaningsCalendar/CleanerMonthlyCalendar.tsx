@@ -2,7 +2,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { CalendarCleanerKind } from "@/lib/ui/cleaning-visual-state";
+import {
+  CalendarCleanerKind,
+  CleanerKind,
+  calendarKindToCleanerKind,
+  getCleanerVisual,
+} from "@/lib/ui/cleaning-visual-state";
 
 type CleaningForCalendar = {
   id: string;
@@ -68,21 +73,19 @@ function dayHref(
   return `/cleaner?${p.toString()}`;
 }
 
-// ─── chip styles ─────────────────────────────────────────────────────────────
+// ─── tipos y helpers de chip ─────────────────────────────────────────────────
 
-function cleanerChipStyle(kind: CalendarCleanerKind, status: string): string {
-  if (status === "COMPLETED")                     return "bg-emerald-100 text-emerald-700";
-  if (kind === "my")                              return "bg-blue-300 text-blue-900";
-  if (kind === "available" || kind === "open")    return "bg-amber-200 text-amber-900";
-  return "bg-neutral-100 text-neutral-400";
+type CalendarEntry = CleaningForCalendar & { __kind: CalendarCleanerKind };
+
+/**
+ * Deriva el CleanerKind canónico a partir de los datos de la celda.
+ * Prioridad: COMPLETED > IN_PROGRESS > MINE_OVERDUE > MINE_PENDING
+ *            > AVAILABLE_OVERDUE > AVAILABLE > OTHER_MEMBER > LOST
+ */
+function deriveKind(c: CalendarEntry): CleanerKind {
+  const isOverdue = new Date(c.scheduledDate) < new Date();
+  return calendarKindToCleanerKind(c.__kind, c.status, isOverdue);
 }
-
-const CHIP_LEGEND = [
-  { chip: "bg-blue-300 text-blue-900",       label: "Mía" },
-  { chip: "bg-amber-200 text-amber-900",     label: "Disponible" },
-  { chip: "bg-neutral-100 text-neutral-400", label: "No disponible" },
-  { chip: "bg-emerald-100 text-emerald-700", label: "Completada" },
-] as const;
 
 // ─── componente ──────────────────────────────────────────────────────────────
 
@@ -130,7 +133,6 @@ export default function CleanerMonthlyCalendar({
   // scheduledDate viene de Prisma como UTC DateTime.
   // getFullYear/Month/Date sin prefijo UTC = hora local del navegador = correcto en cliente.
   // Durante SSR (servidor UTC) también es correcto porque servidor local = UTC.
-  type CalendarEntry = CleaningForCalendar & { __kind: CalendarCleanerKind };
   const cleaningsByDay = new Map<string, CalendarEntry[]>();
   const seenIds = new Set<string>();
 
@@ -217,7 +219,7 @@ export default function CleanerMonthlyCalendar({
             const cellBorder = isToday
               ? "border-black"
               : hasAvailable
-                ? "border-emerald-200"
+                ? "border-amber-200"
                 : "border-neutral-200";
 
             const MAX_CHIPS = 4;
@@ -238,15 +240,59 @@ export default function CleanerMonthlyCalendar({
                     {cd}
                   </span>
 
-                  {/* Chips de propiedades */}
+                  {/* Chips de propiedades — sistema visual canónico */}
                   <div className="flex-1 flex flex-col gap-[2px] overflow-hidden">
                     {visible.map((c) => {
-                      const chip = cleanerChipStyle(c.__kind, c.status);
                       const name = c.property.shortName || c.property.name;
+                      const kind = deriveKind(c);
+                      const visual = getCleanerVisual(kind);
+
+                      // EN PROGRESO → punto verde + negrita
+                      if (kind === "mine_inprogress") {
+                        return (
+                          <span
+                            key={c.id}
+                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight inline-flex items-center gap-[2px] self-start max-w-full"
+                            title={name}
+                          >
+                            <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 shrink-0" />
+                            <span className={`font-bold truncate ${visual.pillText}`}>{name}</span>
+                          </span>
+                        );
+                      }
+
+                      // MÍA VENCIDA → punto rojo + nombre neutro
+                      if (kind === "mine_overdue") {
+                        return (
+                          <span
+                            key={c.id}
+                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight inline-flex items-center gap-[2px] self-start max-w-full"
+                            title={name}
+                          >
+                            <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 shrink-0" />
+                            <span className={`truncate ${visual.pillText}`}>{name}</span>
+                          </span>
+                        );
+                      }
+
+                      // MÍA PENDIENTE → texto plano sin fondo
+                      if (kind === "mine_pending") {
+                        return (
+                          <span
+                            key={c.id}
+                            className="px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate self-start max-w-full text-neutral-900"
+                            title={name}
+                          >
+                            {name}
+                          </span>
+                        );
+                      }
+
+                      // RESTO (available, completed, other_member, lost) → chip con pillBg/pillText
                       return (
                         <span
                           key={c.id}
-                          className={`rounded px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate block ${chip}`}
+                          className={`rounded px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate self-start max-w-full ${visual.pillBg} ${visual.pillText}`}
                           title={name}
                         >
                           {name}
@@ -266,16 +312,46 @@ export default function CleanerMonthlyCalendar({
         )}
       </div>
 
-      {/* Leyenda simplificada */}
+      {/* Leyenda — refleja exactamente los estados renderizados */}
       <div className="border-t border-neutral-100 pt-3 mt-1">
         <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">Leyenda</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-          {CHIP_LEGEND.map(({ chip, label }) => (
-            <div key={label} className="flex items-center gap-1">
-              <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${chip}`}>Abc</span>
-              <span className="text-[9px] text-neutral-500">{label}</span>
-            </div>
-          ))}
+          {/* mine_pending: texto plano */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium text-neutral-900">Abc</span>
+            <span className="text-[9px] text-neutral-500">Mía</span>
+          </div>
+          {/* mine_inprogress: punto verde + negrita */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] leading-tight inline-flex items-center gap-[3px]">
+              <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 shrink-0" />
+              <span className="font-bold text-blue-900">Abc</span>
+            </span>
+            <span className="text-[9px] text-neutral-500">En progreso</span>
+          </div>
+          {/* mine_overdue: punto rojo */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] leading-tight inline-flex items-center gap-[3px]">
+              <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 shrink-0" />
+              <span className="text-neutral-700">Abc</span>
+            </span>
+            <span className="text-[9px] text-neutral-500">Mía · Vencida</span>
+          </div>
+          {/* available / available_overdue: chip ámbar */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-amber-100 text-amber-900">Abc</span>
+            <span className="text-[9px] text-neutral-500">Disponible</span>
+          </div>
+          {/* completed: chip verde claro */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-emerald-50 text-emerald-700">Abc</span>
+            <span className="text-[9px] text-neutral-500">Completada</span>
+          </div>
+          {/* other_member: gris */}
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-neutral-100 text-neutral-500">Abc</span>
+            <span className="text-[9px] text-neutral-500">Otro cleaner</span>
+          </div>
         </div>
       </div>
     </div>

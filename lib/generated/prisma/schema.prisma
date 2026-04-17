@@ -250,37 +250,37 @@ model Property {
   timeZone                String?
   checkInTime             String?
   checkOutTime            String?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
   userId                  String
   groupName               String?
   notificationEmail       String?
-  isActive                Boolean                 @default(true)
-  idOld                   String?                 @unique
-  id                      String                  @id @default(cuid())
+  isActive                Boolean                    @default(true)
+  idOld                   String?                    @unique
+  id                      String                     @id @default(cuid())
   coverAssetGroupId       String?
-  coverMediaId            String?                 @unique
+  coverMediaId            String?                    @unique
   latitude                Float?
   longitude               Float?
   wifiSsid                String?
   wifiPassword            String?
   accessCode              String?
-  icalLastSyncedAt        DateTime?               @db.Timestamptz(6)
-  icalLastSyncAttemptAt   DateTime?               @db.Timestamptz(6)
-  icalSyncInProgressUntil DateTime?               @db.Timestamptz(6)
-  icalLastSyncError       String?                 @db.VarChar(500)
+  icalLastSyncedAt        DateTime?                  @db.Timestamptz(6)
+  icalLastSyncAttemptAt   DateTime?                  @db.Timestamptz(6)
+  icalSyncInProgressUntil DateTime?                  @db.Timestamptz(6)
+  icalLastSyncError       String?                    @db.VarChar(500)
   chatThreads             ChatThread[]
   cleanerReviews          CleanerReview[]
   cleanings               Cleaning[]
-  hostWorkGroupProperties HostWorkGroupProperty[] @relation("Property_HostWorkGroupProperties")
+  hostWorkGroupProperties HostWorkGroupProperty[]    @relation("Property_HostWorkGroupProperties")
   inventoryChecks         InventoryCheck[]
   inventoryLines          InventoryLine[]
   inventoryLogs           InventoryLog[]
   inventoryReviews        InventoryReview[]
   locks                   Lock[]
-  coverMedia              Asset?                  @relation("PropertyCover", fields: [coverMediaId], references: [id])
-  tenant                  Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user                    User                    @relation("PropertyOwner", fields: [userId], references: [id])
+  coverMedia              Asset?                     @relation("PropertyCover", fields: [coverMediaId], references: [id])
+  tenant                  Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                    User                       @relation("PropertyOwner", fields: [userId], references: [id])
   admins                  PropertyAdmin[]
   propertyApplications    PropertyApplication[]
   propertyChecklistItems  PropertyChecklistItem[]
@@ -291,11 +291,12 @@ model Property {
   propertyOpenings        PropertyOpening[]
   teams                   PropertyTeam[]
   propertyZones           PropertyZone[]
-  reservations            Reservation[]           @relation("ReservationProperty")
+  reservations            Reservation[]              @relation("ReservationProperty")
   taskCarryForwards       TaskCarryForward[]
   taskJobs                TaskJob[]
   taskRecurringDues       TaskRecurringDue[]
   taskTemplates           TaskTemplate[]
+  assignmentConfigs       PropertyAssignmentConfig[]
 
   @@index([tenantId])
 }
@@ -568,25 +569,26 @@ model MetricEvent {
 /// *
 /// * Equipo de limpieza
 model Team {
-  id                  String              @id @default(cuid())
+  id                  String                     @id @default(cuid())
   tenantId            String
   name                String
   notes               String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
   inactivatedAt       DateTime?
   inactivatedByUserId String?
-  status              TeamStatus          @default(ACTIVE)
+  status              TeamStatus                 @default(ACTIVE)
   chatParticipants    ChatParticipant[]
   chatThreads         ChatThread[]
   cleanings           Cleaning[]
   properties          PropertyTeam[]
-  inactivatedByUser   User?               @relation("TeamInactivatedBy", fields: [inactivatedByUserId], references: [id])
-  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inactivatedByUser   User?                      @relation("TeamInactivatedBy", fields: [inactivatedByUserId], references: [id])
+  tenant              Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   TeamInvite          TeamInvite[]
   members             TeamMember[]
   TeamMembership      TeamMembership[]
-  workGroupExecutors  WorkGroupExecutor[] @relation("Team_WorkGroupExecutors")
+  workGroupExecutors  WorkGroupExecutor[]        @relation("Team_WorkGroupExecutors")
+  assignmentConfigs   PropertyAssignmentConfig[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -1490,18 +1492,19 @@ model TeamInvite {
 }
 
 model TeamMembership {
-  id               String                 @id @default(cuid())
-  teamId           String
-  userId           String
-  role             TeamRole
-  status           TeamMembershipStatus   @default(PENDING)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  chatParticipants ChatParticipant[]
-  Cleaning         Cleaning[]
-  propertyAccesses PropertyMemberAccess[]
-  Team             Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  User             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String                     @id @default(cuid())
+  teamId            String
+  userId            String
+  role              TeamRole
+  status            TeamMembershipStatus       @default(PENDING)
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  chatParticipants  ChatParticipant[]
+  Cleaning          Cleaning[]
+  propertyAccesses  PropertyMemberAccess[]
+  assignmentConfigs PropertyAssignmentConfig[]
+  Team              Team                       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  User              User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@index([teamId])
@@ -2126,6 +2129,29 @@ enum TeamMembershipStatus {
   PENDING
   ACTIVE
   REMOVED
+}
+
+/// Configuración de ejecutor preferido por propiedad y equipo.
+/// El TL define qué miembro recibe automáticamente las limpiezas de una propiedad.
+model PropertyAssignmentConfig {
+  id                    String         @id @default(cuid())
+  /// Tenant del Host (propietario de la propiedad)
+  hostTenantId          String
+  /// Tenant del equipo de servicios
+  servicesTenantId      String
+  propertyId            String
+  teamId                String
+  preferredMembershipId String
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  property              Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  team                  Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  preferredMembership   TeamMembership @relation(fields: [preferredMembershipId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, teamId])
+  @@index([hostTenantId])
+  @@index([servicesTenantId])
+  @@index([teamId])
 }
 
 enum TeamStatus {

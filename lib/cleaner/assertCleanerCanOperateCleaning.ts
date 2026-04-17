@@ -14,7 +14,6 @@ export async function assertCleanerCanOperateCleaning(cleaningId: string) {
       status: true,
       assignmentStatus: true,
       assignedMembershipId: true,
-      assignedMemberId: true,
     },
   });
 
@@ -41,24 +40,6 @@ export async function assertCleanerCanOperateCleaning(cleaningId: string) {
     };
   }
 
-  if (!context.legacyMember) {
-    forbidden("Acceso denegado.");
-  }
-
-  if (
-    cleaning.assignmentStatus !== "ASSIGNED" ||
-    !cleaning.assignedMemberId ||
-    cleaning.assignedMemberId !== context.legacyMember.id
-  ) {
-    forbidden("Acceso denegado.");
-  }
-
-  return {
-    mode: "legacy" as const,
-    userId: context.user.id,
-    membershipId: null,
-    memberId: context.legacyMember.id,
-    cleaning,
-  };
+  forbidden("Acceso denegado.");
 }
 
