@@ -2,6 +2,7 @@
  * Helpers puros para el timeline de reservas.
  * Sin dependencias de React ni Prisma — solo lógica de fechas y cálculo de layout.
  */
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 
 /** Ancho de cada columna de día en píxeles. */
 export const DAY_W = 32;
@@ -237,10 +238,7 @@ export function isWeekend(year: number, month: number, day: number): boolean {
 }
 
 export function isCurrentDay(year: number, month: number, day: number): boolean {
-  const now = new Date();
-  return (
-    now.getUTCFullYear() === year &&
-    now.getUTCMonth() + 1 === month &&
-    now.getUTCDate() === day
-  );
+  // month is 1-indexed; getCdmxDate().month is 0-indexed
+  const { year: cy, month: cm, day: cd } = getCdmxDate();
+  return year === cy && month === cm + 1 && day === cd;
 }

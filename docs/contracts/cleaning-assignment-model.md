@@ -144,6 +144,18 @@ Integrada en:
   - lib/integrations/ical/sync.ts (ical sync)
   - app/host/properties/create-missing-cleanings.ts (batch)
 
+Resolución de team (corrección 2026-04-17):
+  Los puntos de creación usan resolveAvailableTeamsForProperty(tenantId, propertyId),
+  que consulta WGE + PropertyTeam legacy sin depender de ningún env flag.
+  Si la función devuelve múltiples teamIds, hoy se toma teamIds[0] (el primero
+  en orden alfabético de ID).
+
+  ⚠️  Caso no resuelto: propiedad vinculada a 2+ WorkGroups con ejecutores distintos.
+  En la configuración actual (2026-04-17) todas las propiedades resuelven exactamente
+  1 team. Si eso cambia, tomar teamIds[0] sería arbitrario y silencioso.
+  Ese caso debe tratarse como decisión explícita de producto (¿prioridad manual?
+  ¿asignar al team con menor carga?) y no asumirse automáticamente en el código.
+
 ⚠️ Regla crítica
 
 El Host nunca debe ver una limpieza como "asignada" si no existe ejecutor real

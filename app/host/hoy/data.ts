@@ -5,35 +5,21 @@ import prisma from "@/lib/prisma";
 import { getCleaningsNeedingAttention } from "@/lib/cleaning-needs-attention";
 import { InventoryReportStatus } from "@/lib/generated/prisma";
 import { BlockData, HoyData, ProximasData, BlockItem } from "./types";
+import {
+  getStartOfCdmxToday,
+  getEndOfCdmxToday,
+  getStartOfCdmxTomorrow,
+  getEndOfCdmxNext7Days,
+} from "@/lib/datetime/cdmxToday";
 
 /**
- * Helpers para rangos de fecha (hora local — para limpiezas scheduledDate)
+ * Aliases locales — scheduledDate está en UTC y se compara contra rangos CDMX.
+ * Reemplaza los helpers anteriores basados en setHours() (hora local del servidor = UTC en Railway).
  */
-function getStartOfToday(): Date {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return now;
-}
-
-function getEndOfToday(): Date {
-  const now = new Date();
-  now.setHours(23, 59, 59, 999);
-  return now;
-}
-
-function getStartOfTomorrow(): Date {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow;
-}
-
-function getEndOfNext7Days(): Date {
-  const future = new Date();
-  future.setDate(future.getDate() + 7);
-  future.setHours(23, 59, 59, 999);
-  return future;
-}
+const getStartOfToday = getStartOfCdmxToday;
+const getEndOfToday = getEndOfCdmxToday;
+const getStartOfTomorrow = getStartOfCdmxTomorrow;
+const getEndOfNext7Days = getEndOfCdmxNext7Days;
 
 /**
  * Helpers UTC — para reservas (startDate = UTC midnight desde iCal VALUE=DATE)

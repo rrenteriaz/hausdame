@@ -20,6 +20,7 @@ import BackChevron from "@/lib/ui/BackChevron";
 import { getCleaningsNeedingAttentionCount } from "@/lib/cleaning-needs-attention";
 import CleaningsViewShell from "./CleaningsViewShell";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 
 export default async function CleaningsPage({
     searchParams,
@@ -505,7 +506,7 @@ function MonthlyCleaningsCalendar({
   properties: PropertyListItem[];
   monthDate: Date;
 }) {
-  const today = new Date();
+  const { year: todayYear, month: todayMonth, day: todayDay } = getCdmxDate();
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth(); // 0-11
 
@@ -632,7 +633,7 @@ function MonthlyCleaningsCalendar({
       </div>
 
       {/* Cabeceras de días */}
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] sm:text-[16.5px] text-neutral-500 mb-1">
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] sm:text-sm text-neutral-500 mb-1">
         {weekdayLabels.map((label, index) => (
           <div key={`weekday-${index}`} className="py-1">
             {label}
@@ -641,7 +642,7 @@ function MonthlyCleaningsCalendar({
       </div>
 
       {/* Celdas del calendario */}
-      <div className="grid grid-cols-7 gap-1 text-[11px] sm:text-[16.5px] pb-3 sm:pb-4">
+      <div className="grid grid-cols-7 gap-1 pb-3 sm:pb-4">
         {weeks.map((week, wi) =>
           week.map((cell, di) => {
             const date = cell.date;
@@ -649,7 +650,7 @@ function MonthlyCleaningsCalendar({
               return (
                 <div
                   key={`${wi}-${di}`}
-                  className="h-16 sm:h-20 rounded-xl border border-transparent bg-transparent"
+                  className="h-[72px] sm:h-[88px] rounded-xl border border-transparent bg-transparent"
                 />
               );
             }
@@ -658,9 +659,9 @@ function MonthlyCleaningsCalendar({
             const dayCleanings = cleaningsByDay.get(key) ?? [];
 
             const isToday =
-              date.getFullYear() === today.getFullYear() &&
-              date.getMonth() === today.getMonth() &&
-              date.getDate() === today.getDate();
+              date.getFullYear() === todayYear &&
+              date.getMonth() === todayMonth &&
+              date.getDate() === todayDay;
 
             // ── Estilo de celda: ámbar solo para atención real; vencidas usan punto rojo ──
             const hasAttention = dayCleanings.some(c => {
@@ -694,7 +695,7 @@ function MonthlyCleaningsCalendar({
                 className="block focus:outline-none"
               >
                 <div
-                  className={`h-16 sm:h-20 rounded-xl border ${cellBorder} bg-white p-1 flex flex-col gap-[2px] hover:border-neutral-400 transition`}
+                  className={`h-[72px] sm:h-[88px] rounded-xl border ${cellBorder} bg-white p-1 flex flex-col gap-[2px] hover:border-neutral-400 transition`}
                 >
                   {/* Número del día */}
                   <span className={`text-[10px] font-medium leading-none self-start ${isToday ? "bg-black text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px]" : "text-neutral-700"}`}>
@@ -710,82 +711,40 @@ function MonthlyCleaningsCalendar({
                         assignedMembershipId: (c as any).assignedMembershipId,
                         scheduledDate: c.scheduledDate,
                       });
-                      // Ámbar solo para atención real (vencidas ya no activan ámbar)
                       const isAttention =
                         kind !== "overdue" &&
                         c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" &&
                         ((c as any).needsAttention || kind === "unassigned");
                       const name = c.property.shortName || c.property.name;
 
-                      // Atención / sin cleaner → ámbar dominante
-                      if (isAttention) {
-                        return (
-                          <span
-                            key={c.id}
-                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] font-medium leading-tight truncate self-start max-w-full bg-amber-200 text-amber-900"
-                            title={name}
-                          >
-                            {name}
-                          </span>
-                        );
-                      }
-
-                      // En progreso → punto verde + negrita
-                      if (kind === "in_progress") {
-                        return (
-                          <span
-                            key={c.id}
-                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight inline-flex items-center gap-[2px] bg-neutral-50 border border-neutral-200 self-start max-w-full"
-                            title={name}
-                          >
-                            <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 shrink-0" />
-                            <span className="font-bold truncate text-neutral-900">{name}</span>
-                          </span>
-                        );
-                      }
-
-                      // Completada → pill verde solo en el nombre
-                      if (kind === "completed") {
-                        return (
-                          <span
-                            key={c.id}
-                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight block"
-                            title={name}
-                          >
-                            <span className="rounded px-[3px] py-[1px] bg-emerald-100 text-emerald-700 font-medium">
-                              {name}
-                            </span>
-                          </span>
-                        );
-                      }
-
-                      // Vencida → punto rojo + nombre neutro
-                      if (kind === "overdue") {
-                        return (
-                          <span
-                            key={c.id}
-                            className="rounded px-1 py-0 text-[7px] sm:text-[9px] leading-tight flex items-center gap-[2px]"
-                            title={name}
-                          >
-                            <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 shrink-0" />
-                            <span className="truncate text-neutral-700">{name}</span>
-                          </span>
-                        );
-                      }
-
-                      // Asignada → neutro limpio
+                      if (isAttention) return (
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-medium leading-tight truncate block bg-amber-100 text-amber-900" title={name}>
+                          {name}
+                        </span>
+                      );
+                      if (kind === "in_progress") return (
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-bold leading-tight truncate block bg-emerald-100 text-emerald-800" title={name}>
+                          {name}
+                        </span>
+                      );
+                      if (kind === "completed") return (
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-medium leading-tight truncate block bg-emerald-50 text-emerald-700" title={name}>
+                          {name}
+                        </span>
+                      );
+                      if (kind === "overdue") return (
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] leading-tight truncate block w-fit max-w-full bg-red-50 text-red-700" title={name}>
+                          {name}
+                        </span>
+                      );
                       return (
-                        <span
-                          key={c.id}
-                          className="px-1 py-0 text-[7px] sm:text-[9px] leading-tight truncate block text-neutral-700"
-                          title={name}
-                        >
+                        <span key={c.id} className="px-1 py-[1px] text-[7px] sm:text-[11px] leading-tight truncate block text-neutral-700" title={name}>
                           {name}
                         </span>
                       );
                     })}
                     {overflow > 0 && (
-                      <span className="text-[7px] text-neutral-400 leading-none pl-0.5">
+                      <span className="text-[8px] text-neutral-400 leading-none pl-0.5">
                         +{overflow}
                       </span>
                     )}
@@ -797,41 +756,28 @@ function MonthlyCleaningsCalendar({
         )}
       </div>
 
-      {/* Leyenda de chips */}
+      {/* Leyenda */}
       <div className="border-t border-neutral-100 pt-3 mt-1">
         <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">Leyenda</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-          {/* Atención / sin cleaner — ámbar unificado */}
           <div className="flex items-center gap-1">
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-amber-200 text-amber-900">Abc</span>
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-amber-100 text-amber-900">Abc</span>
             <span className="text-[9px] text-neutral-500">Requiere atención</span>
           </div>
-          {/* Asignada — texto plano, sin fondo */}
           <div className="flex items-center gap-1">
             <span className="px-1.5 py-0.5 text-[9px] text-neutral-700">Abc</span>
             <span className="text-[9px] text-neutral-500">Asignada</span>
           </div>
-          {/* Vencida — punto rojo */}
           <div className="flex items-center gap-1">
-            <span className="rounded px-1.5 py-0.5 text-[9px] leading-tight flex items-center gap-[3px] bg-white border border-neutral-200">
-              <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 shrink-0" />
-              <span className="text-neutral-700">Abc</span>
-            </span>
+            <span className="rounded px-1.5 py-0.5 text-[9px] bg-red-50 text-red-700">Abc</span>
             <span className="text-[9px] text-neutral-500">Vencida</span>
           </div>
-          {/* En progreso — punto verde + negrita */}
           <div className="flex items-center gap-1">
-            <span className="rounded px-1.5 py-0.5 text-[9px] leading-tight flex items-center gap-[3px] bg-neutral-50 border border-neutral-200">
-              <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 shrink-0" />
-              <span className="font-bold text-neutral-900">Abc</span>
-            </span>
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800">Abc</span>
             <span className="text-[9px] text-neutral-500">En progreso</span>
           </div>
-          {/* Completada — pill verde solo en nombre */}
           <div className="flex items-center gap-1">
-            <span className="rounded px-1 py-0.5 text-[9px] leading-tight">
-              <span className="rounded px-[3px] py-[1px] bg-emerald-100 text-emerald-700 font-medium text-[9px]">Abc</span>
-            </span>
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-emerald-50 text-emerald-700">Abc</span>
             <span className="text-[9px] text-neutral-500">Completada</span>
           </div>
         </div>
@@ -852,23 +798,6 @@ function WeeklyCleaningsView({
   properties: PropertyListItem[];
   referenceDate: Date;
 }) {
-  // Crear mapa de colores por propiedad
-  const colorToHex: Record<string, string> = {
-    "bg-emerald-500": "#10b981",
-    "bg-sky-500": "#0ea5e9",
-    "bg-amber-500": "#f59e0b",
-    "bg-fuchsia-500": "#d946ef",
-    "bg-rose-500": "#f43f5e",
-    "bg-slate-500": "#64748b",
-  };
-
-  const propertyColorMap = new Map<string, string>();
-  const propertyColorHexMap = new Map<string, string>();
-  properties.forEach((p, index) => {
-    const color = getPropertyColor(index);
-    propertyColorMap.set(p.id, color);
-    propertyColorHexMap.set(p.id, colorToHex[color] || "#64748b");
-  });
   const ref = new Date(referenceDate);
   const weekStart = new Date(ref);
   weekStart.setDate(ref.getDate() - ref.getDay()); // domingo
@@ -892,8 +821,11 @@ function WeeklyCleaningsView({
     cleaningsByDay.set(key, list);
   });
 
-  const isTodayWeek = 
-    referenceDate.toDateString() === new Date().toDateString();
+  const { year: twY, month: twM, day: twD } = getCdmxDate();
+  const isTodayWeek =
+    referenceDate.getFullYear() === twY &&
+    referenceDate.getMonth() === twM &&
+    referenceDate.getDate() === twD;
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4 space-y-3">
@@ -911,8 +843,11 @@ function WeeklyCleaningsView({
           const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
           const dayCleanings = cleaningsByDay.get(key) ?? [];
 
+          const { year: dY, month: dM, day: dD } = getCdmxDate();
           const isToday =
-            date.toDateString() === new Date().toDateString();
+            date.getFullYear() === dY &&
+            date.getMonth() === dM &&
+            date.getDate() === dD;
 
           return (
             <Link
@@ -938,10 +873,8 @@ function WeeklyCleaningsView({
                   Sin limpiezas
                 </p>
               ) : (
-                <ul className="space-y-1 mt-1">
+                <div className="flex flex-col gap-[3px] mt-1">
                   {dayCleanings.map((c) => {
-                    const propertyIdForColor = c.propertyId;
-                    const colorHex = propertyColorHexMap.get(propertyIdForColor) ?? "#64748b";
                     const label = c.property.shortName || c.property.name;
                     const kind = hostKindFromCleaning({
                       status: c.status,
@@ -953,86 +886,44 @@ function WeeklyCleaningsView({
                       kind !== "overdue" &&
                       c.status !== "IN_PROGRESS" && c.status !== "COMPLETED" &&
                       ((c as any).needsAttention || kind === "unassigned");
-                    const assigneeName =
-                      firstNameOf((c as any).assignedMember?.name ?? (c as any).TeamMembership?.User?.name);
-                    const tooltipText = `${label} · ${
-                      kind === "overdue" ? "Vencida" : kind === "assigned_pending" && assigneeName ? assigneeName : kind === "in_progress" ? "En progreso" : kind === "completed" ? "Completada" : "Sin cleaner"
-                    }`;
 
-                    // Vencida → punto rojo + nombre neutro
-                    if (kind === "overdue") {
-                      return (
-                        <li
-                          key={c.id}
-                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-white border border-neutral-200"
-                          title={tooltipText}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
-                          <span className="inline-flex h-[5px] w-[5px] rounded-full bg-red-500 flex-shrink-0" />
-                          <span className="truncate text-neutral-700">{label}</span>
-                        </li>
-                      );
-                    }
-
-                    // Atención / sin cleaner → ámbar en todo el chip
                     if (isAttention) {
                       return (
-                        <li
-                          key={c.id}
-                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-amber-100 text-amber-900"
-                          title={tooltipText}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
-                          <span className="truncate font-medium">{label}</span>
-                        </li>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-medium leading-tight truncate block bg-amber-100 text-amber-900" title={label}>
+                          {label}
+                        </span>
                       );
                     }
-
-                    // En progreso → punto verde + negrita
                     if (kind === "in_progress") {
                       return (
-                        <li
-                          key={c.id}
-                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-white border border-neutral-200"
-                          title={tooltipText}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
-                          <span className="inline-flex h-[5px] w-[5px] rounded-full bg-green-500 flex-shrink-0" />
-                          <span className="truncate font-bold text-neutral-900">{label}</span>
-                        </li>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-bold leading-tight truncate block bg-emerald-100 text-emerald-800" title={label}>
+                          {label}
+                        </span>
                       );
                     }
-
-                    // Completada → pill verde solo en el nombre
                     if (kind === "completed") {
                       return (
-                        <li
-                          key={c.id}
-                          className="rounded px-1 py-[2px] text-[10px] flex items-center gap-1 bg-white"
-                          title={tooltipText}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
-                          <span className="rounded px-[3px] py-[1px] bg-emerald-100 text-emerald-700 font-medium truncate">{label}</span>
-                        </li>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-medium leading-tight truncate block bg-emerald-50 text-emerald-700" title={label}>
+                          {label}
+                        </span>
                       );
                     }
-
-                    // Asignada → neutro limpio con nombre (+ cleaner si existe)
+                    if (kind === "overdue") {
+                      return (
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] leading-tight truncate block bg-red-50 text-red-700" title={label}>
+                          {label}
+                        </span>
+                      );
+                    }
+                    // Asignada → neutro con nombre (+ cleaner si existe)
+                    const assigneeName = firstNameOf((c as any).assignedMember?.name ?? (c as any).TeamMembership?.User?.name);
                     return (
-                      <li
-                        key={c.id}
-                        className="px-1 py-[2px] text-[10px] flex items-center gap-1 text-neutral-700"
-                        title={tooltipText}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorHex }} />
-                        <span className="truncate font-medium">{label}</span>
-                        {assigneeName && (
-                          <span className="shrink-0 text-neutral-400 text-[8px]">{truncateBadge(assigneeName)}</span>
-                        )}
-                      </li>
+                      <span key={c.id} className="px-1 py-[2px] text-[10px] leading-tight truncate block text-neutral-700" title={label}>
+                        {label}{assigneeName ? ` · ${truncateBadge(assigneeName)}` : ""}
+                      </span>
                     );
                   })}
-                </ul>
+                </div>
               )}
             </Link>
           );

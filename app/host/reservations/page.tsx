@@ -1,10 +1,10 @@
 // app/host/reservations/page.tsx — Vista timeline de reservas (principal)
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import Page from "@/lib/ui/Page";
 import ReservationsTimelineGrid from "./timeline/ReservationsTimelineGrid";
+import ReservationsPropertyFilter from "./ReservationsPropertyFilter";
 import TimelineScrollContainer from "./timeline/TimelineScrollContainer";
 import {
   parseMonthParam,
@@ -12,6 +12,7 @@ import {
   monthParam,
   DAY_W,
 } from "./timeline/timelineUtils";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 
 export default async function ReservationsPage({
   searchParams,
@@ -36,12 +37,11 @@ export default async function ReservationsPage({
   // ── Ventana amplia: 18 meses atrás + actual + 12 adelante = 31 meses ──────
   const win = buildMonthWindow(year, month, 18, 12);
 
-  // Scroll inicial al día de hoy
-  const todayUTC = new Date(
-    Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())
-  );
+  // Scroll inicial al día de hoy (usando fecha CDMX, no UTC)
+  const { year: ty, month: tm, day: td } = getCdmxDate();
+  const todayCdmx = new Date(Date.UTC(ty, tm, td));
   const daysToToday = Math.round(
-    (todayUTC.getTime() - win.windowStart.getTime()) / 86_400_000
+    (todayCdmx.getTime() - win.windowStart.getTime()) / 86_400_000
   );
   const scrollToOffsetPx = Math.max(0, daysToToday) * DAY_W;
 
@@ -106,35 +106,14 @@ export default async function ReservationsPage({
     <Page title="Reservas">
       <div className="space-y-3">
 
-        {/* ── Filtros de propiedad ──────────────────────────────────────── */}
+        {/* ── Filtro de propiedad ───────────────────────────────────────── */}
         {allProperties.length > 1 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Link
-              href={buildUrl(year, month, { propertyId: undefined })}
-              className={[
-                "px-3 py-1.5 text-xs rounded-lg border transition-colors",
-                !propertyFilter
-                  ? "bg-neutral-900 text-white border-neutral-900"
-                  : "border-neutral-200 text-neutral-600 hover:bg-neutral-50",
-              ].join(" ")}
-            >
-              Todas
-            </Link>
-            {allProperties.map((p) => (
-              <Link
-                key={p.id}
-                href={buildUrl(year, month, { propertyId: p.id })}
-                className={[
-                  "px-3 py-1.5 text-xs rounded-lg border transition-colors max-w-[130px] truncate",
-                  propertyFilter === p.id
-                    ? "bg-neutral-900 text-white border-neutral-900"
-                    : "border-neutral-200 text-neutral-600 hover:bg-neutral-50",
-                ].join(" ")}
-                title={p.name}
-              >
-                {p.shortName || p.name}
-              </Link>
-            ))}
+          <div className="flex justify-end">
+            <ReservationsPropertyFilter
+              properties={allProperties}
+              selectedPropertyId={propertyFilter || ""}
+              currentMonthParam={monthParam(year, month)}
+            />
           </div>
         )}
 

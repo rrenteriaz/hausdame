@@ -59,6 +59,11 @@ interface Props {
 // Lane system — detecta solapamientos y asigna carril vertical
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Día UTC como número (YYYYMMDD) para comparación tolerante al formato T00:00Z vs T06:00Z */
+function utcDay(d: Date): number {
+  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+}
+
 function computeLanes(reservations: Reservation[]): Map<string, number> {
   const lanes = new Map<string, number>();
   const sorted = [...reservations].sort(
@@ -68,12 +73,13 @@ function computeLanes(reservations: Reservation[]): Map<string, number> {
   for (const res of sorted) {
     let lane = 0;
     // Buscar el primer carril sin colisión (máx 3 carriles)
+    // Comparar por día UTC para tolerar T00:00Z vs T06:00Z (datos históricos)
     while (lane < 3) {
       const laneOccupants = sorted.filter(
         (r) => (lanes.get(r.id) ?? -1) === lane && r.id !== res.id
       );
       const conflict = laneOccupants.some(
-        (r) => r.startDate < res.endDate && r.endDate > res.startDate
+        (r) => utcDay(r.startDate) < utcDay(res.endDate) && utcDay(r.endDate) > utcDay(res.startDate)
       );
       if (!conflict) break;
       lane++;
@@ -87,21 +93,24 @@ function computeLanes(reservations: Reservation[]): Map<string, number> {
 // Geometría de barras — altura uniforme para todos los carriles
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BAR_H = 24; // altura uniforme (promedio de 32 y 16)
+const BAR_H = Math.floor(ROW_H * 0.5); // 50% del espacio disponible → 26px
 const BAR_GAP = 4;
 
-function barGeometry(maxLane: number, lane: number): { top: number; height: number } {
-  if (maxLane === 0) {
-    // Un solo carril: centrado verticalmente
-    return { top: Math.floor((ROW_H - BAR_H) / 2), height: BAR_H };
-  }
-  // Varios carriles: misma altura, apilados con gap
-  return { top: 5 + lane * (BAR_H + BAR_GAP), height: BAR_H };
+// Ancho de la columna de propiedades: reducido en móvil para mostrar ≥8 días
+// 96px en móvil → ~390-96=294px para días → ≥9 días de 32px visibles
+const PROP_COL_W_MOBILE = 96;
+
+// Extensión visual de la barra hacia el día de checkout (11am / 24h * DAY_W)
+const CHECKOUT_OVERLAP_PX = Math.round(DAY_W * 11 / 24); // ≈ 15px
+
+function barGeometry(_maxLane: number, _lane: number): { top: number; height: number } {
+  // Todas las barras centradas en ROW_H — solapamientos son imposibles en el negocio,
+  // así que todas las filas tienen altura uniforme y las barras siempre quedan centradas.
+  return { top: Math.floor((ROW_H - BAR_H) / 2), height: BAR_H };
 }
 
-function rowHeight(maxLane: number): number {
-  if (maxLane === 0) return ROW_H;
-  return 10 + (maxLane + 1) * (BAR_H + BAR_GAP);
+function rowHeight(_maxLane: number): number {
+  return ROW_H;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -134,7 +143,11 @@ export default function ReservationsTimelineGrid({
 
   return (
     // El div exterior NO tiene overflow; lo maneja TimelineScrollContainer
-    <div style={{ minWidth: PROP_COL_W + gridW }}>
+    <div style={{ minWidth: PROP_COL_W_MOBILE + gridW }}>
+      <style>{`
+        .tl-prop-col { width: ${PROP_COL_W_MOBILE}px; flex-shrink: 0; }
+        @media (min-width: 640px) { .tl-prop-col { width: ${PROP_COL_W}px; } }
+      `}</style>
 
       {/* ── Cabeceras (sticky top — permanecen visibles al hacer scroll vertical) */}
       <div className="sticky top-0 z-20 bg-white">
@@ -143,8 +156,7 @@ export default function ReservationsTimelineGrid({
       <div className="flex border-b border-neutral-200">
         {/* Celda esquina */}
         <div
-          className="sticky left-0 z-30 bg-white flex-none border-r border-neutral-200 px-4 flex items-end pb-2"
-          style={{ width: PROP_COL_W }}
+          className="tl-prop-col sticky left-0 z-30 bg-white border-r border-neutral-200 px-3 sm:px-4 flex items-end pb-2"
         >
           <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">
             Propiedad
@@ -177,10 +189,7 @@ export default function ReservationsTimelineGrid({
       {/* ── Cabecera fila 2: números de día + iniciales de semana ──────── */}
       <div className="flex border-b border-neutral-200">
         {/* Celda esquina (vacía) */}
-        <div
-          className="sticky left-0 z-30 bg-white flex-none border-r border-neutral-200"
-          style={{ width: PROP_COL_W }}
-        />
+        <div className="tl-prop-col sticky left-0 z-30 bg-white border-r border-neutral-200" />
 
         {/* Días de cada mes */}
         {months.map((m, mi) =>
@@ -260,10 +269,13 @@ export default function ReservationsTimelineGrid({
 
           // Lane assignment para solapamientos
           const lanes = computeLanes(propReservations);
-          const maxLane =
+          const rawMaxLane =
             propReservations.length > 0
               ? Math.max(...propReservations.map((r) => lanes.get(r.id) ?? 0))
               : 0;
+          // Limitar a 1 carril extra máximo para evitar filas desproporcionadas
+          // cuando hay solapamientos históricos fuera del viewport actual
+          const maxLane = Math.min(rawMaxLane, 1);
           const rh = rowHeight(maxLane);
 
           return (
@@ -273,8 +285,8 @@ export default function ReservationsTimelineGrid({
             >
               {/* Nombre de propiedad (sticky) */}
               <div
-                className="sticky left-0 z-10 bg-white flex-none border-r border-neutral-200 px-4 flex items-center"
-                style={{ width: PROP_COL_W, minHeight: rh }}
+                className="tl-prop-col sticky left-0 z-10 bg-white border-r border-neutral-200 px-3 sm:px-4 flex items-center"
+                style={{ minHeight: rh }}
               >
                 <span
                   className="text-sm text-neutral-800 truncate leading-tight"
@@ -329,7 +341,7 @@ export default function ReservationsTimelineGrid({
                   );
                   if (!layout) return null;
 
-                  const lane = lanes.get(res.id) ?? 0;
+                  const lane = Math.min(lanes.get(res.id) ?? 0, maxLane);
                   const geo = barGeometry(maxLane, lane);
 
                   const isCancelled = res.status === "CANCELLED";
@@ -341,8 +353,17 @@ export default function ReservationsTimelineGrid({
                       c.status === "PENDING" || c.status === "IN_PROGRESS"
                   );
 
-                  const { nights, widthPx } = layout;
+                  // Extender la barra hacia el día de checkout (no aplica si ya sale de la ventana)
+                  const checkoutExtension = layout.continuesInNext
+                    ? 0
+                    : Math.min(
+                        CHECKOUT_OVERLAP_PX,
+                        totalDays * DAY_W - (layout.leftPx + layout.widthPx)
+                      );
+                  const { nights } = layout;
+                  const widthPx = layout.widthPx + checkoutExtension;
                   const isNarrow = widthPx < DAY_W * 2.5;
+                  const isOneNight = nights === 1;
                   const label = isNarrow
                     ? `${nights}N`
                     : nights === 1
@@ -356,10 +377,10 @@ export default function ReservationsTimelineGrid({
                   // Border radius: plano donde la barra sale de la ventana
                   const roundLeft = layout.isContinuedFromPrev
                     ? "rounded-l-none"
-                    : "rounded-l-md";
+                    : "rounded-l-full";
                   const roundRight = layout.continuesInNext
                     ? "rounded-r-none"
-                    : "rounded-r-md";
+                    : "rounded-r-full";
 
                   return (
                     <Link
@@ -376,19 +397,19 @@ export default function ReservationsTimelineGrid({
                       ].join(" ")}
                       style={{
                         left: layout.leftPx + leftInset,
-                        width: layout.widthPx - leftInset - rightInset,
+                        width: widthPx - leftInset - rightInset,
                         top: geo.top,
                         height: geo.height,
                       }}
                       title={`${nights} noche${nights !== 1 ? "s" : ""}${isCancelled ? " · cancelada" : ""}`}
                     >
-                      {/* Label de noches */}
-                      <span className="min-w-0 flex-1 text-center text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis px-1.5 leading-none">
+                      {/* Label de noches — fuente más pequeña en barras de 1 noche para dejar espacio al punto */}
+                      <span className={`min-w-0 flex-1 text-center font-medium whitespace-nowrap overflow-hidden text-ellipsis leading-none ${isOneNight ? "text-[9px] px-1" : "text-xs px-1.5"}`}>
                         {label}
                       </span>
 
-                      {/* Señales secundarias: solo en barras con espacio */}
-                      {!isNarrow && (hasAttention || hasPendingCleaning) && (
+                      {/* Señales secundarias: siempre visibles en 1 noche, resto solo si hay espacio */}
+                      {(isOneNight || !isNarrow) && (hasAttention || hasPendingCleaning) && (
                         <span className="flex-none flex items-center gap-0.5 pr-1.5 shrink-0">
                           {hasAttention && (
                             <span
