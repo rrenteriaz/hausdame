@@ -345,13 +345,15 @@ export default function ReservationsTimelineGrid({
                   const geo = barGeometry(maxLane, lane);
 
                   const isCancelled = res.status === "CANCELLED";
-                  const hasAttention = res.cleanings.some(
+                  // Solo evaluar limpiezas activas (no terminadas) para evitar estado obsoleto
+                  const activeCleanings = res.cleanings.filter(
+                    (c) => c.status === "PENDING" || c.status === "IN_PROGRESS"
+                  );
+                  // Regla canónica: attention solo en limpiezas activas sin ejecutor asignado
+                  const hasAttention = activeCleanings.some(
                     (c) => c.needsAttention && !c.assignedMembershipId
                   );
-                  const hasPendingCleaning = res.cleanings.some(
-                    (c) =>
-                      c.status === "PENDING" || c.status === "IN_PROGRESS"
-                  );
+                  const hasPendingCleaning = activeCleanings.length > 0;
 
                   // Extender la barra hacia el día de checkout (no aplica si ya sale de la ventana)
                   const checkoutExtension = layout.continuesInNext
@@ -362,7 +364,7 @@ export default function ReservationsTimelineGrid({
                       );
                   const { nights } = layout;
                   const widthPx = layout.widthPx + checkoutExtension;
-                  const isNarrow = widthPx < DAY_W * 2.5;
+                  const isNarrow = widthPx < DAY_W * 1.5; // < 48px: solo barras de 1 noche o recortadas
                   const isOneNight = nights === 1;
                   const label = isNarrow
                     ? `${nights}N`
@@ -403,28 +405,28 @@ export default function ReservationsTimelineGrid({
                       }}
                       title={`${nights} noche${nights !== 1 ? "s" : ""}${isCancelled ? " · cancelada" : ""}`}
                     >
-                      {/* Label de noches — fuente más pequeña en barras de 1 noche para dejar espacio al punto */}
-                      <span className={`min-w-0 flex-1 text-center font-medium whitespace-nowrap overflow-hidden text-ellipsis leading-none ${isOneNight ? "text-[9px] px-1" : "text-xs px-1.5"}`}>
-                        {label}
-                      </span>
-
-                      {/* Señales secundarias: siempre visibles en 1 noche, resto solo si hay espacio */}
-                      {(isOneNight || !isNarrow) && (hasAttention || hasPendingCleaning) && (
-                        <span className="flex-none flex items-center gap-0.5 pr-1.5 shrink-0">
-                          {hasAttention && (
-                            <span
-                              className="block w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
-                              title="Atención requerida"
-                            />
-                          )}
-                          {hasPendingCleaning && !hasAttention && (
-                            <span
-                              className="block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
-                              title="Limpieza pendiente"
-                            />
-                          )}
+                      {/* Label + puntos agrupados y centrados juntos */}
+                      <span className="flex-1 min-w-0 flex items-center justify-center gap-1 overflow-hidden px-1">
+                        <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis leading-none ${isOneNight ? "text-[9px]" : "text-xs"}`}>
+                          {label}
                         </span>
-                      )}
+                        {(isOneNight || !isNarrow) && (hasPendingCleaning || hasAttention) && (
+                          <span className="flex-none flex items-center gap-0.5">
+                            {hasPendingCleaning && (
+                              <span
+                                className="block w-1.5 h-1.5 rounded-full bg-emerald-400"
+                                title="Limpieza pendiente"
+                              />
+                            )}
+                            {hasAttention && (
+                              <span
+                                className="block w-1.5 h-1.5 rounded-full bg-amber-400"
+                                title="Atención requerida"
+                              />
+                            )}
+                          </span>
+                        )}
+                      </span>
                     </Link>
                   );
                 })}

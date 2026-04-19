@@ -262,6 +262,8 @@ export default async function ReservationDetailPage({
               {reservation.cleanings.map((cleaning) => {
                 const scheduledAt = (cleaning as any).scheduledAtPlanned || cleaning.scheduledDate;
                 const assignedMember = (cleaning as any).assignedMember;
+                // Regla canónica: asignado ↔ assignedMembershipId != null
+                const isAssigned = cleaning.assignedMembershipId != null || assignedMember != null;
                 const needsAttention = (cleaning as any).needsAttention &&
                   !cleaning.assignedMembershipId;
 
@@ -299,7 +301,11 @@ export default async function ReservationDetailPage({
                             </p>
                           )}
 
-                          {!assignedMember && cleaning.status !== "COMPLETED" && (
+                          {!assignedMember && cleaning.assignedMembershipId && cleaning.status !== "COMPLETED" && (
+                            <p className="text-xs text-neutral-600">Asignada</p>
+                          )}
+
+                          {!isAssigned && cleaning.status !== "COMPLETED" && (
                             <p className="text-xs text-neutral-500">Sin asignar</p>
                           )}
                         </div>
