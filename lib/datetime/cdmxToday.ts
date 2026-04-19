@@ -49,3 +49,20 @@ export function getEndOfCdmxNext7Days(): Date {
   const { year, month, day } = getCdmxDate();
   return new Date(Date.UTC(year, month, day + 8, 5, 59, 59, 999));
 }
+
+/**
+ * Inicio del día CDMX al que pertenece el instante `date`, expresado como UTC.
+ * Útil para comparaciones "¿este instante es anterior a hoy?" sin depender de TZ del servidor.
+ *
+ * Ejemplo: date = 2026-04-19T17:00:00Z (11:00 CDMX)
+ *          → 2026-04-19T06:00:00Z  (CDMX 00:00 del mismo día)
+ */
+export function getStartOfCdmxDay(date: Date): Date {
+  const cdmxLocal = new Date(date.getTime() - CDMX_OFFSET_MS);
+  return new Date(Date.UTC(
+    cdmxLocal.getUTCFullYear(),
+    cdmxLocal.getUTCMonth(),
+    cdmxLocal.getUTCDate(),
+    6, 0, 0, 0, // CDMX 00:00 = UTC 06:00
+  ));
+}

@@ -1,4 +1,5 @@
 // lib/cleaning-attention-reasons.ts
+import { getStartOfCdmxToday, getStartOfCdmxDay, formatScheduledForDetail } from "@/lib/time";
 
 export type CleaningAttentionReasonCode =
   | "NO_AVAILABLE_MEMBER"
@@ -95,9 +96,7 @@ export async function getCleaningAttentionReasons(
   }
 ): Promise<CleaningAttentionReason[]> {
   const reasons: CleaningAttentionReason[] = [];
-  const now = new Date();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
+  const startOfToday = getStartOfCdmxToday();
 
   // Solo calcular motivos para limpiezas que no estén completadas o canceladas
   if (cleaning.status === "COMPLETED" || cleaning.status === "CANCELLED") {
@@ -105,9 +104,7 @@ export async function getCleaningAttentionReasons(
   }
 
   const scheduledAt = cleaning.scheduledAtPlanned || cleaning.scheduledDate;
-  const scheduledDate = new Date(scheduledAt);
-  const scheduledDateStart = new Date(scheduledDate);
-  scheduledDateStart.setHours(0, 0, 0, 0);
+  const scheduledDateStart = getStartOfCdmxDay(new Date(scheduledAt));
 
   const hasExecution = !!cleaning.teamId || !!cleaning.assignedMembershipId;
 
@@ -217,16 +214,7 @@ export async function getCleaningAttentionReasons(
           code: mappedReason.code,
           title: mappedReason.title,
           severity: mappedReason.severity,
-          detail: scheduledAt
-            ? `Programada para: ${scheduledAt.toLocaleString("es-MX", {
-                weekday: "long",
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}`
-            : undefined,
+          detail: scheduledAt ? formatScheduledForDetail(new Date(scheduledAt)) : undefined,
         });
       }
     }
@@ -243,14 +231,7 @@ export async function getCleaningAttentionReasons(
       code: "CLEANING_PENDING_OVERDUE",
       title: "Limpieza pendiente con fecha pasada.",
       severity: "CRITICAL",
-      detail: `Programada para: ${scheduledAt.toLocaleString("es-MX", {
-        weekday: "long",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`,
+      detail: formatScheduledForDetail(new Date(scheduledAt)),
     });
   }
 
@@ -272,14 +253,7 @@ export async function getCleaningAttentionReasons(
         code: "NO_PRIMARY_ASSIGNEE",
         title: "Esta limpieza aún no tiene un miembro asignado.",
         severity: "CRITICAL",
-        detail: `Programada para: ${scheduledAt.toLocaleString("es-MX", {
-          weekday: "long",
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
+        detail: formatScheduledForDetail(new Date(scheduledAt)),
       });
     }
   }

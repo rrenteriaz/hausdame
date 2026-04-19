@@ -402,9 +402,9 @@ model Reservation {
   tenantId                String
   source                  ReservationSource @default(ICAL)
   status                  ReservationStatus @default(CONFIRMED)
-  /// Fechas base (check-in/out)
-  startDate               DateTime
-  endDate                 DateTime
+  /// Fechas base (check-in/out) — solo fecha, sin hora (date en BD)
+  startDate               DateTime          @db.Date
+  endDate                 DateTime          @db.Date
   /// De iCal
   calendarUid             String?
   reservationCodeCalendar String?
@@ -446,7 +446,7 @@ model Cleaning {
   tenantId               String
   reservationId          String?
   assignedToId           String?
-  scheduledDate          DateTime
+  scheduledDate          DateTime                @db.Date
   status                 CleaningStatus          @default(PENDING)
   notes                  String?
   createdAt              DateTime                @default(now())
@@ -460,8 +460,8 @@ model Cleaning {
   assignmentStatus       AssignmentStatus        @default(OPEN)
   attentionReason        String?
   needsAttention         Boolean                 @default(false)
-  scheduledAtOriginal    DateTime?
-  scheduledAtPlanned     DateTime?
+  scheduledAtOriginal    DateTime?               @db.Timestamptz(3)
+  scheduledAtPlanned     DateTime?               @db.Timestamptz(3)
   isScheduleOverridden   Boolean                 @default(false)
   scheduleOverriddenAt   DateTime?
   propertyId             String

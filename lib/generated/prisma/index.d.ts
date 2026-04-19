@@ -29693,7 +29693,7 @@ export namespace Prisma {
       source: $Enums.ReservationSource
       status: $Enums.ReservationStatus
       /**
-       * Fechas base (check-in/out)
+       * Fechas base (check-in/out) — solo fecha, sin hora (date en BD)
        */
       startDate: Date
       endDate: Date

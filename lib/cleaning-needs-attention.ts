@@ -2,6 +2,7 @@
 import prisma from "@/lib/prisma";
 import { getEligibleMembersForCleaning } from "./cleaning-eligibility";
 import { hasEffectiveAssignee } from "./cleanings/getEffectiveAssignee";
+import { getStartOfCdmxDay } from "@/lib/time";
 
 export type CleaningNeedsAttentionReason =
   | "NO_ASSIGNED_TEAM"
@@ -57,11 +58,11 @@ export async function getCleaningsNeedingAttention(
   onlyFuture: boolean = true
 ): Promise<CleaningNeedsAttention[]> {
   const now = new Date();
-  
-  // Calcular el inicio de la ventana operativa (45 días atrás)
-  const overdueStart = new Date(now);
-  overdueStart.setDate(now.getDate() - HOST_OVERDUE_WINDOW_DAYS);
-  overdueStart.setHours(0, 0, 0, 0);
+
+  // Calcular el inicio de la ventana operativa (45 días atrás), anclado a medianoche CDMX.
+  const overdueStart = getStartOfCdmxDay(
+    new Date(Date.now() - HOST_OVERDUE_WINDOW_DAYS * 86_400_000)
+  );
 
   // Obtener todas las limpiezas activas (excluir canceladas y completadas)
   const cleanings = await (prisma as any).cleaning.findMany({
