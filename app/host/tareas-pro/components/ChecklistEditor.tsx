@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import {
   createTaskStep,
@@ -17,6 +17,7 @@ import {
 import StepCaptureModal from "./StepCaptureModal";
 import StepFrequencyModal from "./StepFrequencyModal";
 import TaskStepPhotosModal from "./TaskStepPhotosModal";
+import CopyToPropertyModal from "./CopyToPropertyModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { scheduleHumanDescription, isScheduleComplete } from "@/lib/tareas-pro/domain/schedule-anchor";
 
@@ -95,16 +96,24 @@ const TEMPLATE_FREQ_OPTIONS = [
 
 const LEGACY_PERIODIC_FREQS = ["DAILY", "WEEKLY", "MONTHLY"] as const;
 
+type TenantProperty = {
+  id: string;
+  name: string;
+  shortName: string | null;
+};
+
 // ---- Component ----
 
 export default function ChecklistEditor({
   template,
   initialSections,
   initialThumbsEntries,
+  tenantProperties = [],
 }: {
   template: Template;
   initialSections: Section[];
   initialThumbsEntries: [string, Array<string | null>][];
+  tenantProperties?: TenantProperty[];
 }) {
   const [sections, setSections] = useState(initialSections);
   const [thumbsMap, setThumbsMap] = useState<Map<string, Array<string | null>>>(
@@ -121,6 +130,13 @@ export default function ChecklistEditor({
   const [photosModal, setPhotosModal] = useState<{ stepId: string; name: string } | null>(null);
   const [deleteSectionConfirm, setDeleteSectionConfirm] = useState<Section | null>(null);
   const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+
+  // Inline rename
+  const [editingName, setEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(template.name);
+  const [renamePending, startRenameTransition] = useTransition();
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Add section
   const [addSectionName, setAddSectionName] = useState("");
@@ -309,6 +325,30 @@ export default function ChecklistEditor({
     setThumbsMap((prev) => new Map(prev).set(stepId, thumbs));
   };
 
+  const commitRename = () => {
+    const trimmed = editNameValue.trim();
+    if (!trimmed || trimmed === template.name) {
+      setEditNameValue(template.name);
+      setEditingName(false);
+      return;
+    }
+    startRenameTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("templateId", template.id);
+        fd.append("name", trimmed);
+        fd.append("status", template.status);
+        fd.append("description", template.description ?? "");
+        await updateTaskTemplate(fd);
+      } catch (err: any) {
+        showError(err?.message || "Error al renombrar el checklist");
+        setEditNameValue(template.name);
+      } finally {
+        setEditingName(false);
+      }
+    });
+  };
+
   const currentStatus = template.status;
   const currentFrequency = template.schedule?.frequency ?? "MANUAL";
 
@@ -326,7 +366,31 @@ export default function ChecklistEditor({
       <div className="flex items-start gap-3">
         <Link href="/host/tareas-pro" className="text-gray-400 hover:text-gray-700 mt-1 shrink-0 text-lg leading-none">←</Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold truncate">{template.name}</h1>
+          {editingName ? (
+            <input
+              ref={nameInputRef}
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); commitRename(); }
+                if (e.key === "Escape") { setEditNameValue(template.name); setEditingName(false); }
+              }}
+              disabled={renamePending}
+              maxLength={120}
+              className="w-full text-lg font-semibold border-b-2 border-neutral-400 focus:border-neutral-900 outline-none bg-transparent py-0.5 leading-tight disabled:opacity-50"
+              autoFocus
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setEditNameValue(template.name); setEditingName(true); }}
+              className="text-left text-lg font-semibold truncate w-full hover:underline decoration-dotted underline-offset-2 cursor-text"
+              title="Clic para renombrar"
+            >
+              {renamePending ? editNameValue : template.name}
+            </button>
+          )}
           <p className="text-xs text-gray-400 mt-0.5">{template.property.shortName ?? template.property.name}</p>
         </div>
         {/* Status pills */}
@@ -748,14 +812,25 @@ export default function ChecklistEditor({
         </div>
       </details>
 
-      {/* Eliminar checklist */}
-      <button
-        type="button"
-        onClick={() => setDeleteMenuOpen(true)}
-        className="text-sm text-white hover:text-neutral-200 bg-neutral-900 border border-neutral-900 px-4 py-2 rounded-lg font-medium transition"
-      >
-        − Eliminar checklist
-      </button>
+      {/* Acciones secundarias */}
+      <div className="flex flex-wrap gap-2">
+        {tenantProperties.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setCopyModalOpen(true)}
+            className="text-sm text-neutral-700 bg-white border border-neutral-200 px-4 py-2 rounded-lg font-medium hover:bg-neutral-50 transition"
+          >
+            Copiar a otra propiedad
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setDeleteMenuOpen(true)}
+          className="text-sm text-white hover:text-neutral-200 bg-neutral-900 border border-neutral-900 px-4 py-2 rounded-lg font-medium transition"
+        >
+          − Eliminar checklist
+        </button>
+      </div>
 
       {/* ---- Modals ---- */}
 
@@ -814,6 +889,16 @@ export default function ChecklistEditor({
         cancelText="Cancelar"
         confirmAction={() => deleteSectionConfirm && handleDeleteSection(deleteSectionConfirm)}
         variant="danger"
+      />
+
+      {/* Copy to property modal */}
+      <CopyToPropertyModal
+        isOpen={copyModalOpen}
+        onClose={() => setCopyModalOpen(false)}
+        sourceTemplateId={template.id}
+        sourceName={template.name}
+        currentPropertyId={template.propertyId}
+        properties={tenantProperties}
       />
 
       {/* Delete / Archive menu modal */}

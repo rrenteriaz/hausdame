@@ -17,20 +17,28 @@ export default async function TemplateEditorPage({
 
   const { templateId } = await params;
 
-  const template = await prisma.taskTemplate.findFirst({
-    where: { id: templateId, tenantId },
-    include: {
-      property: { select: { name: true, shortName: true } },
-      schedule: true,
-      sections: {
-        orderBy: { order: "asc" },
-        include: {
-          steps: { orderBy: { order: "asc" } },
+  const [template, tenantProperties] = await Promise.all([
+    prisma.taskTemplate.findFirst({
+      where: { id: templateId, tenantId },
+      include: {
+        property: { select: { name: true, shortName: true } },
+        schedule: true,
+        sections: {
+          orderBy: { order: "asc" },
+          include: {
+            steps: { orderBy: { order: "asc" } },
+          },
         },
+        _count: { select: { jobs: true } },
       },
-      _count: { select: { jobs: true } },
-    },
-  });
+    }),
+    // Propiedades del tenant para el selector "Copiar a otra propiedad"
+    prisma.property.findMany({
+      where: { tenantId },
+      select: { id: true, name: true, shortName: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   if (!template) notFound();
   if (template.status === "DELETED") redirect("/host/tareas-pro");
@@ -95,6 +103,7 @@ export default async function TemplateEditorPage({
         template={templateData}
         initialSections={initialSections}
         initialThumbsEntries={initialThumbsEntries}
+        tenantProperties={tenantProperties}
       />
     </HostWebContainer>
   );

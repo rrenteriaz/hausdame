@@ -5,7 +5,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { StorageProvider, PutPublicObjectParams, PutPublicObjectResult, DeleteObjectParams } from "./types";
+import type { StorageProvider, PutPublicObjectParams, PutPublicObjectResult, DeleteObjectParams, CopyObjectParams, CopyObjectResult } from "./types";
 
 // Server-only: no usar NEXT_PUBLIC_ para credenciales sensibles
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -103,6 +103,17 @@ export class SupabaseStorageProvider implements StorageProvider {
       // No lanzar error si el archivo no existe (idempotente)
       console.warn(`Failed to delete from Supabase (may not exist): ${error.message}`);
     }
+  }
+
+  async copyObject(params: CopyObjectParams): Promise<CopyObjectResult> {
+    const { bucket, fromKey, toKey } = params;
+    const supabase = getSupabaseClient();
+
+    const { error } = await supabase.storage.from(bucket).copy(fromKey, toKey);
+    if (error) throw new Error(`Failed to copy object in Supabase: ${error.message}`);
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(toKey);
+    return { publicUrl: data.publicUrl };
   }
 }
 

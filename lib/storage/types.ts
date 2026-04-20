@@ -23,6 +23,16 @@ export interface DeleteObjectParams {
   key: string;
 }
 
+export interface CopyObjectParams {
+  bucket: string;
+  fromKey: string;
+  toKey: string;
+}
+
+export interface CopyObjectResult {
+  publicUrl: string;
+}
+
 export interface StorageProvider {
   /**
    * Sube un objeto al storage con acceso público
@@ -33,5 +43,11 @@ export interface StorageProvider {
    * Elimina un objeto del storage
    */
   deleteObject(params: DeleteObjectParams): Promise<void>;
+
+  /**
+   * Copia un objeto dentro del mismo bucket (server-side, sin transferir bytes)
+   * Retorna la URL pública del nuevo objeto.
+   */
+  copyObject(params: CopyObjectParams): Promise<CopyObjectResult>;
 }
 
