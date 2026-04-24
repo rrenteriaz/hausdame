@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getEligibleMembersForCleaning } from "./cleaning-eligibility";
 import { hasEffectiveAssignee } from "./cleanings/getEffectiveAssignee";
 import { getStartOfCdmxDay } from "@/lib/time";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 
 export type CleaningNeedsAttentionReason =
   | "NO_ASSIGNED_TEAM"
@@ -57,20 +59,24 @@ export async function getCleaningsNeedingAttention(
   tenantId: string,
   onlyFuture: boolean = true
 ): Promise<CleaningNeedsAttention[]> {
-  const now = new Date();
-
   // Calcular el inicio de la ventana operativa (45 días atrás), anclado a medianoche CDMX.
   const overdueStart = getStartOfCdmxDay(
     new Date(Date.now() - HOST_OVERDUE_WINDOW_DAYS * 86_400_000)
   );
+
+  // Para onlyFuture: usar UTC midnight del día CDMX actual como límite inferior.
+  // Pasar `now` como timestamp haría que Prisma truncara al día UTC,
+  // que después de medianoche UTC (= 6 PM CDMX) sería mañana → se perderían las limpiezas de hoy.
+  const { year, month, day } = getCdmxDate();
+  const todayUTCMidnight = new Date(Date.UTC(year, month, day));
 
   // Obtener todas las limpiezas activas (excluir canceladas y completadas)
   const cleanings = await (prisma as any).cleaning.findMany({
     where: {
       tenantId,
       status: { notIn: ["CANCELLED", "COMPLETED"] },
-      scheduledDate: { 
-        gte: onlyFuture ? now : overdueStart 
+      scheduledDate: {
+        gte: onlyFuture ? todayUTCMidnight : overdueStart,
       },
     },
     include: {
@@ -201,7 +207,7 @@ export async function getCleaningsNeedingAttention(
   for (const cleaning of cleanings) {
     let reason: CleaningNeedsAttentionReason | null = null;
     const propertyTeamsCount = propertyTeamsCountMap.get(cleaning.propertyId) ?? 0;
-    const isOverdue = new Date(cleaning.scheduledDate) < now;
+    const isOverdue = isPastDateOnly(new Date(cleaning.scheduledDate));
     const isUnassigned = !hasEffectiveAssignee(cleaning);
 
     // Regla de inclusión:
@@ -244,8 +250,8 @@ export async function getCleaningsNeedingAttention(
   // 1. Overdue primero: más recientes primero (DESC)
   // 2. Futuras después: más próximas primero (ASC)
   return cleaningsNeedingAttention.sort((a, b) => {
-    const isAOverdue = a.scheduledDate < now;
-    const isBOverdue = b.scheduledDate < now;
+    const isAOverdue = isPastDateOnly(new Date(a.scheduledDate));
+    const isBOverdue = isPastDateOnly(new Date(b.scheduledDate));
 
     if (isAOverdue && !isBOverdue) return -1;
     if (!isAOverdue && isBOverdue) return 1;

@@ -7,6 +7,7 @@ import HostWebContainer from "@/lib/ui/HostWebContainer";
 import Page from "@/lib/ui/Page";
 import { SubmitConfirmButton } from "@/app/host/tareas-pro/components/SubmitConfirmButton";
 import { skipRecurringDueAction, assignRecurringDueAction } from "./actions";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 /** Convierte un periodKey a texto legible en español. */
 function periodKeyToLabel(periodKey: string): string {
@@ -54,17 +55,9 @@ function isOverdue(periodKey: string): boolean {
 }
 
 function formatCleaningOption(cleaning: { scheduledDate: Date; status: string }): string {
-  const date = new Date(cleaning.scheduledDate).toLocaleDateString("es-MX", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const time = new Date(cleaning.scheduledDate).toLocaleTimeString("es-MX", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const date = formatDateOnly(new Date(cleaning.scheduledDate));
   const statusLabel = cleaning.status === "IN_PROGRESS" ? "En progreso" : "Pendiente";
-  return `${date} ${time} · ${statusLabel}`;
+  return `${date} · ${statusLabel}`;
 }
 
 const freqLabels: Record<string, string> = {
@@ -181,11 +174,7 @@ export default async function PendientesPage() {
                   {due.assignedCleaning && (
                     <p className="text-xs text-blue-600">
                       Asignada a limpieza del{" "}
-                      {new Date(due.assignedCleaning.scheduledDate).toLocaleDateString("es-MX", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}{" "}
+                      {formatDateOnly(new Date(due.assignedCleaning.scheduledDate))}{" "}
                       ({due.assignedCleaning.status === "COMPLETED" ? "completada" : due.assignedCleaning.status === "IN_PROGRESS" ? "en progreso" : "pendiente"})
                     </p>
                   )}

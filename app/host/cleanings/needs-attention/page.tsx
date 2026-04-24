@@ -18,6 +18,8 @@ import Link from "next/link";
 import { getCleaningAssignmentLevel } from "@/lib/cleanings/getCleaningAssignmentLevel";
 import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
 import prisma from "@/lib/prisma";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 const OVERDUE_MESSAGE_V1 = "La fecha programada ya pasó y la limpieza sigue pendiente.";
 
@@ -280,20 +282,14 @@ export default async function CleaningsNeedingAttentionPage() {
                         <h3 className="text-base font-medium text-neutral-900 truncate">
                           {propertyName}
                         </h3>
-                        {new Date(cleaning.scheduledDate) < now && (
+                        {isPastDateOnly(new Date(cleaning.scheduledDate)) && (
                           <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
                             Vencida
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
-                        {cleaning.scheduledDate.toLocaleString("es-MX", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDateOnly(new Date(cleaning.scheduledDate))}
                       </p>
                       {/* Copy canónico según assignmentLevel */}
                       <div className="mt-1 space-y-0.5">
@@ -305,7 +301,7 @@ export default async function CleaningsNeedingAttentionPage() {
                             {cleaning.assignmentCopy.secondary}
                           </p>
                         )}
-                        {new Date(cleaning.scheduledDate) < now && (
+                        {isPastDateOnly(new Date(cleaning.scheduledDate)) && (
                           <p className="text-[10px] sm:text-xs text-amber-600 font-medium">
                             {OVERDUE_MESSAGE_V1}
                           </p>

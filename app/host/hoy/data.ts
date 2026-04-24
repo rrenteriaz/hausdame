@@ -6,6 +6,7 @@ import { getCleaningsNeedingAttention } from "@/lib/cleaning-needs-attention";
 import { InventoryReportStatus } from "@/lib/generated/prisma";
 import { BlockData, HoyData, ProximasData, BlockItem } from "./types";
 import {
+  getCdmxDate,
   getStartOfCdmxToday,
   getEndOfCdmxToday,
   getStartOfCdmxTomorrow,
@@ -13,8 +14,8 @@ import {
 } from "@/lib/datetime/cdmxToday";
 
 /**
- * Aliases locales — scheduledDate está en UTC y se compara contra rangos CDMX.
- * Reemplaza los helpers anteriores basados en setHours() (hora local del servidor = UTC en Railway).
+ * Aliases locales — usados para reservas y para las ventanas de limpiezas sin confirmar.
+ * Para getTodayCleanings() se usa fecha exacta CDMX (ver Fix 1), no rango horario.
  */
 const getStartOfToday = getStartOfCdmxToday;
 const getEndOfToday = getEndOfCdmxToday;
@@ -80,13 +81,8 @@ export async function getHoyData(
   // 2. Incidencias abiertas
   const openIncidentsData = await getOpenIncidents(tenantId, propertyId);
 
-  // 3. Limpiezas de hoy (hora local — scheduledDate es hora local)
-  const todayCleaningsData = await getTodayCleanings(
-    tenantId,
-    startOfToday,
-    endOfToday,
-    propertyId
-  );
+  // 3. Limpiezas de hoy — comparación exacta por fecha CDMX (scheduledDate = @db.Date)
+  const todayCleaningsData = await getTodayCleanings(tenantId, propertyId);
 
   // 4. Reservas para hoy (UTC midnight — startDate de reserva es UTC midnight iCal)
   const todayReservationsData = await getTodayReservations(
@@ -191,9 +187,7 @@ export async function getAllTodayCleanings(
   tenantId: string,
   propertyId?: string
 ): Promise<BlockItem[]> {
-  const startOfToday = getStartOfToday();
-  const endOfToday = getEndOfToday();
-  const data = await getTodayCleanings(tenantId, startOfToday, endOfToday, propertyId);
+  const data = await getTodayCleanings(tenantId, propertyId);
   return data.allItems || data.items;
 }
 
@@ -358,20 +352,25 @@ async function getOpenIncidents(
 }
 
 /**
- * Helper: Obtiene limpiezas de hoy
+ * Helper: Obtiene limpiezas de hoy.
+ *
+ * scheduledDate es DateTime @db.Date — Prisma serializa cualquier Date a DATE (sin hora).
+ * Si se usara un rango gte/lte con límites horarios CDMX, el extremo superior
+ * (ej. 2026-04-23T05:59:59Z) se trunca a DATE '2026-04-23' y arrastra las limpiezas
+ * del día siguiente. Por eso se compara por igualdad exacta a la fecha CDMX.
  */
 async function getTodayCleanings(
   tenantId: string,
-  startOfToday: Date,
-  endOfToday: Date,
   propertyId?: string
 ): Promise<BlockData> {
+  // Fecha calendario de hoy en CDMX → medianoche UTC de ese día
+  // Prisma serializa este Date como DATE '2026-04-22' al comparar contra @db.Date.
+  const { year, month, day } = getCdmxDate();
+  const exactTodayUTC = new Date(Date.UTC(year, month, day));
+
   const whereClause: any = {
     tenantId,
-    scheduledDate: {
-      gte: startOfToday,
-      lte: endOfToday,
-    },
+    scheduledDate: { equals: exactTodayUTC },
     status: { not: "CANCELLED" },
   };
 

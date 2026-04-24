@@ -6,6 +6,7 @@
  */
 
 import { hasEffectiveAssignee } from "@/lib/cleanings/getEffectiveAssignee";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 
 // ─── Tipos de estado ────────────────────────────────────────────────────────
 
@@ -396,7 +397,7 @@ export function hostKindFromCleaning(cleaning: {
   if (
     cleaning.status === "PENDING" &&
     cleaning.scheduledDate != null &&
-    cleaning.scheduledDate < new Date()
+    isPastDateOnly(new Date(cleaning.scheduledDate))
   ) return "overdue";
   // Usar helper canónico: prioriza membership, fallback a legacy
   if (

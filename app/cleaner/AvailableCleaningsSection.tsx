@@ -7,6 +7,8 @@ import ListContainer from "@/lib/ui/ListContainer";
 import ListThumb from "@/lib/ui/ListThumb";
 import { getCleanerVisual } from "@/lib/ui/cleaning-visual-state";
 import { acceptCleaning } from "./actions";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 interface Cleaning {
   id: string;
@@ -39,7 +41,6 @@ export default function AvailableCleaningsSection({
   const [availableOpen, setAvailableOpen] = useState(false);
   const [highlightAvailable, setHighlightAvailable] = useState(false);
   const availableSectionRef = useRef<HTMLDivElement>(null);
-  const now = new Date();
 
   useEffect(() => {
     if (availableOpen && availableSectionRef.current) {
@@ -74,7 +75,7 @@ export default function AvailableCleaningsSection({
             {eligibleCleanings.map((cleaning, index) => {
               const isLast = index === eligibleCleanings.length - 1;
               const propertyName = cleaning.property.shortName || cleaning.property.name;
-              const isOverdue = new Date(cleaning.scheduledDate) < now;
+              const isOverdue = isPastDateOnly(new Date(cleaning.scheduledDate));
               const visual = getCleanerVisual(isOverdue ? "available_overdue" : "available");
 
               return (
@@ -107,13 +108,7 @@ export default function AvailableCleaningsSection({
                         </span>
                       </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
-                        {cleaning.scheduledDate.toLocaleString("es-MX", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDateOnly(new Date(cleaning.scheduledDate))}
                       </p>
                       {cleaning.notes && (
                         <p className="text-xs text-neutral-400 line-clamp-2 mt-1">

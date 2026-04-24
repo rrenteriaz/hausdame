@@ -12,49 +12,36 @@ import ListRow from "@/lib/ui/ListRow";
 import ListThumb from "@/lib/ui/ListThumb";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import TeamCleaningHistoryFilters from "./TeamCleaningHistoryFilters";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 // Usar formato nativo de JavaScript en lugar de date-fns
 
 function getPeriodDates(period: string): { start: Date; end: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  today.setHours(23, 59, 59, 999); // Fin del día
+  // Usar getCdmxDate() + Date.UTC() para que los límites sean UTC midnight del día
+  // CDMX correcto y no dependan del TZ del servidor.
+  // scheduledDate es @db.Date → Prisma compara solo la parte DATE (trunca la hora).
+  const { year, month, day } = getCdmxDate();
+  const today = new Date(Date.UTC(year, month, day));
 
   switch (period) {
-    case "this-month": {
-      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      firstDayThisMonth.setHours(0, 0, 0, 0);
-      return { start: firstDayThisMonth, end: today };
-    }
-    case "previous-month": {
-      const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      firstDayPrevMonth.setHours(0, 0, 0, 0);
-      const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      lastDayPrevMonth.setHours(23, 59, 59, 999);
-      return { start: firstDayPrevMonth, end: lastDayPrevMonth };
-    }
-    case "this-year": {
-      const firstDayYear = new Date(now.getFullYear(), 0, 1);
-      firstDayYear.setHours(0, 0, 0, 0);
-      return { start: firstDayYear, end: today };
-    }
-    case "last-year": {
-      const firstDayLastYear = new Date(now.getFullYear() - 1, 0, 1);
-      firstDayLastYear.setHours(0, 0, 0, 0);
-      const lastDayLastYear = new Date(now.getFullYear() - 1, 11, 31);
-      lastDayLastYear.setHours(23, 59, 59, 999);
-      return { start: firstDayLastYear, end: lastDayLastYear };
-    }
-    case "last-365-days": {
-      const startDate = new Date(today);
-      startDate.setDate(startDate.getDate() - 365);
-      startDate.setHours(0, 0, 0, 0);
-      return { start: startDate, end: today };
-    }
-    default: {
-      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      firstDayThisMonth.setHours(0, 0, 0, 0);
-      return { start: firstDayThisMonth, end: today };
-    }
+    case "this-month":
+      return { start: new Date(Date.UTC(year, month, 1)), end: today };
+    case "previous-month":
+      return {
+        start: new Date(Date.UTC(year, month - 1, 1)),
+        end: new Date(Date.UTC(year, month, 0)),
+      };
+    case "this-year":
+      return { start: new Date(Date.UTC(year, 0, 1)), end: today };
+    case "last-year":
+      return {
+        start: new Date(Date.UTC(year - 1, 0, 1)),
+        end: new Date(Date.UTC(year - 1, 11, 31)),
+      };
+    case "last-365-days":
+      return { start: new Date(Date.UTC(year, month, day - 365)), end: today };
+    default:
+      return { start: new Date(Date.UTC(year, month, 1)), end: today };
   }
 }
 
@@ -276,13 +263,16 @@ export default async function TeamCleaningHistoryPage({
 
   pastCleanings.forEach((cleaning: any) => {
     const date = new Date(cleaning.scheduledDate);
+    // Usar getUTC* y timeZone: "UTC" para que scheduledDate (@db.Date = UTC midnight)
+    // agrupe por el mes correcto sin depender del TZ del servidor.
     const monthKey = date.toLocaleDateString("es-MX", {
+      timeZone: "UTC",
       year: "numeric",
       month: "long",
     });
 
     if (!cleaningsByMonth.has(monthKey)) {
-      const monthDate = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
       cleaningsByMonth.set(monthKey, { cleanings: [], monthDate });
     }
     cleaningsByMonth.get(monthKey)!.cleanings.push(cleaning);
@@ -349,11 +339,11 @@ export default async function TeamCleaningHistoryPage({
                         const statusText = formatCleaningStatus(cleaning.status);
                         const scheduledDate = new Date(cleaning.scheduledDate);
                         const dateStr = scheduledDate.toLocaleDateString("es-MX", {
+                          timeZone: "UTC",
                           weekday: "long",
                           day: "numeric",
                           month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
+                          year: "numeric",
                         });
 
                         return (

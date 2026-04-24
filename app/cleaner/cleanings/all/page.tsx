@@ -13,6 +13,8 @@ import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import { formatCleaningStatus } from "@/lib/cleaning-ui";
 import AllCleaningsFilters from "./AllCleaningsFilters";
 import NoMembershipPage from "../../NoMembershipPage";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 function safeBackHref(input?: string, memberId?: string): string {
   if (input && input.startsWith("/cleaner")) return input;
@@ -307,7 +309,7 @@ export default async function AllCleaningsPage({
               const isAssigned = cleaning.assignedMembershipId != null;
               const isOverdue =
                 (cleaning.status === "PENDING" || cleaning.status === "IN_PROGRESS") &&
-                new Date(cleaning.scheduledDate) < now;
+                isPastDateOnly(new Date(cleaning.scheduledDate));
 
               return (
                 <ListRow
@@ -332,13 +334,7 @@ export default async function AllCleaningsPage({
                       )}
                     </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleString("es-MX", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateOnly(new Date(cleaning.scheduledDate))}
                     </p>
                     <p className="text-xs text-neutral-500 mt-1">
                       Estado: {formatCleaningStatus(cleaning.status)}

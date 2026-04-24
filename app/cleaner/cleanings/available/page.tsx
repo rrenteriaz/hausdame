@@ -14,6 +14,8 @@ import { formatCleaningStatus } from "@/lib/cleaning-ui";
 import AcceptButton from "./AcceptButton";
 import { getAvailabilityWindow } from "@/lib/cleaner/availabilityWindow";
 import NoMembershipPage from "../../NoMembershipPage";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 function safeBackHref(input?: string, memberId?: string) {
   if (input && input.startsWith("/cleaner")) return input;
@@ -80,15 +82,9 @@ export default async function AvailableCleaningsPage({
   // Precomputar strings para evitar llamadas impuras durante render (toLocaleString, formatCleaningStatus)
   const displayItems = available.map((c: { id: string; property: any; scheduledDate: Date; status: string; notes?: string }) => ({
     ...c,
-    formattedDateTime: c.scheduledDate.toLocaleString("es-MX", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    formattedDateTime: formatDateOnly(new Date(c.scheduledDate)),
     statusText: formatCleaningStatus(c.status),
-    isOverdue: c.scheduledDate < now,
+    isOverdue: isPastDateOnly(new Date(c.scheduledDate)),
   }));
 
   return (

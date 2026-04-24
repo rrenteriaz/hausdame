@@ -170,12 +170,12 @@ function buildBaseWhereClause(
 }
 
 /**
- * Helper interno: obtiene el inicio del día local (00:00:00)
+ * Devuelve UTC midnight del día UTC en que cae `now`.
+ * scheduledDate es @db.Date → almacenado como UTC midnight.
+ * getUTC* garantiza el mismo resultado sin importar el TZ del runtime.
  */
-function startOfTodayLocal(now: Date): Date {
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  return startOfToday;
+function startOfDayUTC(now: Date): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
 /**
@@ -194,16 +194,18 @@ export async function getCleanerCleaningsList(
 
   const whereClause = buildBaseWhereClause(scope, params);
 
-  // Para "upcoming", agregar filtro de fecha (próximos 7 días desde inicio del día)
+  // Para "upcoming", agregar filtro de fecha (próximos 7 días desde inicio del día UTC).
+  // Date.UTC con day+7 ajusta cruces de mes/año automáticamente.
   if (params.scope === "upcoming") {
     const now = new Date();
-    const startOfToday = startOfTodayLocal(now);
-    const sevenDaysLater = new Date();
-    sevenDaysLater.setDate(now.getDate() + 7);
-    sevenDaysLater.setHours(23, 59, 59, 999);
     whereClause.scheduledDate = {
-      gte: startOfToday,
-      lte: sevenDaysLater,
+      gte: startOfDayUTC(now),
+      lte: new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + 7,
+        23, 59, 59, 999,
+      )),
     };
   }
 
@@ -277,10 +279,13 @@ export async function getCleanerCleaningsCounts(
   }
 
   const now = new Date();
-  const startOfToday = startOfTodayLocal(now);
-  const sevenDaysLater = new Date();
-  sevenDaysLater.setDate(now.getDate() + 7);
-  sevenDaysLater.setHours(23, 59, 59, 999);
+  const startOfToday = startOfDayUTC(now);
+  const sevenDaysLater = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 7,
+    23, 59, 59, 999,
+  ));
   const availabilityStart = getAvailabilityStartDate(now, { includePastOpen: true });
 
   // Base where para todas las queries

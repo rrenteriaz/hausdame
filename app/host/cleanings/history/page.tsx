@@ -10,6 +10,8 @@ import ListThumb from "@/lib/ui/ListThumb";
 import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import StopPropagationLink from "@/lib/ui/StopPropagationLink";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 
 function formatStatus(status: string) {
   switch (status) {
@@ -27,49 +29,36 @@ function formatStatus(status: string) {
 }
 
 function formatDateTime(date: Date) {
-  return date.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateOnly(date);
 }
 
 function getPeriodDates(period: string): { start: Date; end: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Usar getCdmxDate() + Date.UTC() para que los límites sean UTC midnight del día
+  // CDMX correcto y no dependan del TZ del servidor.
+  // scheduledDate es @db.Date → Prisma compara solo la parte DATE (trunca la hora).
+  const { year, month, day } = getCdmxDate();
+  const today = new Date(Date.UTC(year, month, day));
 
   switch (period) {
-    case "this-month": {
-      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { start: firstDayThisMonth, end: today };
-    }
-    case "previous-month": {
-      const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { start: firstDayPrevMonth, end: lastDayPrevMonth };
-    }
-    case "this-year": {
-      const firstDayYear = new Date(now.getFullYear(), 0, 1);
-      return { start: firstDayYear, end: today };
-    }
-    case "last-year": {
-      const firstDayLastYear = new Date(now.getFullYear() - 1, 0, 1);
-      const lastDayLastYear = new Date(now.getFullYear() - 1, 11, 31);
-      return { start: firstDayLastYear, end: lastDayLastYear };
-    }
-    case "last-365-days": {
-      // Últimos 365 días desde hoy
-      const startDate = new Date(today);
-      startDate.setDate(startDate.getDate() - 365);
-      return { start: startDate, end: today };
-    }
-    default: {
-      // Este mes por defecto
-      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { start: firstDayThisMonth, end: today };
-    }
+    case "this-month":
+      return { start: new Date(Date.UTC(year, month, 1)), end: today };
+    case "previous-month":
+      return {
+        start: new Date(Date.UTC(year, month - 1, 1)),
+        // Date.UTC con day=0 da el último día del mes anterior
+        end: new Date(Date.UTC(year, month, 0)),
+      };
+    case "this-year":
+      return { start: new Date(Date.UTC(year, 0, 1)), end: today };
+    case "last-year":
+      return {
+        start: new Date(Date.UTC(year - 1, 0, 1)),
+        end: new Date(Date.UTC(year - 1, 11, 31)),
+      };
+    case "last-365-days":
+      return { start: new Date(Date.UTC(year, month, day - 365)), end: today };
+    default:
+      return { start: new Date(Date.UTC(year, month, 1)), end: today };
   }
 }
 
@@ -204,11 +193,14 @@ export default async function CleaningHistoryPage({
             
             pastCleanings.forEach((c: any) => {
               const date = new Date(c.scheduledDate);
-              const year = date.getFullYear();
-              const month = date.getMonth() + 1;
+              // Usar getUTC* para que scheduledDate (@db.Date = UTC midnight) agrupe
+              // correctamente sin depender del TZ del servidor.
+              const year = date.getUTCFullYear();
+              const month = date.getUTCMonth() + 1;
               const monthKey = `${year}-${String(month).padStart(2, "0")}`;
-              
-              const monthLabel = date.toLocaleString("es-MX", {
+
+              const monthLabel = date.toLocaleDateString("es-MX", {
+                timeZone: "UTC",
                 month: "long",
                 year: "numeric",
               });

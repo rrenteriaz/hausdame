@@ -6,6 +6,7 @@ import { getPropertyColor } from "@/lib/cleaning-ui";
 import { getHostVisual, hostKindFromCleaning, firstNameOf } from "@/lib/ui/cleaning-visual-state";
 import { startCleaning, completeCleaning } from "./actions";
 import CancelCleaningModal from "./CancelCleaningModal";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 type Cleaning = {
   id: string;
@@ -72,12 +73,14 @@ export default function DailyCleaningsViewWithModal({
         ? referenceDate
         : new Date(referenceDate);
 
-  const dayKey = `${localRefDate.getFullYear()}-${localRefDate.getMonth()}-${localRefDate.getDate()}`;
+  // scheduledDate comes from @db.Date → Prisma returns UTC midnight (e.g. 2026-04-19T00:00:00Z).
+  // Always compare in UTC so the daily view aligns with the monthly view (server-rendered, TZ=UTC).
+  const dayKey = `${localRefDate.getUTCFullYear()}-${localRefDate.getUTCMonth()}-${localRefDate.getUTCDate()}`;
 
   const dayCleanings = cleanings
     .filter((c) => {
       const dd = c.scheduledDate;
-      return `${dd.getFullYear()}-${dd.getMonth()}-${dd.getDate()}` === dayKey;
+      return `${dd.getUTCFullYear()}-${dd.getUTCMonth()}-${dd.getUTCDate()}` === dayKey;
     })
     .sort((a, b) => {
       const aAttn = (a as any).needsAttention && !(a as any).assignedMembershipId && a.status === "PENDING" ? 1 : 0;
@@ -194,9 +197,9 @@ export default function DailyCleaningsViewWithModal({
                         )}
                       </div>
 
-                      {/* Hora + duración */}
+                      {/* Fecha + duración */}
                       <p className="text-xs text-neutral-600 mt-1">
-                        {c.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                        {formatDateOnly(new Date(c.scheduledDate))}
                         {c.startedAt && (() => {
                           const dur = formatDuration(c.startedAt, c.completedAt ?? null);
                           return dur ? ` · ${dur}` : " · En progreso...";

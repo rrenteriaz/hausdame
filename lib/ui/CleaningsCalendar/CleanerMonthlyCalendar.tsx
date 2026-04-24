@@ -8,6 +8,7 @@ import {
   calendarKindToCleanerKind,
   getCleanerVisual,
 } from "@/lib/ui/cleaning-visual-state";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 
 type CleaningForCalendar = {
   id: string;
@@ -83,7 +84,7 @@ type CalendarEntry = CleaningForCalendar & { __kind: CalendarCleanerKind };
  *            > AVAILABLE_OVERDUE > AVAILABLE > OTHER_MEMBER > LOST
  */
 function deriveKind(c: CalendarEntry): CleanerKind {
-  const isOverdue = new Date(c.scheduledDate) < new Date();
+  const isOverdue = isPastDateOnly(new Date(c.scheduledDate));
   return calendarKindToCleanerKind(c.__kind, c.status, isOverdue);
 }
 
@@ -130,9 +131,8 @@ export default function CleanerMonthlyCalendar({
   const weekdayLabels = ["D", "L", "M", "M", "J", "V", "S"];
 
   // ── Agrupar limpiezas por día ──────────────────────────────────────────────
-  // scheduledDate viene de Prisma como UTC DateTime.
-  // getFullYear/Month/Date sin prefijo UTC = hora local del navegador = correcto en cliente.
-  // Durante SSR (servidor UTC) también es correcto porque servidor local = UTC.
+  // scheduledDate comes from @db.Date → Prisma returns UTC midnight (e.g. 2026-04-19T00:00:00Z).
+  // Must use getUTC* so a browser in UTC-6 does not shift midnight to the previous day.
   const cleaningsByDay = new Map<string, CalendarEntry[]>();
   const seenIds = new Set<string>();
 
@@ -148,7 +148,7 @@ export default function CleanerMonthlyCalendar({
     if (seenIds.has(c.id)) return;
     seenIds.add(c.id);
     const d = c.scheduledDate;
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
     const list = cleaningsByDay.get(key) ?? [];
     list.push(c);
     cleaningsByDay.set(key, list);

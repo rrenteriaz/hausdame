@@ -10,6 +10,7 @@ import { getAccessibleTeamsForUser } from "@/lib/cleaner/getAccessibleTeamsForUs
 import { getCleanerCleaningsCounts, getCleanerCleaningsList, getCleanerScope } from "@/lib/cleaner/cleanings/query";
 import { devTrace } from "@/lib/dev/traceRenders";
 import { getAvailabilityStartDate } from "@/lib/cleaner/availabilityWindow";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 import Page from "@/lib/ui/Page";
 import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import CleanerMonthlyCalendar from "@/lib/ui/CleaningsCalendar/CleanerMonthlyCalendar";
@@ -641,13 +642,10 @@ export default async function CleanerPage({
   const myCleaningsCalendarSource = calendarAssignedResult.cleanings;
 
   // Separar disponibles en: futuras (available) vs pasadas-dentro-de-ventana (available_overdue).
-  // FIX: antes se usaba availabilityStart como cutoff, haciendo que eligibleLost fuera siempre vacío
-  // porque eligibleCleanings ya viene con scheduledDate >= availabilityStart.
-  // Ahora usamos startOfToday como cutoff correcto: future = >= hoy, past = < hoy.
-  const startOfTodayForSplit = new Date(now);
-  startOfTodayForSplit.setHours(0, 0, 0, 0);
-  const eligibleFuture = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) >= startOfTodayForSplit);
-  const eligiblePast   = eligibleCleanings.filter((c: any) => new Date(c.scheduledDate) <  startOfTodayForSplit);
+  // Usa isPastDateOnly para comparar correctamente contra UTC midnight del día CDMX actual,
+  // sin depender de setHours() que varía según el TZ del servidor.
+  const eligibleFuture = eligibleCleanings.filter((c: any) => !isPastDateOnly(new Date(c.scheduledDate)));
+  const eligiblePast   = eligibleCleanings.filter((c: any) =>  isPastDateOnly(new Date(c.scheduledDate)));
 
   // Para memberCleanings (limpiezas del equipo asignadas a otros), necesitamos una query adicional
   // LEGACY RETIRADO: Ya no existe modo legacy, siempre usar memberships

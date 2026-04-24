@@ -1,5 +1,6 @@
 // lib/reservation-attention-reasons.ts
 import { getCleaningAttentionReasons, CleaningAttentionReason, CleaningAttentionReasonCode } from "./cleaning-attention-reasons";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 export type ReservationAttentionReasonCode = CleaningAttentionReasonCode | "NO_CLEANING_FOR_CHECKOUT" | "MULTIPLE_CLEANINGS";
 
@@ -61,11 +62,7 @@ export async function getReservationAttentionReasons(
         code: "NO_CLEANING_FOR_CHECKOUT",
         title: "No se encontró limpieza asociada para la salida.",
         severity: "CRITICAL",
-        detail: `La reserva finalizó el ${reservation.endDate.toLocaleDateString("es-MX", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })} y no hay limpieza registrada.`,
+        detail: `La reserva finalizó el ${formatDateOnly(reservation.endDate)} y no hay limpieza registrada.`,
       });
     }
   }

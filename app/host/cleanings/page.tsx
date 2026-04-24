@@ -21,6 +21,8 @@ import { getCleaningsNeedingAttentionCount } from "@/lib/cleaning-needs-attentio
 import CleaningsViewShell from "./CleaningsViewShell";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { getCdmxDate } from "@/lib/datetime/cdmxToday";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 export default async function CleaningsPage({
     searchParams,
@@ -183,7 +185,7 @@ export default async function CleaningsPage({
   const upcomingCleanings = cleanings.filter(
     (c: any) =>
       (c.status === "PENDING" || c.status === "IN_PROGRESS") &&
-      c.scheduledDate >= now
+      !isPastDateOnly(new Date(c.scheduledDate))
   );
 
   // Obtener thumbnails en batch para propiedades de las limpiezas próximas
@@ -196,7 +198,7 @@ export default async function CleaningsPage({
 
   const pastCleanings = cleanings.filter(
     (c: any) =>
-      c.scheduledDate < now ||
+      isPastDateOnly(new Date(c.scheduledDate)) ||
       c.status === "COMPLETED" ||
       c.status === "CANCELLED"
   );
@@ -718,17 +720,17 @@ function MonthlyCleaningsCalendar({
                       const name = c.property.shortName || c.property.name;
 
                       if (isAttention) return (
-                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-medium leading-tight truncate block bg-amber-100 text-amber-900" title={name}>
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-medium leading-tight truncate self-start max-w-full bg-amber-100 text-amber-900" title={name}>
                           {name}
                         </span>
                       );
                       if (kind === "in_progress") return (
-                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-bold leading-tight truncate block bg-emerald-100 text-emerald-800" title={name}>
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-bold leading-tight truncate self-start max-w-full bg-emerald-100 text-emerald-800" title={name}>
                           {name}
                         </span>
                       );
                       if (kind === "completed") return (
-                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-medium leading-tight truncate block bg-emerald-50 text-emerald-700" title={name}>
+                        <span key={c.id} className="rounded px-1 py-[1px] text-[7px] sm:text-[11px] font-medium leading-tight truncate self-start max-w-full bg-emerald-50 text-emerald-700" title={name}>
                           {name}
                         </span>
                       );
@@ -889,28 +891,28 @@ function WeeklyCleaningsView({
 
                     if (isAttention) {
                       return (
-                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-medium leading-tight truncate block bg-amber-100 text-amber-900" title={label}>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-medium leading-tight truncate self-start max-w-full bg-amber-100 text-amber-900" title={label}>
                           {label}
                         </span>
                       );
                     }
                     if (kind === "in_progress") {
                       return (
-                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-bold leading-tight truncate block bg-emerald-100 text-emerald-800" title={label}>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-bold leading-tight truncate self-start max-w-full bg-emerald-100 text-emerald-800" title={label}>
                           {label}
                         </span>
                       );
                     }
                     if (kind === "completed") {
                       return (
-                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-medium leading-tight truncate block bg-emerald-50 text-emerald-700" title={label}>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] font-medium leading-tight truncate self-start max-w-full bg-emerald-50 text-emerald-700" title={label}>
                           {label}
                         </span>
                       );
                     }
                     if (kind === "overdue") {
                       return (
-                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] leading-tight truncate block bg-red-50 text-red-700" title={label}>
+                        <span key={c.id} className="rounded px-1 py-[2px] text-[10px] leading-tight truncate self-start max-w-full bg-red-50 text-red-700" title={label}>
                           {label}
                         </span>
                       );
@@ -1097,10 +1099,7 @@ function DailyCleaningsView({
                       )}
                     </p>
                     <p className="text-xs text-neutral-600 mt-1">
-                      {c.scheduledDate.toLocaleTimeString("es-MX", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateOnly(new Date(c.scheduledDate))}
                       {ui.statusText && ` · ${ui.statusText}`}
                       {c.startedAt && (() => {
                         const duration = formatDuration(c.startedAt || null, c.completedAt || null);

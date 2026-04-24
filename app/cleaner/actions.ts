@@ -13,6 +13,7 @@ import { getAvailabilityWindow } from "@/lib/cleaner/availabilityWindow";
 import { getAccessibleTeamsForUser } from "@/lib/cleaner/getAccessibleTeamsForUser";
 import { getAccessiblePropertiesAndTenants } from "@/lib/cleaner/getAccessiblePropertiesAndTenants";
 import { getServiceTeamsForPropertyViaWorkGroupsWithFallback } from "@/lib/workgroups/getServiceTeamsForPropertyViaWorkGroups";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 
 const DEBUG_LOGS = process.env.DEBUG_LOGS === "1";
 
@@ -112,7 +113,7 @@ export async function acceptCleaning(formData: FormData) {
     const mustBeActiveForFuture = teamForCleaningId
       ? activeTeamIds.includes(teamForCleaningId)
       : false;
-    const isFuture = cleaning.scheduledDate > now;
+    const isFuture = !isPastDateOnly(new Date(cleaning.scheduledDate));
     if (isFuture && !mustBeActiveForFuture) {
       redirect("/cleaner");
       return;

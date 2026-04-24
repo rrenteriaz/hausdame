@@ -7,6 +7,7 @@ import ListRow from "@/lib/ui/ListRow";
 import ListThumb from "@/lib/ui/ListThumb";
 import { acceptCleaning } from "./actions";
 import { formatCleaningStatus } from "@/lib/cleaning-ui";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 interface Cleaning {
   id: string;
@@ -187,13 +188,7 @@ export default function CleanerSections({
                         {propertyName}
                       </h3>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
-                        {cleaning.scheduledDate.toLocaleString("es-MX", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatDateOnly(new Date(cleaning.scheduledDate))}
                       </p>
                       <p className="text-xs text-neutral-500 mt-1">
                         Estado: {formatCleaningStatus(cleaning.status)}
@@ -287,13 +282,7 @@ export default function CleanerSections({
                           {propertyName}
                         </h3>
                         <p className="text-xs text-neutral-500 truncate mt-0.5">
-                          {cleaning.scheduledDate.toLocaleString("es-MX", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatDateOnly(new Date(cleaning.scheduledDate))}
                         </p>
                         {cleaning.notes && (
                           <p className="text-xs text-neutral-500 line-clamp-2 mt-1">

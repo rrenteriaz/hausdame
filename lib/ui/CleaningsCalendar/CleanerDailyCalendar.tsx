@@ -6,6 +6,8 @@ import { acceptCleaning } from "@/app/cleaner/actions";
 import ListContainer from "@/lib/ui/ListContainer";
 import ListThumb from "@/lib/ui/ListThumb";
 import { getCleanerVisual } from "@/lib/ui/cleaning-visual-state";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { formatDateOnlyShort } from "@/lib/ui/formatDateOnly";
 
 type CleaningForCalendar = {
   id: string;
@@ -70,12 +72,14 @@ export default function CleanerDailyCalendar({
   });
   const isToday = localRefDate.toDateString() === new Date().toDateString();
 
-  const dayKey = `${localRefDate.getFullYear()}-${localRefDate.getMonth()}-${localRefDate.getDate()}`;
+  // scheduledDate comes from @db.Date → Prisma returns UTC midnight (e.g. 2026-04-19T00:00:00Z).
+  // Always compare in UTC so the daily view aligns with the monthly view (server-rendered, TZ=UTC).
+  const dayKey = `${localRefDate.getUTCFullYear()}-${localRefDate.getUTCMonth()}-${localRefDate.getUTCDate()}`;
 
   const filterByDay = (list: CleaningForCalendar[]) =>
     list.filter((c) => {
       const dd = c.scheduledDate;
-      return `${dd.getFullYear()}-${dd.getMonth()}-${dd.getDate()}` === dayKey;
+      return `${dd.getUTCFullYear()}-${dd.getUTCMonth()}-${dd.getUTCDate()}` === dayKey;
     });
 
   const dayMyCleanings       = filterByDay(myCleanings);
@@ -118,7 +122,7 @@ export default function CleanerDailyCalendar({
               const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
               const isInProgress = cleaning.status === "IN_PROGRESS";
-              const isOverdue = !isInProgress && cleaning.status !== "COMPLETED" && cleaning.scheduledDate < now;
+              const isOverdue = !isInProgress && cleaning.status !== "COMPLETED" && isPastDateOnly(new Date(cleaning.scheduledDate));
               const myKind = isInProgress ? "mine_inprogress" : isOverdue ? "mine_overdue" : "mine_pending";
               const visual = getCleanerVisual(myKind);
 
@@ -148,7 +152,7 @@ export default function CleanerDailyCalendar({
                       </h4>
                     </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                      {formatDateOnlyShort(new Date(cleaning.scheduledDate))}
                     </p>
                     {cleaning.notes && (
                       <p className="text-xs text-neutral-500 line-clamp-1 mt-1">{cleaning.notes}</p>
@@ -182,7 +186,7 @@ export default function CleanerDailyCalendar({
               const isLast = index === dayAvailableCleanings.length - 1;
               const propertyName = cleaning.property.shortName || cleaning.property.name;
               const detailsHref = `${basePath}/cleanings/${cleaning.id}?memberId=${encodeURIComponent(currentMemberId)}&returnTo=${encodeURIComponent(returnTo)}`;
-              const isOverdue = cleaning.scheduledDate < now;
+              const isOverdue = isPastDateOnly(new Date(cleaning.scheduledDate));
               const visual = getCleanerVisual(isOverdue ? "available_overdue" : "available");
 
               return (
@@ -205,7 +209,7 @@ export default function CleanerDailyCalendar({
                         <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
                       </div>
                       <p className="text-xs text-neutral-500 truncate mt-0.5">
-                        {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                        {formatDateOnlyShort(new Date(cleaning.scheduledDate))}
                       </p>
                       {cleaning.notes && (
                         <p className="text-xs text-neutral-500 line-clamp-1 mt-1">{cleaning.notes}</p>
@@ -271,7 +275,7 @@ export default function CleanerDailyCalendar({
                       <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
                     </div>
                     <p className="text-xs text-neutral-400 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                      {formatDateOnlyShort(new Date(cleaning.scheduledDate))}
                     </p>
                   </div>
                 </CleanerCleaningLink>
@@ -318,7 +322,7 @@ export default function CleanerDailyCalendar({
                       <StatusBadge bg={visual.badgeBg} text={visual.badgeTextColor} label={visual.badgeFull} />
                     </div>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {cleaning.scheduledDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                      {formatDateOnlyShort(new Date(cleaning.scheduledDate))}
                       {" · "}
                       {cleaning.status === "IN_PROGRESS" ? "En progreso" : "Pendiente"}
                     </p>

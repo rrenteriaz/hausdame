@@ -10,6 +10,8 @@ import ListThumb from "@/lib/ui/ListThumb";
 import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import prisma from "@/lib/prisma";
 import HistoryFilters from "./HistoryFilters";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 
 export default async function CleanerHistoryPage({
   searchParams,
@@ -30,20 +32,22 @@ export default async function CleanerHistoryPage({
       return;
     }
 
-    // Calcular rango de fechas según el filtro de período
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Calcular rango de fechas según el filtro de período.
+    // Usar Date.UTC + getCdmxDate() para que los límites sean UTC midnight del día CDMX
+    // correcto, independientemente del TZ del servidor.
+    // scheduledDate es @db.Date → Prisma compara solo la parte DATE, nunca la hora.
+    const { year, month, day } = getCdmxDate();
     let scheduledDateFrom: Date | undefined;
     let scheduledDateTo: Date | undefined;
 
     if (periodFilter === "last_7_days") {
-      scheduledDateFrom = new Date(today);
-      scheduledDateFrom.setDate(scheduledDateFrom.getDate() - 7);
+      scheduledDateFrom = new Date(Date.UTC(year, month, day - 7));
     } else if (periodFilter === "last_month") {
-      scheduledDateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+      scheduledDateFrom = new Date(Date.UTC(year, month, 1));
     } else if (periodFilter === "previous_month") {
-      scheduledDateFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      scheduledDateTo = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      scheduledDateFrom = new Date(Date.UTC(year, month - 1, 1));
+      // Date.UTC con day=0 da el último día del mes anterior
+      scheduledDateTo = new Date(Date.UTC(year, month, 0));
     }
 
     // Usar query layer canónico con scope history (incluye REMOVED y omite property filter actual)
@@ -142,13 +146,15 @@ export default async function CleanerHistoryPage({
                       {propertyName}
                     </h3>
                     <p className="text-xs text-neutral-500 truncate mt-0.5">
-                      {(cleaning.completedAt ? new Date(cleaning.completedAt) : new Date(cleaning.scheduledDate)).toLocaleString("es-MX", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {cleaning.completedAt
+                        ? new Date(cleaning.completedAt).toLocaleString("es-MX", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : formatDateOnly(new Date(cleaning.scheduledDate))}
                     </p>
                     <p className="text-xs text-neutral-500 mt-1">
                       Estado: {formatCleaningStatus(cleaning.status)}

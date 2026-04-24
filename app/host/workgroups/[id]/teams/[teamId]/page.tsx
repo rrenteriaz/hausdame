@@ -12,6 +12,7 @@ import ToggleExecutorStatusButton from "./ToggleExecutorStatusButton";
 import ListContainer from "@/lib/ui/ListContainer";
 import ListRow from "@/lib/ui/ListRow";
 import ListThumb from "@/lib/ui/ListThumb";
+import { formatDateOnly } from "@/lib/ui/formatDateOnly";
 
 export default async function TeamDetailPage({
   params,
@@ -341,11 +342,7 @@ export default async function TeamDetailPage({
                 const thumbUrl = thumbUrls.get(cleaning.property.id) || null;
                 const statusText = formatCleaningStatus(cleaning.status);
                 const scheduledDate = new Date(cleaning.scheduledDate);
-                const dateStr = scheduledDate.toLocaleDateString("es-MX", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                });
+                const dateStr = formatDateOnly(scheduledDate);
 
                 return (
                   <ListRow

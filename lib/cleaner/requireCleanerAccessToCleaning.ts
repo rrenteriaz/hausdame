@@ -4,6 +4,7 @@ import { resolveCleanerContext, CleanerContext } from "./resolveCleanerContext";
 import { forbidden, notFound } from "@/lib/http/errors";
 import { getActiveMembershipsForUser } from "./getActiveMembershipsForUser";
 import { getAccessibleHostTenantIdsForUser } from "./getAccessibleHostTenantIdsForUser";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 
 export interface CleanerCleaningAccess {
   user: {
@@ -206,8 +207,7 @@ export async function requireCleanerAccessToCleaning(
           forbidden("No tienes acceso a esta limpieza.");
         }
 
-      const now = new Date();
-      const isFuture = cleaning.scheduledDate > now;
+      const isFuture = !isPastDateOnly(new Date(cleaning.scheduledDate));
       const activeTeamsForProperty = propertyTeams
         .filter((pt: any) => pt.propertyId === cleaning.property.id)
         .map((pt: any) => pt.teamId)

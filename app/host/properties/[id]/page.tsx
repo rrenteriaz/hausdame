@@ -17,6 +17,8 @@ import { PropertyOpeningManager } from "@/components/properties/PropertyOpeningM
 import WorkGroupsSection from "./WorkGroupsSection";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
+import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 import PropertyLocationPreview from "./PropertyLocationPreview";
 
 function formatDateRange(start: Date, end: Date): string {
@@ -316,15 +318,20 @@ export default async function PropertyDetailPage({
 
   // Separar reservas activas hoy y próximas
   // Solo mostrar reservas CONFIRMED (excluir BLOCKED)
+  // Semántica date-only: activa si startDate <= hoy CDMX < endDate
+  // Se compara UTC midnight (date-only) contra UTC midnight de hoy CDMX,
+  // evitando que `now` como timestamp real cruce fronteras de día incorrectamente.
+  const { year: cdmxYear, month: cdmxMonth, day: cdmxDay } = getCdmxDate();
+  const todayUTCMidnight = new Date(Date.UTC(cdmxYear, cdmxMonth, cdmxDay));
   const activeToday = allReservations.filter((r: any) => {
     if (r.status !== "CONFIRMED") return false;
     const start = new Date(r.startDate);
     const end = new Date(r.endDate);
-    return start <= now && now < end;
+    return start <= todayUTCMidnight && todayUTCMidnight < end;
   });
 
   const upcoming = allReservations
-    .filter((r: any) => r.status === "CONFIRMED" && new Date(r.startDate) >= now)
+    .filter((r: any) => r.status === "CONFIRMED" && !isPastDateOnly(new Date(r.startDate)))
     .slice(0, 10);
 
   // Manejar returnTo: validar y usar fallback seguro
