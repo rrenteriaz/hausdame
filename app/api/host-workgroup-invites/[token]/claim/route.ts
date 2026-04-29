@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ensureCleanerPersonalTeam } from "@/lib/teams/provisioning";
 import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";
+import { assertNoConflictingExecutor } from "@/lib/workgroups/assertNoConflictingExecutor";
 
 export async function POST(
   request: NextRequest,
@@ -169,6 +170,16 @@ export async function POST(
   // Crear/activar WorkGroupExecutor y marcar invite como CLAIMED en una transacción
   try {
     await prisma.$transaction(async (tx) => {
+      // VALIDACIÓN MULTI-TEAM: dentro de la tx para consistencia.
+      // Si el TL ya tiene otro equipo activo en este WG (mismo servicesTenantId),
+      // bloqueamos el claim para no violar la regla de unicidad operativa.
+      await assertNoConflictingExecutor(tx, {
+        hostTenantId,
+        workGroupId,
+        servicesTenantId,
+        teamId,
+      });
+
       // Upsert WorkGroupExecutor
       await tx.workGroupExecutor.upsert({
         where: {

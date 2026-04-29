@@ -18,6 +18,7 @@ import CleaningWarningCard from "./CleaningWarningCard";
 import AssignmentSection from "./AssignmentSection";
 import HostWebContainer from "@/lib/ui/HostWebContainer";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
+import { getTeamDisplayNameForHost } from "@/lib/host/teamDisplayName";
 
 function formatDateTime(date: Date) {
   return date.toLocaleString("es-MX", {
@@ -193,7 +194,6 @@ export default async function CleaningDetailPage({
           },
         },
       });
-      const { getTeamDisplayNameForHost } = await import("@/lib/host/teamDisplayName");
       const teamDisplayName = getTeamDisplayNameForHost({
         teamName: membership.Team.name,
         leaderUser: teamLeader?.User ?? null,
@@ -297,9 +297,6 @@ export default async function CleaningDetailPage({
       ])
     );
 
-    // Importar helper fuera del map para evitar await en función no async
-    const { getTeamDisplayNameForHost } = await import("@/lib/host/teamDisplayName");
-
     // Unificar en formato compatible: value será "m:<membershipId>" o "t:<teamMemberId>"
     teamMembers = [
       ...memberships.map((m) => {
@@ -336,6 +333,18 @@ export default async function CleaningDetailPage({
       }),
     ];
   }
+
+  // Remap propertyTeams a display names opacos para Host (nunca exponer team.name interno).
+  const propertyTeamsForHost = propertyTeams.map((pt: { teamId: string; team: { id: string; name: string } }) => {
+    const leader = teamLeaderMap.get(pt.teamId);
+    return {
+      teamId: pt.teamId,
+      team: {
+        id: pt.team.id,
+        name: getTeamDisplayNameForHost({ teamName: pt.team.name, leaderUser: leader ?? null }),
+      },
+    };
+  });
 
   // Conteo para atención debe basarse en cleaning.teamId (ejecución real), no en propertyTeams (config Host).
   const [membershipsCount, legacyCount] = cleaningTyped.teamId
@@ -445,7 +454,6 @@ export default async function CleaningDetailPage({
         },
       },
     });
-    const { getTeamDisplayNameForHost } = await import("@/lib/host/teamDisplayName");
     const teamDisplayName = getTeamDisplayNameForHost({
       teamName: cleaningTyped.assignedMember.team.name,
       leaderUser: teamLeader?.User ?? null,
@@ -511,7 +519,7 @@ export default async function CleaningDetailPage({
           cleaningId={cleaning.id}
           assignees={finalAssignees}
           teamMembers={teamMembers}
-          propertyTeams={propertyTeams}
+          propertyTeams={propertyTeamsForHost}
           hasError={false}
           primaryAssigneeId={
             cleaningTyped.assignedMembershipId
@@ -521,7 +529,14 @@ export default async function CleaningDetailPage({
           cleaningStatus={cleaning.status}
           assignmentLevel={assignmentLevel}
           teamId={cleaningTyped.teamId || null}
-          teamName={cleaningTyped.team?.name || null}
+          teamName={
+            cleaningTyped.team
+              ? getTeamDisplayNameForHost({
+                  teamName: cleaningTyped.team.name,
+                  leaderUser: teamLeaderMap.get(cleaningTyped.team.id) ?? null,
+                })
+              : null
+          }
           tlName={
             cleaningTyped.teamId
               ? (teamLeaderMap.get(cleaningTyped.teamId)?.name ?? null)

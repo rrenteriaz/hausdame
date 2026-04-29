@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import BottomSheet from "@/lib/ui/BottomSheet";
+import ListContainer from "@/lib/ui/ListContainer";
+import ListThumb from "@/lib/ui/ListThumb";
 import { setAssignedMembersForProperty } from "../actions";
 
 type TeamMember = {
@@ -16,6 +18,8 @@ type PropertyItem = {
   id: string;
   name: string;
   shortName: string | null;
+  address?: string | null;
+  thumbUrl?: string | null;
   hostLabel: string;
   assignedMembershipIds: string[];
   defaultAssignedLeader?: boolean;
@@ -129,9 +133,10 @@ export default function PropertyAssignmentsSection({
             Este equipo aún no tiene propiedades asignadas
           </p>
         ) : (
-          <div className="space-y-4">
-            {properties.map((property) => {
-              const assigned = assignedMembersFor(property.id);
+          <ListContainer>
+            {properties.map((property, index) => {
+              const isLast = index === properties.length - 1;
+              const displayName = property.name;
               return (
                 <div
                   key={property.id}
@@ -145,58 +150,46 @@ export default function PropertyAssignmentsSection({
                       openEditor(property);
                     }
                   }}
-                  className={`space-y-2 rounded-lg p-2 -mx-2 ${
-                    isTeamLeader ? "cursor-pointer hover:bg-neutral-50" : ""
-                  }`}
                   aria-label={
                     isTeamLeader
                       ? `Editar miembros asignados de ${property.shortName || property.name}`
                       : undefined
                   }
+                  className={`flex items-center gap-3 py-3 px-3 sm:px-4 min-h-[44px] transition-colors ${
+                    !isLast ? "border-b border-neutral-200" : ""
+                  } ${isTeamLeader ? "cursor-pointer hover:bg-neutral-50 active:opacity-95" : ""}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-neutral-900">
-                      {property.shortName || property.name}
-                    </p>
-                    <span className="text-xs text-neutral-500">
-                      Host: {property.hostLabel}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {assigned.length === 0 ? (
-                      <span className="text-xs text-neutral-500">
-                        Sin miembros asignados
-                      </span>
-                    ) : (
-                      <>
-                        {assigned.slice(0, 3).map((m) => {
-                          const initial = (m.name || m.email).trim()[0]?.toUpperCase() || "M";
-                          return (
-                            <div
-                              key={`${property.id}-${m.membershipId}`}
-                              className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold ${
-                                m.isLeader
-                                  ? "bg-amber-100 text-amber-900"
-                                  : "bg-blue-100 text-blue-700"
-                              }`}
-                              title={`${m.name || m.email}${m.isLeader ? " (Líder)" : ""}${property.defaultAssignedLeader && m.isLeader ? " - Por defecto" : ""}`}
-                            >
-                              {initial}
-                            </div>
-                          );
-                        })}
-                        {assigned.length > 3 && (
-                          <span className="text-xs text-neutral-500">
-                            +{assigned.length - 3}
-                          </span>
+                  <ListThumb src={property.thumbUrl ?? null} alt={displayName} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-base font-medium text-neutral-900 truncate">
+                        {displayName}
+                      </h3>
+                      {property.shortName && (
+                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-black text-white">
+                          {property.shortName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        {property.address && (
+                          <p className="text-xs text-neutral-500 truncate">
+                            {property.address}
+                          </p>
                         )}
-                      </>
-                    )}
+                      </div>
+                      <div className="shrink-0 text-right ml-2">
+                        <p className="text-[11px] text-emerald-600 whitespace-nowrap">
+                          Host: {property.hostLabel}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
+          </ListContainer>
         )}
       </section>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { syncIcalForProperty } from "../sync-ical";
 import { createMissingCleaningsForReservations } from "../create-missing-cleanings";
 
@@ -30,6 +30,13 @@ export default function SyncIcalButton({
   icalLastSyncError,
 }: SyncIcalButtonProps) {
   const [isPending, startTransition] = useTransition();
+  const [formattedSyncedAt, setFormattedSyncedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (icalLastSyncedAt) {
+      setFormattedSyncedAt(formatDateTime(icalLastSyncedAt));
+    }
+  }, [icalLastSyncedAt]);
   const [result, setResult] = useState<{
     ok: boolean;
     skippedLock?: boolean;
@@ -93,9 +100,9 @@ export default function SyncIcalButton({
         La sincronización ocurre automáticamente cada {SYNC_INTERVAL_MINUTES} minutos.
       </p>
 
-      {icalLastSyncedAt && (
+      {formattedSyncedAt && (
         <p className="text-xs text-neutral-600">
-          Última sincronización: {formatDateTime(icalLastSyncedAt)}
+          Última sincronización: {formattedSyncedAt}
         </p>
       )}
       {icalLastSyncError && (

@@ -86,7 +86,7 @@ export default function TareasProBlock({ jobs, periodicCount = 0 }: Props) {
         className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-neutral-800">Tareas Pro</h3>
+          <h3 className="text-base font-semibold text-neutral-800">Tareas de la propiedad</h3>
           <span className="text-xs text-neutral-500">
             ({doneSections}/{totalSections})
           </span>
@@ -127,7 +127,7 @@ export default function TareasProBlock({ jobs, periodicCount = 0 }: Props) {
             />
           ) : (
             <div className="divide-y divide-neutral-100">
-              {jobs.map(({ job, initialSections }) => {
+              {jobs.map(({ job, initialSections }, idx) => {
                 const jobDone = initialSections.filter(
                   (s) => s.status === "CONFIRMED" || s.status === "DEFERRED"
                 ).length;
@@ -135,7 +135,7 @@ export default function TareasProBlock({ jobs, periodicCount = 0 }: Props) {
                   <div key={job.id}>
                     <div className="px-4 py-2 bg-neutral-50 flex items-center justify-between">
                       <span className="text-xs font-medium text-neutral-700">
-                        {job.templateNameSnapshot}
+                        Grupo {idx + 1}
                       </span>
                       <span className="text-xs text-neutral-500">
                         {jobDone}/{initialSections.length}

@@ -274,7 +274,7 @@ export default async function CleaningHistoryPage({
                               Estado: {formatStatus(c.status)}
                               {c.assignedMember && (
                                 <span className="text-neutral-600">
-                                  {" "}· {c.assignedMember.name} ({c.assignedMember.team.name})
+                                  {" "}· {c.assignedMember.name}
                                 </span>
                               )}
                             </p>

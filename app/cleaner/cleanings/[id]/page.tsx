@@ -22,6 +22,8 @@ import { getActiveMembershipsForUser } from "@/lib/cleaner/getActiveMembershipsF
 import { getChecklistItemThumbsByProperty } from "@/lib/media/getChecklistItemThumbsByProperty";
 import { getInventoryLineImageThumbsBatch } from "@/lib/media/getInventoryLineImageThumbs";
 import TareasProBlock from "./TareasProBlock";
+import CleaningAccessCard from "./CleaningAccessCard";
+import PropertyLocationPreview from "@/app/host/properties/[id]/PropertyLocationPreview";
 
 function safeReturnTo(input?: string, memberId?: string): string {
   const baseUrl = memberId ? `/cleaner?memberId=${encodeURIComponent(memberId)}` : "/cleaner";
@@ -33,11 +35,40 @@ function safeReturnTo(input?: string, memberId?: string): string {
 
 function formatDateTime(date: Date) {
   return date.toLocaleString("es-MX", {
+    timeZone: "America/Mexico_City",
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+  });
+}
+
+/**
+ * Formatea la fecha programada de la limpieza de forma correcta:
+ * - Si hay scheduledAtPlanned (timestamp real con hora), lo usa con timezone CDMX.
+ * - Si solo hay scheduledDate (@db.Date, sin hora), lo muestra como fecha sin hora
+ *   usando UTC para evitar el desplazamiento de zona horaria.
+ */
+function formatCleaningDate(cleaning: { scheduledDate: Date; scheduledAtPlanned?: Date | null }): string {
+  const ts = cleaning.scheduledAtPlanned;
+  if (ts) {
+    return ts.toLocaleString("es-MX", {
+      timeZone: "America/Mexico_City",
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+  return cleaning.scheduledDate.toLocaleDateString("es-MX", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
   });
 }
 
@@ -414,233 +445,107 @@ export default async function CleanerCleaningDetailPage({
 
   // Nota: No calculamos attentionReasons en cleaner - es exclusivo de Host
 
+  // Computar mapsUrl una vez para reutilizar en header y en detalles
+  let mapsUrl: string | null = null;
+  if (cleaning.property.latitude && cleaning.property.longitude) {
+    mapsUrl = `https://www.google.com/maps/search/?api=1&query=${cleaning.property.latitude},${cleaning.property.longitude}`;
+  } else if (cleaning.property.address) {
+    mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleaning.property.address)}`;
+  }
+
+  // Badge de estado
+  const statusBadgeClass = {
+    PENDING: "bg-amber-100 text-amber-700",
+    IN_PROGRESS: "bg-blue-100 text-blue-700",
+    COMPLETED: "bg-green-100 text-green-700",
+    CANCELLED: "bg-neutral-100 text-neutral-500",
+  }[cleaning.status as string] ?? "bg-neutral-100 text-neutral-500";
+
   return (
     <Page
       showBack
       backHref={backUrl}
-      title="Detalle de limpieza"
-      subtitle={`${cleaning.property.shortName || cleaning.property.name} · ${formatDateTime(cleaning.scheduledDate)} · ${formatStatus(cleaning.status)}`}
+      title={cleaning.property.shortName || cleaning.property.name}
+      subtitle={formatCleaningDate(cleaning)}
       variant="compact"
     >
+      <div className="space-y-3">
 
-      <div className="space-y-4">
-        <section className="rounded-2xl border border-neutral-200 bg-white p-4">
-          <CollapsibleSection title="Datos de la propiedad" defaultOpen>
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-neutral-500 mb-1">Propiedad</p>
-                <p className="text-base font-semibold text-neutral-900">
-                  {cleaning.property.shortName || cleaning.property.name}
-                </p>
-              </div>
+        {/* ── 1. ESTADO + UBICACIÓN (primera fila visible) ─────────────── */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusBadgeClass}`}>
+            {formatStatus(cleaning.status)}
+          </span>
+          {mapsUrl && (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Abrir ubicación
+            </a>
+          )}
+        </div>
 
-              {/* Domicilio y Ubicación */}
-              {(cleaning.property.address || (cleaning.property.latitude && cleaning.property.longitude)) && (
-                <div className="pt-3 border-t border-neutral-200 space-y-2">
-                  {cleaning.property.address && (
-                    <div>
-                      <p className="text-xs text-neutral-500 mb-1">Domicilio</p>
-                      <p className="text-base text-neutral-900">
-                        {cleaning.property.address}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {/* Botón Abrir ubicación */}
-                  {(() => {
-                    let mapsUrl: string | null = null;
-                    
-                    // Preferencia 1: lat/lng si existen
-                    if (cleaning.property.latitude && cleaning.property.longitude) {
-                      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${cleaning.property.latitude},${cleaning.property.longitude}`;
-                    }
-                    // Preferencia 2: address si no hay coords
-                    else if (cleaning.property.address) {
-                      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleaning.property.address)}`;
-                    }
-                    
-                    if (mapsUrl) {
-                      return (
-                        <div>
-                          <a
-                            href={mapsUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 text-base font-medium text-neutral-900 hover:text-neutral-700 transition-colors"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            Abrir ubicación
-                          </a>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              )}
-
-              <div>
-                <p className="text-xs text-neutral-500">Fecha y hora</p>
-                <p className="text-base text-neutral-900">{formatDateTime(cleaning.scheduledDate)}</p>
-              </div>
-
-              {(cleaning.property.checkInTime || cleaning.property.checkOutTime) && (
-                <div className="pt-3 border-t border-neutral-200">
-                  <p className="text-xs text-neutral-500 mb-2">Horario de la propiedad</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {cleaning.property.checkInTime && (
-                      <div>
-                        <p className="text-xs text-neutral-500">Hora de check-in</p>
-                        <p className="text-base text-neutral-900">{cleaning.property.checkInTime}</p>
-                      </div>
-                    )}
-                    {cleaning.property.checkOutTime && (
-                      <div>
-                        <p className="text-xs text-neutral-500">Hora de check-out</p>
-                        <p className="text-base text-neutral-900">{cleaning.property.checkOutTime}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <p className="text-xs text-neutral-500">Estado</p>
-                <p className="text-base text-neutral-900">{formatStatus(cleaning.status)}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-neutral-500">Asignación</p>
-                <p className="text-base text-neutral-900">
-                  {formatAssignmentStatus(cleaning.assignmentStatus)}
-                  {cleaning.assignedMember && (
-                    <>
-                      {" "}· {cleaning.assignedMember.name} ({cleaning.assignedMember.team.name})
-                    </>
-                  )}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-neutral-500">Notas</p>
-                <p className="text-base text-neutral-900">
-                  {cleaning.notes?.trim() ? cleaning.notes : "—"}
-                </p>
-              </div>
-
-              {cleaning.startedAt && (
-                <div>
-                  <p className="text-xs text-neutral-500">Iniciada</p>
-                  <p className="text-base text-neutral-900">
-                    {formatDateTime(cleaning.startedAt)}
-                  </p>
-                </div>
-              )}
-
-              {cleaning.completedAt && (
-                <div>
-                  <p className="text-xs text-neutral-500">Completada</p>
-                  <p className="text-base text-neutral-900">
-                    {formatDateTime(cleaning.completedAt)}
-                  </p>
-                </div>
-              )}
-
-              {canSeeSecrets ? (
-                (cleaning.property.wifiSsid ||
-                  cleaning.property.wifiPassword ||
-                  cleaning.property.accessCode) && (
-                  <div className="pt-3 border-t border-neutral-200">
-                    <p className="text-xs text-neutral-500 mb-2">Acceso y conectividad</p>
-                    <div className="space-y-2">
-                      {cleaning.property.wifiSsid && (
-                        <div>
-                          <p className="text-xs text-neutral-500">Red Wi-Fi</p>
-                          <p className="text-base text-neutral-900">{cleaning.property.wifiSsid}</p>
-                        </div>
-                      )}
-                      {cleaning.property.wifiPassword && (
-                        <div>
-                          <p className="text-xs text-neutral-500">Contraseña Wi-Fi</p>
-                          <p className="text-base text-neutral-900 break-all">
-                            {cleaning.property.wifiPassword}
-                          </p>
-                        </div>
-                      )}
-                      {cleaning.property.accessCode && (
-                        <div>
-                          <p className="text-xs text-neutral-500">Clave de acceso</p>
-                          <p className="text-base text-neutral-900 break-all">
-                            {cleaning.property.accessCode}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              ) : (
-                <div className="pt-3 border-t border-neutral-200">
-                  <p className="text-xs text-neutral-500 mb-2">Acceso y conectividad</p>
-                  <p className="text-sm text-neutral-500">
-                    Disponible cuando aceptes la limpieza.
-                  </p>
-                </div>
-              )}
-            </div>
-          </CollapsibleSection>
-        </section>
-
-        {/* Checklist */}
-        {cleaningChecklistItems && cleaningChecklistItems.length > 0 && (
-          <CollapsibleChecklist
-            title="Checklist"
-            itemsCount={cleaningChecklistItems.length}
-            completedCount={cleaningChecklistItems.filter((item: any) => item.isCompleted).length}
-          >
-            <CleaningChecklist
-              cleaningId={cleaning.id}
-              items={cleaningChecklistItems.map((item: any) => ({
-                id: item.id,
-                area: item.area,
-                title: item.title,
-                sortOrder: item.sortOrder,
-                isCompleted: item.isCompleted,
-                requiresValue: item.requiresValue || false,
-                valueLabel: item.valueLabel,
-                valueNumber: item.valueNumber,
-                notCompletedReasonCode: item.notCompletedReasonCode,
-                notCompletedReasonNote: item.notCompletedReasonNote,
-              }))}
-              canEdit={canOperate}
-              checklistThumbsMap={checklistThumbsMap}
-            />
-          </CollapsibleChecklist>
+        {/* ── 2. ACCIÓN PRINCIPAL ───────────────────────────────────────── */}
+        {canAccept && (
+          <form action={acceptCleaning}>
+            <input type="hidden" name="cleaningId" value={cleaning.id} />
+            {memberIdParam && <input type="hidden" name="memberId" value={memberIdParam} />}
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-black px-4 py-3.5 text-base font-semibold text-white hover:bg-neutral-800 active:scale-[0.99] transition"
+            >
+              Aceptar limpieza
+            </button>
+          </form>
         )}
 
-        {/* Tareas Pro — bloque colapsable justo arriba del inventario */}
+        {isAssignedToMe && canOperate && cleaning.status === "PENDING" && (
+          <form action={startCleaning}>
+            <input type="hidden" name="cleaningId" value={cleaning.id} />
+            {memberIdParam && <input type="hidden" name="memberId" value={memberIdParam} />}
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-black px-4 py-3.5 text-base font-semibold text-white hover:bg-neutral-800 active:scale-[0.99] transition"
+            >
+              Iniciar limpieza
+            </button>
+          </form>
+        )}
+
+        {/* ── 3. ACCESO RÁPIDO (WiFi / clave) ──────────────────────────── */}
+        {canSeeSecrets && (
+          <CleaningAccessCard
+            wifiSsid={cleaning.property.wifiSsid}
+            wifiPassword={cleaning.property.wifiPassword}
+            accessCode={cleaning.property.accessCode}
+          />
+        )}
+        {!canSeeSecrets && !isPreviewMode && (
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1">Acceso</p>
+            <p className="text-sm text-neutral-500">🔒 Disponible al aceptar la limpieza.</p>
+          </div>
+        )}
+
+        {/* ── 4. TAREAS DE LA PROPIEDAD ─────────────────────────────────── */}
         {isAssignedToMe && (
           <TareasProBlock jobs={tareasProJobs} periodicCount={assignedRecurringDues.length} />
         )}
 
-        {/* Inventario (solo referencia) en PENDING */}
+        {/* ── 5. CHECKLIST LEGACY — oculto en cleaner (datos cargados para CleaningDetailClient) ── */}
+
+        {/* ── 6. INVENTARIO — referencia en PENDING ─────────────────────── */}
         {cleaning.status === "PENDING" && inventoryLines.length > 0 && (
           <>
             <InventoryProblemsCard cleaningId={cleaning.id} returnTo={returnTo} />
@@ -654,61 +559,7 @@ export default async function CleanerCleaningDetailPage({
           </>
         )}
 
-        {/* Acciones para PENDING */}
-        {canAccept && (
-          <section className="p-4">
-            <form action={acceptCleaning}>
-              <input type="hidden" name="cleaningId" value={cleaning.id} />
-              {memberIdParam && (
-                <input type="hidden" name="memberId" value={memberIdParam} />
-              )}
-              <input type="hidden" name="returnTo" value={returnTo} />
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-black px-3 py-2 text-base font-medium text-white hover:bg-neutral-800 active:scale-[0.99] transition"
-              >
-                Aceptar limpieza
-              </button>
-            </form>
-          </section>
-        )}
-
-        {isAssignedToMe && canOperate && cleaning.status === "PENDING" && (
-          <section className="p-4">
-            <div className="space-y-3">
-              <form action={startCleaning}>
-                <input type="hidden" name="cleaningId" value={cleaning.id} />
-                {memberIdParam && (
-                  <input type="hidden" name="memberId" value={memberIdParam} />
-                )}
-                <input type="hidden" name="returnTo" value={returnTo} />
-                <button
-                  type="submit"
-                  className="w-full rounded-lg bg-black px-3 py-2 text-base font-medium text-white hover:bg-neutral-800 active:scale-[0.99] transition"
-                >
-                  Iniciar limpieza
-                </button>
-              </form>
-              {canDecline && (
-                <form action={declineCleaning}>
-                  <input type="hidden" name="cleaningId" value={cleaning.id} />
-                  {memberIdParam && (
-                    <input type="hidden" name="memberId" value={memberIdParam} />
-                  )}
-                  <input type="hidden" name="returnTo" value={returnTo} />
-                  <button
-                    type="submit"
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 active:scale-[0.99] transition"
-                  >
-                    Declinar limpieza
-                  </button>
-                </form>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Inventario y acciones para IN_PROGRESS */}
+        {/* ── 7. INVENTARIO + COMPLETAR — IN_PROGRESS ───────────────────── */}
         {cleaning.status === "IN_PROGRESS" && (
           <CleaningDetailClient
             cleaningId={cleaning.id}
@@ -729,7 +580,7 @@ export default async function CleanerCleaningDetailPage({
           />
         )}
 
-        {/* Inventario enviado para limpiezas históricas (COMPLETED, CANCELLED, etc.) */}
+        {/* ── 8. INVENTARIO ENVIADO — historial ─────────────────────────── */}
         {cleaning.status !== "IN_PROGRESS" && cleaning.status !== "PENDING" && (
           <>
             <InventoryProblemsCard cleaningId={cleaning.id} returnTo={returnTo} />
@@ -742,21 +593,200 @@ export default async function CleanerCleaningDetailPage({
           </>
         )}
 
-        {/* Estado completado o no disponible */}
+        {/* ── 9. MENSAJES DE ESTADO ─────────────────────────────────────── */}
         {isAssignedToMe && cleaning.status === "COMPLETED" && (
-          <section className="p-4">
-            <p className="text-base text-neutral-600 text-center">Limpieza completada</p>
-          </section>
+          <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-center">
+            <p className="text-base font-medium text-green-700">✓ Limpieza completada</p>
+          </div>
         )}
 
         {!isAssignedToMe && cleaning.status !== "PENDING" && (
-          <section className="p-4">
-            <p className="text-base text-neutral-600 text-center">
-              {cleaning.assignedMember
-                ? `Asignada a ${cleaning.assignedMember.name}`
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4 text-center">
+            <p className="text-sm text-neutral-500">
+              {(cleaning as any).assignedMember
+                ? `Asignada a ${(cleaning as any).assignedMember.name}`
                 : "No disponible para operar"}
             </p>
-          </section>
+          </div>
+        )}
+
+        {/* ── 10. DETALLES ADICIONALES (colapsable al fondo) ───────────── */}
+        <section className="rounded-2xl border border-neutral-200 bg-white p-4">
+          <CollapsibleSection title="Más información" defaultOpen={false}>
+            {/* Móvil: stack · Web (sm+) con mapa: grid 2 columnas */}
+            {cleaning.property.latitude != null && cleaning.property.longitude != null ? (
+              <div className="pt-1 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-6 sm:items-start">
+
+                {/* Columna izquierda: texto */}
+                <div className="space-y-3">
+                  {cleaning.notes?.trim() && (
+                    <div>
+                      <p className="text-xs text-neutral-400">Notas</p>
+                      <p className="text-sm text-neutral-900 mt-0.5">{cleaning.notes}</p>
+                    </div>
+                  )}
+
+                  {cleaning.property.address && (
+                    <div>
+                      <p className="text-xs text-neutral-400">Domicilio</p>
+                      <p className="text-sm text-neutral-900 mt-0.5">{cleaning.property.address}</p>
+                    </div>
+                  )}
+
+                  {(cleaning.property.checkInTime || cleaning.property.checkOutTime) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {cleaning.property.checkInTime && (
+                        <div>
+                          <p className="text-xs text-neutral-400">Check-in</p>
+                          <p className="text-sm text-neutral-900 mt-0.5">{cleaning.property.checkInTime}</p>
+                        </div>
+                      )}
+                      {cleaning.property.checkOutTime && (
+                        <div>
+                          <p className="text-xs text-neutral-400">Check-out</p>
+                          <p className="text-sm text-neutral-900 mt-0.5">{cleaning.property.checkOutTime}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-xs text-neutral-400">Asignación</p>
+                    <p className="text-sm text-neutral-900 mt-0.5">
+                      {formatAssignmentStatus(cleaning.assignmentStatus)}
+                      {(cleaning as any).assignedMember && (
+                        <> · {(cleaning as any).assignedMember.name}</>
+                      )}
+                    </p>
+                  </div>
+
+                  {cleaning.startedAt && (
+                    <div>
+                      <p className="text-xs text-neutral-400">Iniciada</p>
+                      <p className="text-sm text-neutral-900 mt-0.5">{formatDateTime(cleaning.startedAt)}</p>
+                    </div>
+                  )}
+
+                  {cleaning.completedAt && (
+                    <div>
+                      <p className="text-xs text-neutral-400">Completada</p>
+                      <p className="text-sm text-neutral-900 mt-0.5">{formatDateTime(cleaning.completedAt)}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Columna derecha: mapa + botón ruta */}
+                <div className="space-y-2">
+                  <PropertyLocationPreview
+                    latitude={Number(cleaning.property.latitude)}
+                    longitude={Number(cleaning.property.longitude)}
+                    propertyName={cleaning.property.shortName ?? cleaning.property.name}
+                  />
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${Number(cleaning.property.latitude)},${Number(cleaning.property.longitude)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full rounded-xl border border-neutral-200 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100 transition"
+                  >
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Abrir ruta
+                  </a>
+                </div>
+              </div>
+
+            ) : (
+              /* Sin coordenadas: columna única */
+              <div className="space-y-3 pt-1">
+                {cleaning.notes?.trim() && (
+                  <div>
+                    <p className="text-xs text-neutral-400">Notas</p>
+                    <p className="text-sm text-neutral-900 mt-0.5">{cleaning.notes}</p>
+                  </div>
+                )}
+
+                {cleaning.property.address && (
+                  <div>
+                    <p className="text-xs text-neutral-400">Domicilio</p>
+                    <p className="text-sm text-neutral-900 mt-0.5">{cleaning.property.address}</p>
+                  </div>
+                )}
+
+                {cleaning.property.address && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(cleaning.property.address)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition"
+                  >
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Abrir ruta en Google Maps
+                  </a>
+                )}
+
+                {(cleaning.property.checkInTime || cleaning.property.checkOutTime) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {cleaning.property.checkInTime && (
+                      <div>
+                        <p className="text-xs text-neutral-400">Check-in</p>
+                        <p className="text-sm text-neutral-900 mt-0.5">{cleaning.property.checkInTime}</p>
+                      </div>
+                    )}
+                    {cleaning.property.checkOutTime && (
+                      <div>
+                        <p className="text-xs text-neutral-400">Check-out</p>
+                        <p className="text-sm text-neutral-900 mt-0.5">{cleaning.property.checkOutTime}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs text-neutral-400">Asignación</p>
+                  <p className="text-sm text-neutral-900 mt-0.5">
+                    {formatAssignmentStatus(cleaning.assignmentStatus)}
+                    {(cleaning as any).assignedMember && (
+                      <> · {(cleaning as any).assignedMember.name}</>
+                    )}
+                  </p>
+                </div>
+
+                {cleaning.startedAt && (
+                  <div>
+                    <p className="text-xs text-neutral-400">Iniciada</p>
+                    <p className="text-sm text-neutral-900 mt-0.5">{formatDateTime(cleaning.startedAt)}</p>
+                  </div>
+                )}
+
+                {cleaning.completedAt && (
+                  <div>
+                    <p className="text-xs text-neutral-400">Completada</p>
+                    <p className="text-sm text-neutral-900 mt-0.5">{formatDateTime(cleaning.completedAt)}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CollapsibleSection>
+        </section>
+
+        {/* ── 11. DECLINAR (acción negativa secundaria, al fondo) ──────── */}
+        {canDecline && (
+          <form action={declineCleaning}>
+            <input type="hidden" name="cleaningId" value={cleaning.id} />
+            {memberIdParam && <input type="hidden" name="memberId" value={memberIdParam} />}
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <button
+              type="submit"
+              className="w-full py-2 text-sm text-blue-500 hover:text-blue-700 transition text-center"
+            >
+              Declinar limpieza
+            </button>
+          </form>
         )}
       </div>
     </Page>

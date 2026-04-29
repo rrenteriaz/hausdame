@@ -56,7 +56,7 @@ export default async function InventoryInboxPage({
   const [summary, items, properties] = await Promise.all([
     getInventoryInboxSummary(),
     getInventoryInboxItems({
-      propertyId,
+      // propertyId no se filtra en servidor — el split web filtra client-side
       type,
       severity,
       status: tab === "pending" ? "PENDING" : "RESOLVED",

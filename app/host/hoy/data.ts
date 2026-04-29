@@ -22,34 +22,6 @@ const getEndOfToday = getEndOfCdmxToday;
 const getStartOfTomorrow = getStartOfCdmxTomorrow;
 const getEndOfNext7Days = getEndOfCdmxNext7Days;
 
-/**
- * Helpers UTC — para reservas (startDate = UTC midnight desde iCal VALUE=DATE)
- */
-function getStartOfUTCToday(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
-
-function getEndOfUTCToday(): Date {
-  const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999)
-  );
-}
-
-function getStartOfUTCTomorrow(): Date {
-  const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
-  );
-}
-
-function getEndOfUTCNext7Days(): Date {
-  const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 7, 23, 59, 59, 999)
-  );
-}
 
 /**
  * Obtiene datos para el tab "Hoy"
@@ -84,13 +56,8 @@ export async function getHoyData(
   // 3. Limpiezas de hoy — comparación exacta por fecha CDMX (scheduledDate = @db.Date)
   const todayCleaningsData = await getTodayCleanings(tenantId, propertyId);
 
-  // 4. Reservas para hoy (UTC midnight — startDate de reserva es UTC midnight iCal)
-  const todayReservationsData = await getTodayReservations(
-    tenantId,
-    getStartOfUTCToday(),
-    getEndOfUTCToday(),
-    propertyId
-  );
+  // 4. Reservas para hoy (startDate es @db.Date — equals con fecha CDMX exacta)
+  const todayReservationsData = await getTodayReservations(tenantId, propertyId);
 
   // Para unconfirmedCleanings, necesitamos mapear todos los items
   const allUnconfirmedItems = todayUnconfirmedCleanings.map((c) => ({
@@ -141,21 +108,11 @@ export async function getProximasData(
     );
   });
 
-  // 3. Próximas limpiezas (hora local — scheduledDate es hora local)
-  const upcomingCleaningsData = await getUpcomingCleanings(
-    tenantId,
-    startOfTomorrow,
-    endOfNext7Days,
-    propertyId
-  );
+  // 3. Próximas limpiezas (scheduledDate es @db.Date — fechas CDMX como UTC midnight)
+  const upcomingCleaningsData = await getUpcomingCleanings(tenantId, propertyId);
 
-  // 4. Próximas reservas (UTC midnight — startDate de reserva es UTC midnight iCal)
-  const upcomingReservationsData = await getUpcomingReservations(
-    tenantId,
-    getStartOfUTCTomorrow(),
-    getEndOfUTCNext7Days(),
-    propertyId
-  );
+  // 4. Próximas reservas (startDate es @db.Date — fechas CDMX como UTC midnight)
+  const upcomingReservationsData = await getUpcomingReservations(tenantId, propertyId);
 
   // Para unconfirmedCleanings, necesitamos mapear todos los items
   const allUpcomingUnconfirmedItems = upcomingUnconfirmedCleanings.map((c) => ({
@@ -195,9 +152,7 @@ export async function getAllUpcomingCleanings(
   tenantId: string,
   propertyId?: string
 ): Promise<BlockItem[]> {
-  const startOfTomorrow = getStartOfTomorrow();
-  const endOfNext7Days = getEndOfNext7Days();
-  const data = await getUpcomingCleanings(tenantId, startOfTomorrow, endOfNext7Days, propertyId);
+  const data = await getUpcomingCleanings(tenantId, propertyId);
   return data.allItems || data.items;
 }
 
@@ -243,12 +198,7 @@ export async function getAllTodayReservations(
   tenantId: string,
   propertyId?: string
 ): Promise<BlockItem[]> {
-  const data = await getTodayReservations(
-    tenantId,
-    getStartOfUTCToday(),
-    getEndOfUTCToday(),
-    propertyId
-  );
+  const data = await getTodayReservations(tenantId, propertyId);
   return data.allItems || data.items;
 }
 
@@ -256,12 +206,7 @@ export async function getAllUpcomingReservations(
   tenantId: string,
   propertyId?: string
 ): Promise<BlockItem[]> {
-  const data = await getUpcomingReservations(
-    tenantId,
-    getStartOfUTCTomorrow(),
-    getEndOfUTCNext7Days(),
-    propertyId
-  );
+  const data = await getUpcomingReservations(tenantId, propertyId);
   return data.allItems || data.items;
 }
 
@@ -380,7 +325,12 @@ async function getTodayCleanings(
 
   const allCleanings = await (prisma as any).cleaning.findMany({
     where: whereClause,
-    include: {
+    select: {
+      id: true,
+      scheduledDate: true,
+      scheduledAtPlanned: true,
+      status: true,
+      propertyId: true,
       property: {
         select: {
           id: true,
@@ -390,7 +340,7 @@ async function getTodayCleanings(
       },
     },
     orderBy: {
-      scheduledDate: "asc",
+      scheduledAtPlanned: "asc",
     },
     // Sin take: devolver todos para bottom sheet
   });
@@ -403,7 +353,9 @@ async function getTodayCleanings(
     id: c.id,
     title: `Limpieza programada`,
     propertyName: c.property.shortName || c.property.name,
-    date: c.scheduledDate.toISOString(),
+    // scheduledAtPlanned es timestamp real (con hora); fallback a scheduledDate (date-only, sin hora).
+    // HoyTabContent detecta si hay hora real via getUTCHours() !== 0.
+    date: (c.scheduledAtPlanned ?? c.scheduledDate).toISOString(),
     status: c.status,
     href: `/host/cleanings/${c.id}${propertyId ? `?propertyId=${propertyId}` : ""}`,
   }));
@@ -417,18 +369,25 @@ async function getTodayCleanings(
 
 /**
  * Helper: Obtiene próximas limpiezas (mañana hasta +7 días)
+ *
+ * scheduledDate es @db.Date. Se usan UTC midnight basados en la fecha CDMX
+ * para que PostgreSQL los castee a DATE sin drift de timezone.
+ * Ejemplo hoy CDMX 26-abr: gte = 2026-04-27T00:00Z → DATE 2026-04-27
+ *                           lte = 2026-05-03T00:00Z → DATE 2026-05-03
  */
 async function getUpcomingCleanings(
   tenantId: string,
-  startOfTomorrow: Date,
-  endOfNext7Days: Date,
   propertyId?: string
 ): Promise<BlockData> {
+  const { year, month, day } = getCdmxDate();
+  const tomorrowUTC = new Date(Date.UTC(year, month, day + 1));
+  const next7DaysUTC = new Date(Date.UTC(year, month, day + 7));
+
   const whereClause: any = {
     tenantId,
     scheduledDate: {
-      gte: startOfTomorrow,
-      lte: endOfNext7Days,
+      gte: tomorrowUTC,
+      lte: next7DaysUTC,
     },
     status: { not: "CANCELLED" },
   };
@@ -439,7 +398,12 @@ async function getUpcomingCleanings(
 
   const allCleanings = await (prisma as any).cleaning.findMany({
     where: whereClause,
-    include: {
+    select: {
+      id: true,
+      scheduledDate: true,
+      scheduledAtPlanned: true,
+      status: true,
+      propertyId: true,
       property: {
         select: {
           id: true,
@@ -449,7 +413,7 @@ async function getUpcomingCleanings(
       },
     },
     orderBy: {
-      scheduledDate: "asc",
+      scheduledAtPlanned: "asc",
     },
     // Sin take: devolver todos para bottom sheet
   });
@@ -462,7 +426,7 @@ async function getUpcomingCleanings(
     id: c.id,
     title: `Limpieza programada`,
     propertyName: c.property.shortName || c.property.name,
-    date: c.scheduledDate.toISOString(),
+    date: (c.scheduledAtPlanned ?? c.scheduledDate).toISOString(),
     status: c.status,
     href: `/host/cleanings/${c.id}${propertyId ? `?propertyId=${propertyId}` : ""}`,
   }));
@@ -477,24 +441,22 @@ async function getUpcomingCleanings(
 /**
  * Helper: Obtiene reservas para hoy
  * "Reservas para hoy" = SOLO check-ins de hoy (startDate cae hoy)
- * - startDate >= startOfToday && startDate <= endOfToday
- * - Excluir CANCELLED
- * - NO incluir BLOCKED (no es check-in real)
+ *
+ * startDate es @db.Date. Se usa equals con UTC midnight de la fecha CDMX:
+ * gte/lte con timestamps horarios causa que el extremo superior (ej. T23:59:59Z)
+ * se castee a DATE del día siguiente en PostgreSQL, incluyendo la reserva de mañana.
  */
 async function getTodayReservations(
   tenantId: string,
-  startOfToday: Date,
-  endOfToday: Date,
   propertyId?: string
 ): Promise<BlockData> {
+  const { year, month, day } = getCdmxDate();
+  const exactTodayUTC = new Date(Date.UTC(year, month, day));
+
   const whereClause: any = {
     tenantId,
     status: { notIn: ["CANCELLED", "BLOCKED"] },
-    // Solo check-ins de hoy: startDate cae hoy
-    startDate: {
-      gte: startOfToday,
-      lte: endOfToday,
-    },
+    startDate: { equals: exactTodayUTC },
   };
 
   if (propertyId) {
@@ -540,19 +502,24 @@ async function getTodayReservations(
 
 /**
  * Helper: Obtiene próximas reservas (mañana hasta +7 días)
+ *
+ * startDate es @db.Date. Se usan UTC midnight basados en la fecha CDMX
+ * para que PostgreSQL los castee a DATE sin drift de timezone.
  */
 async function getUpcomingReservations(
   tenantId: string,
-  startOfTomorrow: Date,
-  endOfNext7Days: Date,
   propertyId?: string
 ): Promise<BlockData> {
+  const { year, month, day } = getCdmxDate();
+  const tomorrowUTC = new Date(Date.UTC(year, month, day + 1));
+  const next7DaysUTC = new Date(Date.UTC(year, month, day + 7));
+
   const whereClause: any = {
     tenantId,
     status: { not: "CANCELLED" },
     startDate: {
-      gte: startOfTomorrow,
-      lte: endOfNext7Days,
+      gte: tomorrowUTC,
+      lte: next7DaysUTC,
     },
   };
 

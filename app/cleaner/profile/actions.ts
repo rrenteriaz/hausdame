@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { requireCleanerUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
+import { hashPassword } from "@/lib/auth/password";
 
 export type UpdateCleanerProfileInput = {
   nickname?: string | null;
@@ -40,19 +41,8 @@ export async function updateCleanerProfile(input: UpdateCleanerProfileInput) {
   const state = input.state?.toString().trim() || null;
   const postalCode = input.postalCode?.toString().trim() || null;
   const country = input.country?.toString().trim() || "MX";
-
-  const latitude =
-    typeof input.latitude === "number" && Number.isFinite(input.latitude)
-      ? input.latitude
-      : input.latitude === null
-      ? null
-      : null;
-  const longitude =
-    typeof input.longitude === "number" && Number.isFinite(input.longitude)
-      ? input.longitude
-      : input.longitude === null
-      ? null
-      : null;
+  const latitude = typeof input.latitude === "number" ? input.latitude : null;
+  const longitude = typeof input.longitude === "number" ? input.longitude : null;
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
@@ -94,6 +84,52 @@ export async function updateCleanerProfile(input: UpdateCleanerProfileInput) {
 
   revalidatePath("/cleaner/profile");
   revalidatePath("/cleaner");
+
+  return { ok: true as const };
+}
+
+/**
+ * Resuelve una URL de Google Maps (incluyendo cortas como maps.app.goo.gl)
+ * y devuelve la URL final tras redirecciones. No requiere autenticación de usuario.
+ */
+export async function resolveGoogleMapsUrl(rawUrl: string): Promise<{ finalUrl: string }> {
+  const url = rawUrl.trim();
+
+  // Solo permitimos dominios de Google Maps
+  const allowed =
+    url.startsWith("https://maps.google") ||
+    url.startsWith("https://www.google.com/maps") ||
+    url.startsWith("https://goo.gl/maps") ||
+    url.startsWith("https://maps.app.goo.gl");
+
+  if (!allowed) {
+    throw new Error("URL no reconocida como enlace de Google Maps.");
+  }
+
+  const res = await fetch(url, {
+    method: "GET",
+    redirect: "follow",
+    headers: { "User-Agent": "Mozilla/5.0" },
+    // No almacenamos cookies ni credenciales
+    credentials: "omit",
+  });
+
+  return { finalUrl: res.url };
+}
+
+export async function changePassword(input: { newPassword: string }) {
+  const user = await requireCleanerUser();
+
+  if (input.newPassword.length < 8) {
+    throw new Error("La contraseña debe tener al menos 8 caracteres.");
+  }
+
+  const hashed = await hashPassword(input.newPassword);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { hashedPassword: hashed },
+  });
 
   return { ok: true as const };
 }

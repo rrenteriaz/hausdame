@@ -18,6 +18,7 @@ import { requireCleanerUser } from "@/lib/auth/requireUser";
 import Page from "@/lib/ui/Page";
 import Link from "next/link";
 import { getTeamDisplayName } from "@/lib/cleaner/teamDisplayName";
+import CreateCleanerTeamButton from "./CreateCleanerTeamButton";
 
 export default async function CleanerTeamsPage() {
   const user = await requireCleanerUser();
@@ -217,27 +218,37 @@ export default async function CleanerTeamsPage() {
     <Page title="Equipos" showBack backHref="/cleaner">
       <div className="p-4 space-y-4">
         {teams.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-center">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-center space-y-3">
             <p className="text-neutral-600 text-base">
               Aún no perteneces a ningún equipo
             </p>
-            <p className="text-neutral-500 text-sm mt-2">
-              Cuando un líder te agregue, aparecerán aquí
+            <p className="text-neutral-500 text-sm">
+              Crea tu primer equipo o espera a que un líder te invite.
             </p>
+            <div className="flex justify-center">
+              <CreateCleanerTeamButton />
+            </div>
           </div>
         ) : (
-          teams.map((item) => {
+          <>
+            {teams.map((item) => {
             const propertiesCount = Number(propertyCountsMap.get(item.team.id) ?? 0);
             const membersCount = Number(activeMembersMap.get(item.team.id) ?? 0);
+            // Solo el TL activo (membersCount === 1) significa que no hay ejecutores adicionales
+            const isTlOnly = membersCount <= 1;
             const isPaused = item.team.status === "PAUSED";
             const badgeLabel = isPaused
               ? "Pausado"
               : propertiesCount === 0
-              ? "Sin propiedades"
+              ? "Sin WG asignado"
+              : isTlOnly
+              ? "Sin ejecutores"
               : "Activo";
             const badgeClassName = isPaused
               ? "bg-neutral-100 text-neutral-700"
               : propertiesCount === 0
+              ? "bg-amber-100 text-amber-800"
+              : isTlOnly
               ? "bg-amber-100 text-amber-800"
               : "bg-emerald-100 text-emerald-800";
             const leaderMembership = item.team.TeamMembership[0] ?? null;
@@ -270,7 +281,11 @@ export default async function CleanerTeamsPage() {
                 </div>
               </Link>
             );
-          })
+          })}
+            <div className="flex justify-center pt-2">
+              <CreateCleanerTeamButton />
+            </div>
+          </>
         )}
       </div>
     </Page>

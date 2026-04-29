@@ -4,19 +4,12 @@ import prisma from "@/lib/prisma";
 import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";
 import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import Page from "@/lib/ui/Page";
-import Link from "next/link";
-import { reassignCleaningByLeader } from "@/app/cleaner/cleanings/reassign-actions";
 import NoMembershipPage from "../NoMembershipPage";
-
-function formatDateTime(date: Date) {
-  return date.toLocaleString("es-MX", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import TeamCleaningsClient, {
+  type MemberItem,
+  type CleaningItem,
+  type CleanerForReassign,
+} from "./TeamCleaningsClient";
 
 export default async function TeamCleaningsPage({
   searchParams,
@@ -37,19 +30,39 @@ export default async function TeamCleaningsPage({
     return <NoMembershipPage />;
   }
 
-  // Verificar que el usuario tiene role TEAM_LEADER en alguno de sus teams
   const tlMemberships = context.memberships.filter((m) => m.role === "TEAM_LEADER");
   if (tlMemberships.length === 0) {
     redirect(returnTo);
   }
 
   const tlTeamIds = tlMemberships.map((m) => m.teamId);
+  const isTeamLeader = true; // ya validamos arriba
+  const hasMultipleTeams = tlTeamIds.length > 1;
 
-  // Cargar limpiezas PENDING del equipo
-  const cleanings = await prisma.cleaning.findMany({
+  // Nombres de equipos — solo necesarios cuando el TL tiene múltiples equipos
+  const teamNamesMap = new Map<string, string>();
+  if (hasMultipleTeams) {
+    const teams = await prisma.team.findMany({
+      where: { id: { in: tlTeamIds } },
+      select: { id: true, name: true },
+    });
+    for (const t of teams) {
+      teamNamesMap.set(t.id, t.name);
+    }
+  }
+
+  // Ventana para limpiezas DONE: últimos 90 días
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  // Limpiezas: PENDING + IN_PROGRESS (todas) + DONE (últimos 90 días)
+  const cleaningsRaw = await prisma.cleaning.findMany({
     where: {
       teamId: { in: tlTeamIds },
-      status: "PENDING",
+      OR: [
+        { status: { in: ["PENDING", "IN_PROGRESS"] } },
+        { status: "COMPLETED", scheduledDate: { gte: ninetyDaysAgo } },
+      ],
     },
     select: {
       id: true,
@@ -58,9 +71,6 @@ export default async function TeamCleaningsPage({
       status: true,
       teamId: true,
       assignedMembershipId: true,
-      assignmentStatus: true,
-      needsAttention: true,
-      attentionReason: true,
       property: {
         select: {
           id: true,
@@ -72,64 +82,78 @@ export default async function TeamCleaningsPage({
       TeamMembership: {
         select: {
           id: true,
-          User: {
-            select: { id: true, name: true, email: true },
-          },
+          User: { select: { id: true, name: true, email: true } },
         },
       },
     },
     orderBy: { scheduledDate: "asc" },
   });
 
-  // Cargar miembros ACTIVE CLEANER de los teams del TL (para selector de reasignación)
-  const teamMemberships = await prisma.teamMembership.findMany({
+  // Todos los miembros activos para el panel izquierdo (TL + CLEANER)
+  const allMembershipsRaw = await prisma.teamMembership.findMany({
     where: {
       teamId: { in: tlTeamIds },
       status: "ACTIVE",
-      role: "CLEANER",
     },
     select: {
       id: true,
       teamId: true,
-      User: {
-        select: { id: true, name: true, email: true },
-      },
+      role: true,
+      User: { select: { id: true, name: true, email: true } },
     },
     orderBy: { createdAt: "asc" },
   });
 
-  // Agrupar miembros por team
-  const membersByTeam = new Map<string, typeof teamMemberships>();
-  for (const m of teamMemberships) {
-    const list = membersByTeam.get(m.teamId) ?? [];
-    list.push(m);
-    membersByTeam.set(m.teamId, list);
-  }
+  // Solo CLEANERs para el selector de reasignación
+  const cleanerMembershipsRaw = allMembershipsRaw.filter((m) => m.role === "CLEANER");
 
-  // Obtener thumbnails
-  const propertyIds = [...new Set(cleanings.map((c) => c.propertyId))];
+  // Thumbnails
+  const propertyIds = [...new Set(cleaningsRaw.map((c) => c.propertyId))];
   const thumbUrls =
     propertyIds.length > 0
       ? await getCoverThumbUrlsBatch(
-          cleanings.map((c) => ({
+          cleaningsRaw.map((c) => ({
             id: c.property.id,
             coverAssetGroupId: c.property.coverAssetGroupId || null,
           }))
         )
       : new Map<string, string | null>();
 
-  // Separar en sin ejecutor / asignadas
-  const sinEjecutor = cleanings.filter((c) => !c.assignedMembershipId);
-  const asignadas = cleanings.filter((c) => !!c.assignedMembershipId);
+  // Serializar para el cliente (Date → string)
+  const cleanings: CleaningItem[] = cleaningsRaw.map((c) => ({
+    id: c.id,
+    propertyName: c.property.shortName || c.property.name,
+    thumbUrl: thumbUrls.get(c.property.id) ?? null,
+    scheduledDate: c.scheduledDate.toISOString(),
+    status: c.status as "PENDING" | "IN_PROGRESS" | "COMPLETED",
+    assignedMembershipId: c.assignedMembershipId ?? null,
+    assignedMemberName: c.TeamMembership
+      ? c.TeamMembership.User.name || c.TeamMembership.User.email
+      : null,
+    teamId: c.teamId ?? "",
+    // teamName solo se incluye cuando el TL opera múltiples equipos
+    teamName: hasMultipleTeams && c.teamId ? (teamNamesMap.get(c.teamId) ?? undefined) : undefined,
+  }));
 
-  function getExecutorName(c: (typeof cleanings)[number]): string {
-    if (!c.assignedMembershipId || !c.TeamMembership) return "—";
-    return (
-      c.TeamMembership.User.name ||
-      c.TeamMembership.User.email ||
-      "Miembro"
-    );
-  }
+  // Miembros para panel izquierdo — TL primero, luego CLEANERs
+  const members: MemberItem[] = allMembershipsRaw
+    .sort((a, b) => {
+      if (a.role === "TEAM_LEADER" && b.role !== "TEAM_LEADER") return -1;
+      if (a.role !== "TEAM_LEADER" && b.role === "TEAM_LEADER") return 1;
+      return 0;
+    })
+    .map((m) => ({
+      membershipId: m.id,
+      name: m.User.name || m.User.email,
+      role: m.role as "TEAM_LEADER" | "CLEANER",
+      teamId: m.teamId,
+    }));
+
+  const cleanersForReassign: CleanerForReassign[] = cleanerMembershipsRaw.map((m) => ({
+    membershipId: m.id,
+    name: m.User.name || m.User.email,
+    teamId: m.teamId,
+  }));
 
   return (
     <Page
@@ -137,198 +161,22 @@ export default async function TeamCleaningsPage({
       subtitle="Vista del Team Leader"
       showBack
       backHref={returnTo}
-      containerClassName="pt-6"
+      containerSpacing="none"
     >
-      <div className="space-y-6">
-        {cleanings.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-            <p className="text-base text-neutral-600">
-              No hay limpiezas pendientes en tu equipo.
-            </p>
-          </div>
-        )}
-
-        {/* Sin ejecutor */}
-        {sinEjecutor.length > 0 && (
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <span className="inline-flex h-2 w-2 rounded-full bg-amber-400" />
-              <h2 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                Sin ejecutor ({sinEjecutor.length})
-              </h2>
-            </div>
-
-            <div className="space-y-2">
-              {sinEjecutor.map((c) => {
-                const propertyName = c.property.shortName || c.property.name;
-                const thumbUrl = thumbUrls.get(c.property.id) ?? null;
-                const members = membersByTeam.get(c.teamId ?? "") ?? [];
-
-                return (
-                  <div
-                    key={c.id}
-                    className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3"
-                  >
-                    {/* Header row */}
-                    <div className="flex items-start gap-3">
-                      {thumbUrl ? (
-                        <img
-                          src={thumbUrl}
-                          alt={propertyName}
-                          className="h-10 w-10 rounded-lg object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-lg bg-neutral-200 shrink-0" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-neutral-900 truncate">
-                          {propertyName}
-                        </p>
-                        <p className="text-xs text-neutral-500 mt-0.5">
-                          {formatDateTime(c.scheduledDate)}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/cleaner/cleanings/${c.id}?returnTo=${encodeURIComponent("/cleaner/team-cleanings")}`}
-                        className="text-xs text-neutral-500 underline underline-offset-2 shrink-0"
-                      >
-                        Ver
-                      </Link>
-                    </div>
-
-                    {/* Formulario de asignación */}
-                    {members.length > 0 ? (
-                      <form action={reassignCleaningByLeader} className="flex gap-2">
-                        <input type="hidden" name="cleaningId" value={c.id} />
-                        <input
-                          type="hidden"
-                          name="returnTo"
-                          value="/cleaner/team-cleanings"
-                        />
-                        <select
-                          name="targetMembershipId"
-                          required
-                          className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 bg-white min-w-0"
-                        >
-                          <option value="">— Asignar a —</option>
-                          {members.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.User.name || m.User.email}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="submit"
-                          className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 shrink-0"
-                        >
-                          Asignar
-                        </button>
-                      </form>
-                    ) : (
-                      <p className="text-xs text-amber-700">
-                        Sin miembros activos disponibles para asignar.
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Asignadas */}
-        {asignadas.length > 0 && (
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <span className="inline-flex h-2 w-2 rounded-full bg-blue-500" />
-              <h2 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                Asignadas ({asignadas.length})
-              </h2>
-            </div>
-
-            <div className="space-y-2">
-              {asignadas.map((c) => {
-                const propertyName = c.property.shortName || c.property.name;
-                const thumbUrl = thumbUrls.get(c.property.id) ?? null;
-                const members = membersByTeam.get(c.teamId ?? "") ?? [];
-
-                return (
-                  <div
-                    key={c.id}
-                    className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3"
-                  >
-                    {/* Header row */}
-                    <div className="flex items-start gap-3">
-                      {thumbUrl ? (
-                        <img
-                          src={thumbUrl}
-                          alt={propertyName}
-                          className="h-10 w-10 rounded-lg object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-lg bg-neutral-200 shrink-0" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-neutral-900 truncate">
-                          {propertyName}
-                        </p>
-                        <p className="text-xs text-neutral-500 mt-0.5">
-                          {formatDateTime(c.scheduledDate)}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-blue-500" />
-                          <span className="text-xs text-neutral-600">
-                            {getExecutorName(c)}
-                          </span>
-                          <span className="text-xs text-blue-600 bg-blue-50 rounded px-1 py-0.5">
-                            Asignado
-                          </span>
-                        </div>
-                      </div>
-                      <Link
-                        href={`/cleaner/cleanings/${c.id}?returnTo=${encodeURIComponent("/cleaner/team-cleanings")}`}
-                        className="text-xs text-neutral-500 underline underline-offset-2 shrink-0"
-                      >
-                        Ver
-                      </Link>
-                    </div>
-
-                    {/* Reasignar */}
-                    {members.length > 0 && (
-                      <form action={reassignCleaningByLeader} className="flex gap-2">
-                        <input type="hidden" name="cleaningId" value={c.id} />
-                        <input
-                          type="hidden"
-                          name="returnTo"
-                          value="/cleaner/team-cleanings"
-                        />
-                        <select
-                          name="targetMembershipId"
-                          required
-                          className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 bg-white min-w-0"
-                        >
-                          <option value="">— Reasignar a —</option>
-                          {members.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.User.name || m.User.email}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="submit"
-                          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 shrink-0"
-                        >
-                          Reasignar
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-      </div>
+      {cleanings.length === 0 ? (
+        <div className="m-4 rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
+          <p className="text-base text-neutral-600">
+            No hay limpiezas registradas en tu equipo.
+          </p>
+        </div>
+      ) : (
+        <TeamCleaningsClient
+          members={members}
+          cleanings={cleanings}
+          cleanersForReassign={cleanersForReassign}
+          isTeamLeader={isTeamLeader}
+        />
+      )}
     </Page>
   );
 }

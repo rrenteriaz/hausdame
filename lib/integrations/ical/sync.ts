@@ -231,9 +231,12 @@ async function executeSyncCore(
             property.checkOutTime
           );
 
-          // Resolver team para la propiedad (WGE + PropertyTeam legacy, sin flag)
+          // Resolver team para la propiedad (WGE + PropertyTeam legacy, sin flag).
+          // Contrato: exactamente 1 equipo → asignar; 0 o 2+ → null (OPEN).
+          // Igual que en app/host/cleanings/actions.ts. Si hay 2+ equipos para una
+          // propiedad, la limpieza queda OPEN en lugar de elegir arbitrariamente.
           const { teamIds } = await resolveAvailableTeamsForProperty(tenantId, propertyId);
-          const resolvedTeamId = teamIds.length > 0 ? teamIds[0] : null;
+          const resolvedTeamId = teamIds.length === 1 ? teamIds[0] : null;
 
           // Auto-asignación con preferred executor → 1 membership → OPEN
           const assignment = await resolveAutoAssignment(propertyId, resolvedTeamId);

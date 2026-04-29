@@ -6,6 +6,7 @@ import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { toggleExecutorStatus } from "@/lib/workgroups/toggleExecutorStatus";
+import { assertNoConflictingExecutor } from "@/lib/workgroups/assertNoConflictingExecutor";
 
 function redirectBack(formData: FormData) {
   const returnTo = formData.get("returnTo")?.toString();
@@ -64,6 +65,14 @@ export async function addExecutorToWorkGroup(formData: FormData) {
   if (!existingExecutor) {
     throw new Error("No se encontró información del equipo ejecutor. El equipo debe estar conectado a otro grupo de trabajo primero.");
   }
+
+  // VALIDACIÓN MULTI-TEAM: delega en helper centralizado.
+  await assertNoConflictingExecutor(prisma, {
+    hostTenantId: tenantId,
+    workGroupId,
+    servicesTenantId: existingExecutor.servicesTenantId,
+    teamId,
+  });
 
   // Crear/activar WorkGroupExecutor para este WorkGroup
   await prisma.workGroupExecutor.upsert({

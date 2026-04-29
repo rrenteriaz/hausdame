@@ -219,9 +219,6 @@ export default async function PropertyDetailPage({
   // Obtener información de los teams ejecutores (solo lectura)
   const executorTeamIds = executors.map((e) => e.teamId);
   
-  // LOGS TEMPORALES PARA DIAGNÓSTICO (quitar al final)
-  console.log("[DIAGNÓSTICO] executorTeamIds:", executorTeamIds);
-  
   const executorTeams = executorTeamIds.length > 0
     ? await prisma.team.findMany({
         where: {
@@ -252,14 +249,6 @@ export default async function PropertyDetailPage({
       })
     : [];
 
-  // LOGS TEMPORALES PARA DIAGNÓSTICO (quitar al final)
-  console.log("[DIAGNÓSTICO] executorTeams:", executorTeams.map(t => ({
-    id: t.id,
-    name: t.name,
-    tenantId: t.tenantId,
-    status: t.status,
-    leaderName: t.TeamMembership[0]?.User?.name || t.TeamMembership[0]?.User?.email?.split("@")[0] || null,
-  })));
 
   // Crear map con información del leader para cada team
   const executorTeamsMap = new Map(
@@ -355,18 +344,7 @@ export default async function PropertyDetailPage({
           <EditPropertyModal property={typedProperty} returnTo={returnTo} />
         </div>
 
-        {/* Miniatura de la propiedad */}
-        {coverThumbUrl && (
-          <div className="w-full">
-            <img
-              src={coverThumbUrl}
-              alt={typedProperty.name}
-              className="w-full h-48 object-cover rounded-xl"
-            />
-          </div>
-        )}
-
-        {/* Layout responsive: WEB (>=lg): mapa al lado; MÓVIL: mapa debajo */}
+        {/* Layout responsive: WEB (>=lg): imagen+mapa al lado; MÓVIL: imagen+mapa debajo */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Columna izquierda: Información textual */}
           <div className="space-y-4">
@@ -382,6 +360,17 @@ export default async function PropertyDetailPage({
                   <p className="text-neutral-900">{typedProperty.shortName}</p>
                 </div>
               )}
+
+              {/* Imagen de portada en MÓVIL: entre Alias corto y Dirección */}
+              <div className="lg:hidden col-span-full">
+                <CoverImageSection
+                  propertyId={typedProperty.id}
+                  coverThumbUrl={coverThumbUrl}
+                  coverOriginalUrl={coverOriginalUrl}
+                  propertyName={typedProperty.name}
+                  returnTo={returnTo}
+                />
+              </div>
 
               {typedProperty.address && (
                 <div className="space-y-1 md:col-span-2">
@@ -424,17 +413,28 @@ export default async function PropertyDetailPage({
             )}
           </div>
 
-          {/* Columna derecha: Preview de ubicación en WEB (>=lg) */}
-          {typedProperty.latitude !== null && typedProperty.longitude !== null && (
-            <div className="hidden lg:block">
-              <PropertyLocationPreview
-                latitude={typedProperty.latitude}
-                longitude={typedProperty.longitude}
-                propertyName={typedProperty.name}
-              />
-            </div>
-          )}
+          {/* Columna derecha: imagen de portada (solo desktop) */}
+          <div className="hidden lg:block">
+            <CoverImageSection
+              propertyId={typedProperty.id}
+              coverThumbUrl={coverThumbUrl}
+              coverOriginalUrl={coverOriginalUrl}
+              propertyName={typedProperty.name}
+              returnTo={returnTo}
+            />
+          </div>
         </div>
+
+        {/* Mapa full-width debajo del grid (solo desktop; en mobile ya aparece dentro de la col izquierda) */}
+        {typedProperty.latitude !== null && typedProperty.longitude !== null && (
+          <div className="hidden lg:block">
+            <PropertyLocationPreview
+              latitude={typedProperty.latitude}
+              longitude={typedProperty.longitude}
+              propertyName={typedProperty.name}
+            />
+          </div>
+        )}
 
         {/* Resto de campos (continúan en grid normal) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">

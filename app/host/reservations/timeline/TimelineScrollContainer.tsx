@@ -6,7 +6,7 @@
  * volver desde el detalle de una reserva.
  */
 
-import { useRef, useEffect, type ReactNode } from "react";
+import { useRef, useLayoutEffect, type ReactNode } from "react";
 
 const STORAGE_KEY = "res-timeline-scroll-v1";
 
@@ -28,7 +28,7 @@ export default function TimelineScrollContainer({
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 

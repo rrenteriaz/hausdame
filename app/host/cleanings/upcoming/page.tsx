@@ -170,7 +170,7 @@ export default async function UpcomingCleaningsPage({
                       Estado: {formatStatus(c.status)}
                       {c.assignedMember && (
                         <span className="text-neutral-600">
-                          {" "}· {c.assignedMember.name} ({c.assignedMember.team.name})
+                          {" "}· {c.assignedMember.name}
                         </span>
                       )}
                       {(c as any).assignmentStatus === "OPEN" && !c.assignedMember && (

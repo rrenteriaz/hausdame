@@ -156,7 +156,7 @@ export async function uploadCoverImage(formData: FormData) {
 
     revalidatePath("/host/properties");
     revalidatePath(`/host/properties/${propertyId}`);
-    redirectBack(returnTo);
+    return { ok: true as const };
   } catch (error) {
     console.error("[uploadCoverImage] Error:", error);
     // Limpiar storage si falló la creación en DB
@@ -216,7 +216,7 @@ export async function removeCoverImage(formData: FormData) {
 
   revalidatePath("/host/properties");
   revalidatePath(`/host/properties/${propertyId}`);
-  redirectBack(returnTo);
+  return { ok: true as const };
 }
 
 /**

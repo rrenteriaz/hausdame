@@ -17,6 +17,7 @@ import TeamMemberSelect from "../[id]/TeamMemberSelect";
 import Link from "next/link";
 import { getCleaningAssignmentLevel } from "@/lib/cleanings/getCleaningAssignmentLevel";
 import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
+import { getTeamDisplayNameForHost } from "@/lib/host/teamDisplayName";
 import prisma from "@/lib/prisma";
 import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 import { formatDateOnly } from "@/lib/ui/formatDateOnly";
@@ -162,6 +163,41 @@ export default async function CleaningsNeedingAttentionPage() {
     cleaningsWithDetails.map((c) => [c.id, c])
   );
 
+  // Obtener TL names en batch para generar display names seguros para Host.
+  // El Host nunca debe ver el nombre interno del equipo (e.g. "Equipo Norte").
+  // Usamos getTeamDisplayNameForHost() igual que en el detail page de cleaning.
+  const allTeamIdsForDisplay = Array.from(
+    new Set(
+      cleaningsWithDetails.flatMap((c) =>
+        [c.teamId, c.TeamMembership?.Team?.id].filter((id): id is string => Boolean(id))
+      )
+    )
+  );
+  const teamLeaderMemberships = allTeamIdsForDisplay.length > 0
+    ? await prisma.teamMembership.findMany({
+        where: {
+          teamId: { in: allTeamIdsForDisplay },
+          role: "TEAM_LEADER",
+          status: "ACTIVE",
+        },
+        select: {
+          teamId: true,
+          User: { select: { name: true, email: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      })
+    : [];
+  // Map teamId → display name opaco para Host (e.g., "Itzel's Team")
+  const teamDisplayNameByTeamId = new Map<string, string>();
+  for (const leader of teamLeaderMemberships) {
+    if (!teamDisplayNameByTeamId.has(leader.teamId)) {
+      teamDisplayNameByTeamId.set(
+        leader.teamId,
+        getTeamDisplayNameForHost({ teamName: "Equipo", leaderUser: leader.User })
+      );
+    }
+  }
+
   // Para cada limpieza, calcular assignmentLevel y obtener miembros elegibles
   const cleaningsWithEligibleMembers = await Promise.all(
     cleaningsNeedingAttention.map(async (cleaning) => {
@@ -191,10 +227,16 @@ export default async function CleaningsNeedingAttentionPage() {
         assignmentLevel = 0;
       }
 
-      // Obtener nombres para el copy
-      const teamName = details?.team?.name || null;
+      // Obtener nombres para el copy — usar display names seguros para Host.
+      // team.name NUNCA se expone directamente; se usa el TL name vía getTeamDisplayNameForHost.
+      const teamName = details?.teamId
+        ? (teamDisplayNameByTeamId.get(details.teamId) ?? "Equipo")
+        : null;
       const cleanerName = details?.TeamMembership?.User?.name || cleaning.assignedMember?.name || null;
-      const teamNameSecondary = details?.TeamMembership?.Team?.name || cleaning.assignedMember?.team?.name || null;
+      const membershipTeamId = details?.TeamMembership?.Team?.id ?? null;
+      const teamNameSecondary = membershipTeamId
+        ? (teamDisplayNameByTeamId.get(membershipTeamId) ?? "Equipo")
+        : null;
 
       // Obtener miembros elegibles
       const eligibleMembers = await getEligibleMembersForCleaning(
@@ -222,7 +264,9 @@ export default async function CleaningsNeedingAttentionPage() {
         eligibleMembers: eligibleMembers.map((m) => ({
           id: m.id,
           name: m.name,
-          team: { id: m.teamId, name: m.teamName },
+          // Usar display name opaco — teamDisplayNameByTeamId cubre los equipos de los cleanings;
+          // si el equipo es elegible pero no está en el map, fallback seguro "Equipo".
+          team: { id: m.teamId, name: teamDisplayNameByTeamId.get(m.teamId) ?? "Equipo" },
         })),
       };
     })

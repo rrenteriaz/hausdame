@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { uploadCoverImage, removeCoverImage } from "../cover-actions";
 import ListThumb from "@/lib/ui/ListThumb";
-import Image from "next/image";
 
 interface CoverImageSectionProps {
   propertyId: string;
@@ -21,6 +21,7 @@ export default function CoverImageSection({
   propertyName,
   returnTo,
 }: CoverImageSectionProps) {
+  const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +60,10 @@ export default function CoverImageSection({
         formData.append("returnTo", returnTo);
       }
 
-      await uploadCoverImage(formData);
+      const result = await uploadCoverImage(formData);
+      if (result?.ok) {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error uploading cover:", error);
       alert("Error al subir la imagen. Por favor, intente nuevamente.");
@@ -84,7 +88,10 @@ export default function CoverImageSection({
         formData.append("returnTo", returnTo);
       }
 
-      await removeCoverImage(formData);
+      const result = await removeCoverImage(formData);
+      if (result?.ok) {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error removing cover:", error);
       alert("Error al eliminar la imagen. Por favor, intente nuevamente.");
@@ -101,7 +108,7 @@ export default function CoverImageSection({
 
       {displayUrl ? (
         <div className="space-y-3">
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
+          <div className="relative w-full h-40 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
             {previewUrl ? (
               <img
                 src={previewUrl}
@@ -109,20 +116,16 @@ export default function CoverImageSection({
                 className="w-full h-full object-cover"
               />
             ) : coverOriginalUrl ? (
-              <Image
+              <img
                 src={coverOriginalUrl}
                 alt={propertyName}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="w-full h-full object-cover"
               />
             ) : coverThumbUrl ? (
-              <Image
+              <img
                 src={coverThumbUrl}
                 alt={propertyName}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="w-full h-full object-cover"
               />
             ) : null}
           </div>
@@ -154,7 +157,7 @@ export default function CoverImageSection({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 flex items-center justify-center">
+          <div className="relative w-full h-40 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 flex items-center justify-center">
             <ListThumb src={null} alt={propertyName} size={64} />
           </div>
 

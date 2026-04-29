@@ -3,6 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
   InventoryChangeReason,
   InventoryReportType,
@@ -44,14 +45,18 @@ export default function InventoryInboxItemCard({
   };
 
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleString("es-MX", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFormattedDate(
+      new Date(item.createdAt).toLocaleString("es-MX", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  }, [item.createdAt]);
 
   return (
     <div 
@@ -185,7 +190,7 @@ export default function InventoryInboxItemCard({
           <div className="flex items-center gap-2 text-xs text-neutral-500">
             <span>Por {item.createdBy}</span>
             <span>·</span>
-            <span>{formatDate(item.createdAt)}</span>
+            {formattedDate && <span>{formattedDate}</span>}
           </div>
         </div>
       </div>

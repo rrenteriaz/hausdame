@@ -10,6 +10,7 @@ import { toggleTeamMemberStatus, setPreferredExecutor, removePreferredExecutor }
 import TeamInvitesList, { type TeamInviteItem } from "./TeamInvitesList";
 import { getTeamInvites } from "@/lib/teams/getTeamInvites";
 import { getTeamDisplayName } from "@/lib/cleaner/teamDisplayName";
+import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("es-MX", {
@@ -102,6 +103,8 @@ export default async function CleanerTeamDetailPage({
           id: true,
           name: true,
           shortName: true,
+          address: true,
+          coverAssetGroupId: true,
           notificationEmail: true,
           user: {
             select: {
@@ -141,6 +144,8 @@ export default async function CleanerTeamDetailPage({
               id: true,
               name: true,
               shortName: true,
+              address: true,
+              coverAssetGroupId: true,
               notificationEmail: true,
               user: {
                 select: {
@@ -165,6 +170,8 @@ export default async function CleanerTeamDetailPage({
             id: true,
             name: true,
             shortName: true,
+            address: true,
+            coverAssetGroupId: true,
             notificationEmail: true,
             user: {
               select: {
@@ -288,6 +295,16 @@ export default async function CleanerTeamDetailPage({
       ? membersForUi.find((m) => m.userId === leaderUserId)?.membershipId ?? null
       : null;
 
+  // Thumbnails de portada para la lista de propiedades
+  const thumbUrls = properties.length > 0
+    ? await getCoverThumbUrlsBatch(
+        properties.map((pt: any) => ({
+          id: pt.propertyId,
+          coverAssetGroupId: pt.property.coverAssetGroupId || null,
+        }))
+      )
+    : new Map<string, string | null>();
+
   const propertiesForUi = properties.map((pt: any) => {
     const hostLabel =
       pt.property.user?.name ||
@@ -307,6 +324,8 @@ export default async function CleanerTeamDetailPage({
       id: pt.propertyId,
       name: pt.property.name,
       shortName: pt.property.shortName,
+      address: pt.property.address || null,
+      thumbUrl: thumbUrls.get(pt.propertyId) || null,
       hostLabel,
       assignedMembershipIds,
       defaultAssignedLeader,
@@ -419,91 +438,106 @@ export default async function CleanerTeamDetailPage({
         />
 
         {/* Ejecutor preferido por propiedad — solo visible para TL */}
-        {isTeamLeader && propertiesForUi.length > 0 && (
-          <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
-            <div>
-              <h2 className="text-base font-semibold text-neutral-800">
-                Ejecutor preferido por propiedad
-              </h2>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                El miembro seleccionado recibirá automáticamente las nuevas limpiezas de cada propiedad.
-              </p>
-            </div>
+        {isTeamLeader && propertiesForUi.length > 0 && (() => {
+          // Todos los miembros activos son ejecutores válidos (incluye al TL).
+          // El TL puede ejecutar limpiezas igual que cualquier miembro.
+          const executableMembers = membersForUi;
+          const hasOtherMembers = executableMembers.length > 1;
 
-            <div className="space-y-4">
-              {propertiesForUi.map((property) => {
-                const currentPreferredId = preferredByProperty.get(property.id) ?? null;
-                const currentMember = currentPreferredId
-                  ? membersForUi.find((m) => m.membershipId === currentPreferredId) ?? null
-                  : null;
-                const cleanerMembers = membersForUi.filter((m) => !m.isLeader);
+          return (
+            <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
+              <div>
+                <h2 className="text-base font-semibold text-neutral-800">
+                  Ejecutor preferido por propiedad
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  El miembro seleccionado recibirá automáticamente las nuevas limpiezas de cada propiedad.
+                </p>
+              </div>
 
-                return (
-                  <div key={property.id} className="space-y-2">
-                    <p className="text-sm font-medium text-neutral-900">
-                      {property.shortName || property.name}
-                    </p>
+              {!hasOtherMembers ? (
+                <p className="text-sm text-neutral-500 bg-neutral-50 rounded-xl px-4 py-3">
+                  Actualmente solo tú perteneces a este equipo. Cuando agregues más miembros, podrás elegir un ejecutor preferido por propiedad.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {propertiesForUi.map((property) => {
+                    const currentPreferredId = preferredByProperty.get(property.id) ?? null;
+                    const currentMember = currentPreferredId
+                      ? executableMembers.find((m) => m.membershipId === currentPreferredId) ?? null
+                      : null;
 
-                    {currentMember ? (
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                        <span className="text-sm text-neutral-700">
-                          {currentMember.name || currentMember.email}
-                        </span>
-                        <span className="text-xs text-blue-600 bg-blue-50 rounded px-1.5 py-0.5">
-                          Preferido
-                        </span>
-                        <form action={removePreferredExecutorAction} className="ml-auto">
+                    return (
+                      <div key={property.id} className="space-y-2">
+                        <p className="text-sm font-medium text-neutral-900">
+                          {property.shortName || property.name}
+                        </p>
+
+                        {currentMember ? (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                            <span className="text-sm text-neutral-700">
+                              {currentMember.name || currentMember.email}
+                              {currentMember.isLeader && (
+                                <span className="ml-1 text-xs text-neutral-400">(Tú)</span>
+                              )}
+                            </span>
+                            <span className="text-xs text-blue-600 bg-blue-50 rounded px-1.5 py-0.5">
+                              Preferido
+                            </span>
+                            <form action={removePreferredExecutorAction} className="ml-auto">
+                              <input type="hidden" name="teamId" value={team.id} />
+                              <input type="hidden" name="propertyId" value={property.id} />
+                              <button
+                                type="submit"
+                                className="text-xs text-neutral-400 hover:text-red-600 underline underline-offset-2 transition"
+                              >
+                                Quitar
+                              </button>
+                            </form>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-neutral-400">Sin preferencia — selección automática</p>
+                        )}
+
+                        <form action={setPreferredExecutorAction} className="flex gap-2">
                           <input type="hidden" name="teamId" value={team.id} />
                           <input type="hidden" name="propertyId" value={property.id} />
+                          <select
+                            name="preferredMembershipId"
+                            required
+                            defaultValue=""
+                            className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 bg-white min-w-0"
+                          >
+                            <option value="" disabled>
+                              {currentMember ? "— Cambiar a —" : "— Asignar preferido —"}
+                            </option>
+                            {executableMembers.map((m) => (
+                              <option
+                                key={m.membershipId}
+                                value={m.membershipId}
+                              >
+                                {m.isLeader
+                                  ? `${m.name || m.email} (Tú)`
+                                  : (m.name || m.email)}
+                              </option>
+                            ))}
+                          </select>
                           <button
                             type="submit"
-                            className="text-xs text-neutral-400 hover:text-red-600 underline underline-offset-2 transition"
+                            className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 shrink-0"
                           >
-                            Quitar
+                            {currentMember ? "Cambiar" : "Asignar"}
                           </button>
                         </form>
                       </div>
-                    ) : (
-                      <p className="text-xs text-neutral-400">Sin preferencia — selección automática</p>
-                    )}
-
-                    {cleanerMembers.length > 0 && (
-                      <form action={setPreferredExecutorAction} className="flex gap-2">
-                        <input type="hidden" name="teamId" value={team.id} />
-                        <input type="hidden" name="propertyId" value={property.id} />
-                        <select
-                          name="preferredMembershipId"
-                          required
-                          defaultValue=""
-                          className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900 bg-white min-w-0"
-                        >
-                          <option value="" disabled>
-                            {currentMember ? "— Cambiar a —" : "— Asignar preferido —"}
-                          </option>
-                          {cleanerMembers.map((m) => (
-                            <option
-                              key={m.membershipId}
-                              value={m.membershipId}
-                            >
-                              {m.name || m.email}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="submit"
-                          className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 shrink-0"
-                        >
-                          {currentMember ? "Cambiar" : "Asignar"}
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          );
+        })()}
 
         {/* Info del equipo */}
         <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-2">

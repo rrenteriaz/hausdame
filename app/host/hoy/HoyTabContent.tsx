@@ -152,6 +152,7 @@ function BlockCard({ title, count, items, href, disabled = false }: BlockCardPro
                   <span className="text-xs text-neutral-500 ml-2 shrink-0">
                     {hasTime
                       ? dateObj.toLocaleDateString("es-MX", {
+                          timeZone: "America/Mexico_City",
                           day: "2-digit",
                           month: "short",
                           hour: "2-digit",

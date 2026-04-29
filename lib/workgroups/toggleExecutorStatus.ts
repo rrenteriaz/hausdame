@@ -2,6 +2,7 @@
 // Función backend para cambiar WorkGroupExecutor.status y aplicar efectos en limpiezas futuras
 
 import prisma from "@/lib/prisma";
+import { assertNoConflictingExecutor } from "./assertNoConflictingExecutor";
 
 export interface ToggleExecutorStatusParams {
   hostTenantId: string;
@@ -65,6 +66,18 @@ export async function toggleExecutorStatus(
       affectedCleaningsCount: 0,
       message: `El executor ya está en estado ${newStatus}`,
     };
+  }
+
+  // VALIDACIÓN MULTI-TEAM: al reactivar un executor, verificar que no exista otro
+  // equipo activo del mismo servicesTenantId en este WG.
+  // No aplica al desactivar (INACTIVE nunca genera conflicto).
+  if (newStatus === "ACTIVE") {
+    await assertNoConflictingExecutor(prisma, {
+      hostTenantId,
+      workGroupId,
+      servicesTenantId: executor.servicesTenantId,
+      teamId,
+    });
   }
 
   // Aplicar cambios en transacción

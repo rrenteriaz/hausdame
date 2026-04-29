@@ -297,7 +297,6 @@ export default async function ReservationDetailPage({
                           {assignedMember && (
                             <p className="text-xs text-neutral-600">
                               Asignada a {assignedMember.name}
-                              {assignedMember.team && ` (${assignedMember.team.name})`}
                             </p>
                           )}
 

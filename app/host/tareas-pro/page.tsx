@@ -6,6 +6,7 @@ import HostWebContainer from "@/lib/ui/HostWebContainer";
 import Page from "@/lib/ui/Page";
 import CreateChecklistModal from "./components/CreateChecklistModal";
 import PropertyFilterRouter from "./components/PropertyFilterRouter";
+import TareasProSplitView from "./components/TareasProSplitView";
 import { isScheduleComplete } from "@/lib/tareas-pro/domain/schedule-anchor";
 
 export default async function TareasProPage({
@@ -20,19 +21,17 @@ export default async function TareasProPage({
   const sp = searchParams ? await searchParams : undefined;
   const propertyFilter = sp?.property;
 
-  const properties = await prisma.property.findMany({
+  const properties = (await prisma.property.findMany({
     where: { tenantId, isActive: true },
-    select: { id: true, name: true, shortName: true },
-    orderBy: { name: "asc" },
-  });
+    select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
+  })).sort((a, b) =>
+    (a.shortName ?? a.name).localeCompare(b.shortName ?? b.name, "es")
+  );
 
   const templates = await prisma.taskTemplate.findMany({
     where: {
       tenantId,
       status: { not: "DELETED" },
-      ...(propertyFilter && propertyFilter !== "all"
-        ? { propertyId: propertyFilter }
-        : {}),
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -41,6 +40,58 @@ export default async function TareasProPage({
       _count: { select: { sections: true, jobs: true } },
     },
   });
+
+  // --- Datos para el split de web ---
+
+  // Obtener thumbnails de propiedades que tienen coverAssetGroupId
+  const assetGroupIds = properties
+    .map((p) => p.coverAssetGroupId)
+    .filter((id): id is string => id != null);
+
+  const thumbAssets =
+    assetGroupIds.length > 0
+      ? await prisma.asset.findMany({
+          where: { groupId: { in: assetGroupIds }, variant: "THUMB_256" },
+          select: { groupId: true, publicUrl: true },
+        })
+      : [];
+
+  const thumbByGroupId = new Map(thumbAssets.map((a) => [a.groupId, a.publicUrl]));
+
+  // Calcular contadores por propiedad
+  const countsByProperty = new Map<string, { active: number; draft: number }>();
+  for (const t of templates) {
+    const entry = countsByProperty.get(t.propertyId) ?? { active: 0, draft: 0 };
+    if (t.status === "ACTIVE") entry.active++;
+    else if (t.status === "DRAFT") entry.draft++;
+    countsByProperty.set(t.propertyId, entry);
+  }
+
+  const propertiesForSplit = properties.map((p) => ({
+    id: p.id,
+    name: p.name,
+    shortName: p.shortName,
+    coverThumbUrl: p.coverAssetGroupId
+      ? (thumbByGroupId.get(p.coverAssetGroupId) ?? null)
+      : null,
+    activeCount: countsByProperty.get(p.id)?.active ?? 0,
+    draftCount: countsByProperty.get(p.id)?.draft ?? 0,
+  }));
+
+  const templatesForSplit = templates.map((t) => ({
+    id: t.id,
+    name: t.name,
+    status: t.status,
+    propertyId: t.propertyId,
+    sectionCount: t._count.sections,
+    jobCount: t._count.jobs,
+    schedule: t.schedule,
+  }));
+
+  // --- Datos para la lista mobile (respeta el filtro por propiedad) ---
+  const mobileTemplates = propertyFilter && propertyFilter !== "all"
+    ? templates.filter((t) => t.propertyId === propertyFilter)
+    : templates;
 
   return (
     <HostWebContainer>
@@ -60,30 +111,45 @@ export default async function TareasProPage({
           </div>
         }
       >
-        <div className="max-w-2xl space-y-5">
-          {/* Botón crear + filtro de propiedad */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <CreateChecklistModal properties={properties} />
-            </div>
-            {properties.length > 1 && (
-              <PropertyFilterRouter
-                properties={properties}
-                selectedPropertyId={propertyFilter ?? ""}
-              />
-            )}
-          </div>
+        {/* Botón crear checklist — visible en ambas vistas */}
+        <div className="mb-5">
+          <CreateChecklistModal properties={properties} />
+        </div>
+
+        {/* VISTA WEB (lg+): split de dos paneles, sin filtro de propiedad */}
+        <div className="hidden lg:block">
+          {propertiesForSplit.length === 0 ? (
+            <p className="text-sm text-gray-400 py-6 text-center">
+              No hay propiedades activas.
+            </p>
+          ) : (
+            <TareasProSplitView
+              properties={propertiesForSplit}
+              templates={templatesForSplit}
+            />
+          )}
+        </div>
+
+        {/* VISTA MOBILE (< lg): lista plana con filtro de propiedad */}
+        <div className="lg:hidden max-w-2xl space-y-5">
+          {/* Filtro de propiedad */}
+          {properties.length > 1 && (
+            <PropertyFilterRouter
+              properties={properties}
+              selectedPropertyId={propertyFilter ?? ""}
+            />
+          )}
 
           {/* Lista de checklists */}
           <div className="space-y-2">
-            {templates.length === 0 ? (
+            {mobileTemplates.length === 0 ? (
               <p className="text-sm text-gray-400 py-6 text-center">
                 {propertyFilter && propertyFilter !== "all"
                   ? "Esta propiedad aún no tiene checklists."
                   : "Aún no hay checklists. Crea el primero."}
               </p>
             ) : (
-              templates.map((t) => {
+              mobileTemplates.map((t) => {
                 const isLegacyPeriodic =
                   t.schedule != null &&
                   ["DAILY", "WEEKLY", "MONTHLY"].includes(t.schedule.frequency);

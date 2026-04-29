@@ -66,14 +66,13 @@ export default async function HostThreadPage({
     const cleanerParticipant = otherParticipants.find((p) => p.user?.role === "CLEANER");
     counterpartName = cleanerParticipant?.user?.name || cleanerParticipant?.user?.email || "Usuario";
   } else if (thread.type === "HOST_TEAM") {
-    // Host ve "Team X" o "TLName (Team X)"
+    // Host ve display name opaco del TL (nunca el nombre interno del equipo)
     const teamLeaderParticipant = otherParticipants.find((p) => p.role === "OWNER");
-    if (teamLeaderParticipant?.team?.name) {
-      counterpartName = `${teamLeaderParticipant.user?.name || "Team"} (${teamLeaderParticipant.team.name})`;
-    } else if (thread.team) {
-      counterpartName = thread.team.name;
+    if (teamLeaderParticipant?.user) {
+      const { getTeamDisplayNameForHost } = await import("@/lib/host/teamDisplayName");
+      counterpartName = getTeamDisplayNameForHost({ teamName: "Equipo", leaderUser: teamLeaderParticipant.user });
     } else {
-      counterpartName = "Team";
+      counterpartName = "Equipo";
     }
   } else {
     // Fallback: primer participante

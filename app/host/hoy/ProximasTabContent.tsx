@@ -143,14 +143,25 @@ function BlockCard({ title, count, items, href, disabled = false }: BlockCardPro
               <span className="truncate flex-1">{item.propertyName}</span>
               {item.date && (() => {
                 const dateObj = new Date(item.date);
-                const hasTime = dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0;
+                // Campos @db.Date llegan como UTC midnight (00:00:00Z).
+                // getHours() en timezone local (ej. CDMX UTC-6) daría 18 → falso positivo.
+                // getUTCHours() es 0 para date-only y distinto de 0 para timestamps reales.
+                const hasTime = dateObj.getUTCHours() !== 0 || dateObj.getUTCMinutes() !== 0;
                 return (
                   <span className="text-xs text-neutral-500 ml-2 shrink-0">
-                    {dateObj.toLocaleDateString("es-MX", {
-                      day: "2-digit",
-                      month: "short",
-                      ...(hasTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-                    })}
+                    {hasTime
+                      ? dateObj.toLocaleDateString("es-MX", {
+                          timeZone: "America/Mexico_City",
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : dateObj.toLocaleDateString("es-MX", {
+                          timeZone: "UTC",
+                          day: "2-digit",
+                          month: "short",
+                        })}
                   </span>
                 );
               })()}

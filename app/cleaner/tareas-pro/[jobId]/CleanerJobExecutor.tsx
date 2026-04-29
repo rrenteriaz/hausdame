@@ -421,40 +421,38 @@ export default function CleanerJobExecutor({
   return (
     <div className={embedded ? "px-4 py-4 space-y-4" : "max-w-lg mx-auto px-4 py-6 pb-32 space-y-4"}>
 
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        {!embedded && (
+      {/* Header — solo en modo standalone (no embedded) */}
+      {!embedded && (
+        <div className="flex items-start gap-3">
           <Link
             href="/cleaner/tareas-pro"
             className="text-gray-400 hover:text-gray-700 mt-0.5 shrink-0 text-lg leading-none"
           >
             ←
           </Link>
-        )}
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base font-semibold truncate">{job.templateNameSnapshot}</h1>
-          {!embedded && (
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-semibold truncate">{job.templateNameSnapshot}</h1>
             <p className="text-xs text-gray-400 mt-0.5">
               {job.property.shortName ?? job.property.name}
             </p>
-          )}
-        </div>
-        <span
-          className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${
-            isCompleted
-              ? "bg-green-100 text-green-700"
+          </div>
+          <span
+            className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${
+              isCompleted
+                ? "bg-green-100 text-green-700"
+                : jobStatus === "IN_PROGRESS"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {isCompleted
+              ? "Completada"
               : jobStatus === "IN_PROGRESS"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
-          {isCompleted
-            ? "Completada"
-            : jobStatus === "IN_PROGRESS"
-            ? "En progreso"
-            : "Pendiente"}
-        </span>
-      </div>
+              ? "En progreso"
+              : "Pendiente"}
+          </span>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="space-y-1.5">
@@ -558,11 +556,11 @@ export default function CleanerJobExecutor({
                         type="button"
                         onClick={() => openSheet(step, section.id)}
                         disabled={isCompleted || jobStatus !== "IN_PROGRESS"}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 active:bg-neutral-100 transition text-left disabled:cursor-default"
+                        className="w-full flex items-center gap-3 px-4 py-4 hover:bg-neutral-50 active:bg-neutral-100 transition text-left disabled:cursor-default"
                       >
                         {/* Checkbox circle */}
                         <div
-                          className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors ${
                             isResponded
                               ? "bg-green-500 border-green-500"
                               : "border-neutral-300"
@@ -570,7 +568,7 @@ export default function CleanerJobExecutor({
                         >
                           {isResponded && (
                             <svg
-                              className="w-3.5 h-3.5 text-white"
+                              className="w-4 h-4 text-white"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"

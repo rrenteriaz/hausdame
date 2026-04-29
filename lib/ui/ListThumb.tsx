@@ -20,11 +20,9 @@ export default function ListThumb({ src, alt = "", size = 56 }: ListThumbProps) 
         className="shrink-0 rounded-md overflow-hidden bg-neutral-100"
         style={{ width: size, height: size }}
       >
-        <Image
+        <img
           src={src}
           alt={alt}
-          width={size}
-          height={size}
           className="w-full h-full object-cover"
         />
       </div>

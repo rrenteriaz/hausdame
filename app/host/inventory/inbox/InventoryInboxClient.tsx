@@ -53,6 +53,11 @@ export default function InventoryInboxClient({
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<InboxItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Panel izquierdo (solo desktop): propiedad seleccionada
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(
+    properties[0]?.id ?? ""
+  );
   
   // Estados para los selectores (bottom sheets)
   const [isPropertySheetOpen, setIsPropertySheetOpen] = useState(false);
@@ -155,6 +160,22 @@ export default function InventoryInboxClient({
     params.set("tab", newTab);
     router.push(`/host/inventory/inbox?${params.toString()}`);
   };
+
+  // Conteos por propiedad para el panel izquierdo
+  const countByProperty = properties.map((p) => ({
+    ...p,
+    count: items.filter((i) => i.propertyId === p.id).length,
+  }));
+
+  // Items del panel derecho (desktop): filtrados por propiedad seleccionada
+  const desktopItems = selectedPropertyId
+    ? items.filter((i) => i.propertyId === selectedPropertyId)
+    : items;
+
+  // Items para mobile: respetan filters.propertyId si está activo
+  const mobileItems = filters.propertyId
+    ? items.filter((i) => i.propertyId === filters.propertyId)
+    : items;
 
   return (
     <div className="space-y-4">
@@ -285,28 +306,8 @@ export default function InventoryInboxClient({
         </div>
       </div>
 
-      {/* Desktop: Dropdowns originales */}
+      {/* Desktop: Dropdowns (sin propiedad — reemplazada por el panel izquierdo) */}
       <div className="hidden sm:flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-neutral-700 mb-1">
-            Propiedad
-          </label>
-          <select
-            value={filters.propertyId || ""}
-            onChange={(e) =>
-              handleFilterChange({ ...filters, propertyId: e.target.value || undefined })
-            }
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-          >
-            <option value="">Todas</option>
-            {properties.map((prop) => (
-              <option key={prop.id} value={prop.id}>
-                {prop.shortName || prop.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-medium text-neutral-700 mb-1">
             Tipo
@@ -450,33 +451,90 @@ export default function InventoryInboxClient({
         />
       )}
 
-      {/* Lista de items */}
-      {items.length === 0 ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
-          <p className="text-base text-neutral-600">
-            {tab === "pending"
-              ? "No hay pendientes"
-              : "No hay items resueltos"}
-          </p>
+      {/* VISTA WEB (lg+): split de dos paneles */}
+      <div className="hidden lg:flex border border-neutral-200 rounded-2xl overflow-hidden h-[calc(100vh-280px)]">
+        {/* Panel izquierdo: propiedades */}
+        <div className="w-52 shrink-0 border-r border-neutral-200 bg-neutral-50 overflow-y-auto">
+          {countByProperty.map((p) => {
+            const isSelected = p.id === selectedPropertyId;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setSelectedPropertyId(p.id)}
+                className={`w-full text-left px-4 py-3 transition-colors border-b border-neutral-100 last:border-b-0 ${
+                  isSelected
+                    ? "border-r-2 border-r-neutral-900 bg-white"
+                    : "hover:bg-neutral-100"
+                }`}
+              >
+                <p className={`text-sm font-medium truncate ${isSelected ? "text-neutral-900" : "text-neutral-600"}`}>
+                  {p.shortName ?? p.name}
+                </p>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {p.count} {p.count === 1 ? "incidencia" : "incidencias"}
+                </p>
+              </button>
+            );
+          })}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item) => (
-            <InventoryInboxItemCard
-              key={`${item.type}-${item.id}`}
-              item={item}
-              inboxReturnUrl={inboxReturnUrl}
-              onApplyChange={handleApplyChange}
-              onRejectChange={handleRejectChange}
-              onResolveReport={(report) => {
-                setSelectedReport(report);
-                setShowResolveModal(true);
-              }}
-              disabled={isPending || tab === "resolved"}
-            />
-          ))}
+
+        {/* Panel derecho: incidencias de la propiedad seleccionada */}
+        <div className="flex-1 overflow-y-auto bg-white p-4">
+          {desktopItems.length === 0 ? (
+            <div className="flex items-center justify-center h-full py-12">
+              <p className="text-sm text-neutral-400">
+                {tab === "pending" ? "No hay pendientes para esta propiedad." : "No hay resueltos para esta propiedad."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {desktopItems.map((item) => (
+                <InventoryInboxItemCard
+                  key={`${item.type}-${item.id}`}
+                  item={item}
+                  inboxReturnUrl={inboxReturnUrl}
+                  onApplyChange={handleApplyChange}
+                  onRejectChange={handleRejectChange}
+                  onResolveReport={(report) => {
+                    setSelectedReport(report);
+                    setShowResolveModal(true);
+                  }}
+                  disabled={isPending || tab === "resolved"}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* VISTA MOBILE (<lg): lista plana original */}
+      <div className="lg:hidden">
+        {mobileItems.length === 0 ? (
+          <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
+            <p className="text-base text-neutral-600">
+              {tab === "pending" ? "No hay pendientes" : "No hay items resueltos"}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {mobileItems.map((item) => (
+              <InventoryInboxItemCard
+                key={`${item.type}-${item.id}`}
+                item={item}
+                inboxReturnUrl={inboxReturnUrl}
+                onApplyChange={handleApplyChange}
+                onRejectChange={handleRejectChange}
+                onResolveReport={(report) => {
+                  setSelectedReport(report);
+                  setShowResolveModal(true);
+                }}
+                disabled={isPending || tab === "resolved"}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modal para resolver reporte */}
       {showResolveModal && selectedReport && selectedReport.type === "REPORT" && (
