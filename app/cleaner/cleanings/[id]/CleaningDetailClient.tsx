@@ -26,18 +26,13 @@ interface InventoryReview {
   reports: any[];
 }
 
-interface CleaningChecklistItem {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-}
-
 interface CleaningDetailClientProps {
   cleaningId: string;
   propertyId: string;
   review: InventoryReview | null;
   inventoryLines: InventoryLine[];
-  checklistItems: CleaningChecklistItem[];
+  /** @deprecated No longer used for completion validation. Kept for backward compat. */
+  checklistItems?: unknown[];
   returnTo: string;
   memberId?: string;
   cleaningStatus: string;
@@ -49,7 +44,6 @@ export default function CleaningDetailClient({
   propertyId,
   review,
   inventoryLines,
-  checklistItems,
   returnTo,
   memberId,
   cleaningStatus,
@@ -81,7 +75,6 @@ export default function CleaningDetailClient({
         <section className="p-4">
           <CompleteCleaningButton
             cleaningId={cleaningId}
-            checklistItems={checklistItems}
             returnTo={returnTo}
             inventoryCardRef={inventoryCardRef}
           />

@@ -22,13 +22,13 @@ const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"
 
 export async function startTaskJob(formData: FormData) {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const jobId = String(formData.get("jobId") || "");
 
+  // NOTA: NO filtrar por user.tenantId — el job pertenece al tenant del Host,
+  // no al tenant del Cleaner. La autorización se garantiza via sesión + UUID opaco.
   const job = await prisma.taskJob.findFirst({
-    where: { id: jobId, tenantId },
+    where: { id: jobId },
   });
   if (!job) throw new Error("Job no encontrado");
   if (job.status !== "PENDING") throw new Error("Job ya está en progreso o finalizado");
@@ -39,7 +39,7 @@ export async function startTaskJob(formData: FormData) {
   });
 
   await logTaskEvent({
-    tenantId,
+    tenantId: job.tenantId,
     jobId,
     eventType: "STARTED",
     actorId: user.id,
@@ -54,8 +54,6 @@ export async function startTaskJob(formData: FormData) {
 
 export async function respondTaskStep(formData: FormData) {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const stepId = String(formData.get("stepId") || "");
   const jobId = String(formData.get("jobId") || "");
@@ -66,22 +64,24 @@ export async function respondTaskStep(formData: FormData) {
   const textValue = String(formData.get("textValue") || "") || null;
   const notes = String(formData.get("notes") || "") || null;
 
+  // NO filtrar por user.tenantId — job/step pertenecen al tenant del Host
   const step = await prisma.taskJobStep.findFirst({
-    where: { id: stepId, tenantId },
+    where: { id: stepId },
     include: { section: true },
   });
   if (!step) throw new Error("Paso no encontrado");
 
-  // Verificar que el job pertenece al tenant
   const job = await prisma.taskJob.findFirst({
-    where: { id: jobId, tenantId },
+    where: { id: jobId },
   });
   if (!job) throw new Error("Job no encontrado");
+
+  const effectiveTenantId = job.tenantId;
 
   await prisma.taskJobStepResponse.upsert({
     where: { stepId },
     create: {
-      tenantId,
+      tenantId: effectiveTenantId,
       stepId,
       respondedAt: new Date(),
       confirmed,
@@ -106,7 +106,7 @@ export async function respondTaskStep(formData: FormData) {
   });
 
   await logTaskEvent({
-    tenantId,
+    tenantId: effectiveTenantId,
     jobId,
     eventType: "STEP_RESPONDED",
     actorId: user.id,
@@ -122,22 +122,28 @@ export async function respondTaskStep(formData: FormData) {
 
 export async function confirmTaskSection(formData: FormData) {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const sectionId = String(formData.get("sectionId") || "");
   const jobId = String(formData.get("jobId") || "");
   const notes = String(formData.get("notes") || "") || null;
 
+  // NO filtrar por user.tenantId — section/job pertenecen al tenant del Host
   const section = await prisma.taskJobSection.findFirst({
-    where: { id: sectionId, tenantId },
+    where: { id: sectionId },
   });
   if (!section) throw new Error("Sección no encontrada");
+
+  const job = await prisma.taskJob.findFirst({
+    where: { id: jobId },
+  });
+  if (!job) throw new Error("Job no encontrado");
+
+  const effectiveTenantId = job.tenantId;
 
   await prisma.taskJobSectionResponse.upsert({
     where: { sectionId },
     create: {
-      tenantId,
+      tenantId: effectiveTenantId,
       sectionId,
       confirmedAt: new Date(),
       notes,
@@ -154,7 +160,7 @@ export async function confirmTaskSection(formData: FormData) {
   });
 
   await logTaskEvent({
-    tenantId,
+    tenantId: effectiveTenantId,
     jobId,
     eventType: "SECTION_CONFIRMED",
     actorId: user.id,
@@ -170,22 +176,23 @@ export async function confirmTaskSection(formData: FormData) {
 
 export async function deferTaskSection(formData: FormData) {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const sectionId = String(formData.get("sectionId") || "");
   const jobId = String(formData.get("jobId") || "");
   const reason = String(formData.get("reason") || "").trim() || null;
 
+  // NO filtrar por user.tenantId — section/job pertenecen al tenant del Host
   const section = await prisma.taskJobSection.findFirst({
-    where: { id: sectionId, tenantId },
+    where: { id: sectionId },
   });
   if (!section) throw new Error("Sección no encontrada");
 
   const job = await prisma.taskJob.findFirst({
-    where: { id: jobId, tenantId },
+    where: { id: jobId },
   });
   if (!job) throw new Error("Job no encontrado");
+
+  const effectiveTenantId = job.tenantId;
 
   await prisma.taskJobSection.update({
     where: { id: sectionId },
@@ -198,7 +205,7 @@ export async function deferTaskSection(formData: FormData) {
   });
 
   await createCarryForwardFromSection(
-    tenantId,
+    effectiveTenantId,
     job.propertyId,
     jobId,
     sectionId,
@@ -208,7 +215,7 @@ export async function deferTaskSection(formData: FormData) {
   );
 
   await logTaskEvent({
-    tenantId,
+    tenantId: effectiveTenantId,
     jobId,
     eventType: "DEFERRED",
     actorId: user.id,
@@ -224,19 +231,20 @@ export async function deferTaskSection(formData: FormData) {
 
 export async function completeTaskJob(formData: FormData) {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const jobId = String(formData.get("jobId") || "");
 
+  // NO filtrar por user.tenantId — job pertenece al tenant del Host
   const job = await prisma.taskJob.findFirst({
-    where: { id: jobId, tenantId },
+    where: { id: jobId },
   });
   if (!job) throw new Error("Job no encontrado");
   if (job.status !== "IN_PROGRESS") throw new Error("El job no está en progreso");
 
+  const effectiveTenantId = job.tenantId;
+
   // Validación estricta de cierre
-  const { canComplete, blockers } = await validateJobCompletion(jobId, tenantId);
+  const { canComplete, blockers } = await validateJobCompletion(jobId, effectiveTenantId);
   if (!canComplete) {
     throw new Error(`No se puede completar el job:\n${blockers.join("\n")}`);
   }
@@ -247,7 +255,7 @@ export async function completeTaskJob(formData: FormData) {
   });
 
   await logTaskEvent({
-    tenantId,
+    tenantId: effectiveTenantId,
     jobId,
     eventType: "COMPLETED",
     actorId: user.id,
@@ -263,21 +271,21 @@ export async function completeTaskJob(formData: FormData) {
 
 export async function attachStepEvidence(formData: FormData) {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const stepId = String(formData.get("stepId") || "");
   const assetId = String(formData.get("assetId") || "");
   const caption = String(formData.get("caption") || "") || null;
 
+  // NO filtrar por user.tenantId — step pertenece al tenant del Host
   const step = await prisma.taskJobStep.findFirst({
-    where: { id: stepId, tenantId },
+    where: { id: stepId },
+    select: { tenantId: true },
   });
   if (!step) throw new Error("Paso no encontrado");
 
   await prisma.taskJobStepEvidenceAsset.create({
     data: {
-      tenantId,
+      tenantId: step.tenantId,
       stepId,
       assetId,
       syncStatus: "UPLOADED",
@@ -290,16 +298,15 @@ export async function attachStepEvidence(formData: FormData) {
 }
 
 export async function markEvidenceSyncStatus(formData: FormData) {
-  const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
+  await requireUser();
 
   const evidenceId = String(formData.get("evidenceId") || "");
   const syncStatus = String(formData.get("syncStatus") || "") as any;
   const assetId = String(formData.get("assetId") || "") || null;
 
+  // NO filtrar por user.tenantId — evidence pertenece al tenant del Host
   await prisma.taskJobStepEvidenceAsset.updateMany({
-    where: { id: evidenceId, tenantId },
+    where: { id: evidenceId },
     data: { syncStatus, assetId: assetId ?? undefined },
   });
 }
@@ -312,8 +319,6 @@ export async function uploadStepEvidenceAction(
   formData: FormData
 ): Promise<{ evidenceAssetId: string; thumbUrl: string }> {
   const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
 
   const stepId = formData.get("stepId")?.toString();
   const file = formData.get("file") as File | null;
@@ -327,20 +332,22 @@ export async function uploadStepEvidenceAction(
   if (buffer.length > MAX_FILE_SIZE)
     throw new Error("El archivo es demasiado grande. Máximo 5MB.");
 
+  // NO filtrar por user.tenantId — step pertenece al tenant del Host
   const step = await prisma.taskJobStep.findFirst({
-    where: { id: stepId, tenantId },
-    include: { section: { select: { job: { select: { id: true } } } } },
+    where: { id: stepId },
+    include: { section: { select: { job: { select: { id: true, tenantId: true } } } } },
   });
   if (!step) throw new Error("Paso no encontrado");
 
   const jobId = step.section.job.id;
+  const effectiveTenantId = step.section.job.tenantId;
   const groupId = randomUUID();
   const originalMetadata = await sharp(buffer).metadata();
   const thumbnailResult = await generateThumbnail(buffer, file.type);
 
   const fileExt = file.name.split(".").pop() || "jpg";
-  const originalKey = `${tenantId}/jobs/${jobId}/steps/${stepId}/${groupId}/original.${fileExt}`;
-  const thumbKey = `${tenantId}/jobs/${jobId}/steps/${stepId}/${groupId}/thumb_256.${thumbnailResult.format}`;
+  const originalKey = `${effectiveTenantId}/jobs/${jobId}/steps/${stepId}/${groupId}/original.${fileExt}`;
+  const thumbKey = `${effectiveTenantId}/jobs/${jobId}/steps/${stepId}/${groupId}/thumb_256.${thumbnailResult.format}`;
 
   try {
     const [originalUpload, thumbUpload] = await Promise.all([
@@ -361,7 +368,7 @@ export async function uploadStepEvidenceAction(
     const result = await prisma.$transaction(async (tx) => {
       await tx.asset.create({
         data: {
-          tenantId,
+          tenantId: effectiveTenantId,
           type: "IMAGE",
           provider: "SUPABASE",
           variant: "ORIGINAL",
@@ -378,7 +385,7 @@ export async function uploadStepEvidenceAction(
 
       const thumbAsset = await tx.asset.create({
         data: {
-          tenantId,
+          tenantId: effectiveTenantId,
           type: "IMAGE",
           provider: "SUPABASE",
           variant: "THUMB_256",
@@ -399,7 +406,7 @@ export async function uploadStepEvidenceAction(
 
       const ea = await tx.taskJobStepEvidenceAsset.create({
         data: {
-          tenantId,
+          tenantId: effectiveTenantId,
           stepId,
           assetId: thumbAsset.id,
           syncStatus: "UPLOADED",
@@ -422,14 +429,13 @@ export async function uploadStepEvidenceAction(
 }
 
 export async function deleteStepEvidenceAction(formData: FormData): Promise<void> {
-  const user = await requireUser();
-  const tenantId = user.tenantId;
-  if (!tenantId) throw new Error("Usuario sin tenant");
+  await requireUser();
 
   const evidenceAssetId = formData.get("evidenceAssetId")?.toString();
   if (!evidenceAssetId) throw new Error("evidenceAssetId es requerido");
 
+  // NO filtrar por user.tenantId — evidence pertenece al tenant del Host
   await prisma.taskJobStepEvidenceAsset.deleteMany({
-    where: { id: evidenceAssetId, tenantId },
+    where: { id: evidenceAssetId },
   });
 }

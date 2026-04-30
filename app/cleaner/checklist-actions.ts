@@ -7,7 +7,7 @@
 import prisma from "@/lib/prisma";
 import { getDefaultTenant } from "@/lib/tenant";
 import { revalidatePath } from "next/cache";
-import { NotCompletedReasonCode } from "@/lib/generated/prisma";
+import { validateJobCompletion } from "@/lib/tareas-pro/validation";
 
 export async function updateChecklistItemCompletion(
   cleaningId: string,
@@ -46,9 +46,10 @@ export async function updateChecklistItemCompletion(
 
 export async function completeCleaningWithReasons(
   cleaningId: string,
-  incompleteItems: Array<{
+  // Parámetro mantenido por compatibilidad — ya no se usa para validar ni bloquear
+  _incompleteItems?: Array<{
     itemId: string;
-    reasonCode: NotCompletedReasonCode;
+    reasonCode: string;
     reasonNote?: string;
   }>
 ): Promise<{ success: boolean; requiresInventoryReview?: boolean }> {
@@ -57,77 +58,52 @@ export async function completeCleaningWithReasons(
     throw new Error("No tenant found");
   }
 
-  // GATING: Verificar que existe una revisión de inventario SUBMITTED antes de permitir concluir
+  // ── 1. GATING: Inventario ───────────────────────────────────────────
+  // La revisión de inventario sigue siendo obligatoria antes de completar.
   try {
     const inventoryReview = await prisma.inventoryReview.findUnique({
-      where: {
-        cleaningId: cleaningId,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
-    });
-
-    console.log("[completeCleaningWithReasons] Verificando revisión de inventario:", {
-      cleaningId,
-      hasReview: !!inventoryReview,
-      reviewStatus: inventoryReview?.status,
+      where: { cleaningId },
+      select: { id: true, status: true },
     });
 
     if (!inventoryReview || inventoryReview.status !== "SUBMITTED") {
-      console.warn(`[completeCleaningWithReasons] Revisión de inventario requerida o no enviada para cleaningId: ${cleaningId}. Status: ${inventoryReview?.status}`);
-      // Retornar resultado en lugar de lanzar error
       return { success: false, requiresInventoryReview: true };
     }
-    console.log(`[completeCleaningWithReasons] Revisión de inventario SUBMITTED encontrada para cleaningId: ${cleaningId}`);
   } catch (error: any) {
-    console.error("[completeCleaningWithReasons] Error al verificar revisión de inventario:", error);
-    // Si el error es por tabla no encontrada (migración no aplicada), lanzar un error más específico
     if (error.message.includes("does not exist") || error.message.includes("P2025")) {
-      throw new Error("DATABASE_SCHEMA_MISMATCH: La tabla InventoryReview no existe. Asegúrate de que la migración se haya aplicado.");
+      throw new Error("DATABASE_SCHEMA_MISMATCH: La tabla InventoryReview no existe.");
     }
-    // Para otros errores, propagarlos
     throw error;
   }
 
-  // 2. Validar que no falten items por completar (que no se enviaron razones para ellos)
-  // Obtenemos los IDs de los items que se enviaron con razones
-  const itemIdsWithReasons = new Set(incompleteItems.map(i => i.itemId));
-  
-  // Buscamos en DB si hay CUALQUIER otro item activo que no esté completado y no esté en la lista enviada
-  const missingIncompleteItems = await (prisma as any).cleaningChecklistItem.count({
+  // ── 2. GATING: Tareas de la propiedad ──────────────────────────────
+  // Si hay TaskJobs vinculados a esta limpieza con pasos obligatorios pendientes,
+  // bloquear el cierre. NO filtrar por user.tenantId — los jobs pertenecen al
+  // tenant del Host. Se usa el tenantId de cada job.
+  const linkedJobs = await prisma.taskJob.findMany({
     where: {
       cleaningId,
-      tenantId: tenant.id,
-      isCompleted: false,
-      isRemovedFromTemplate: false,
-      NOT: {
-        id: { in: Array.from(itemIdsWithReasons) }
-      }
-    }
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+    },
+    select: { id: true, tenantId: true },
   });
 
-  if (missingIncompleteItems > 0) {
-    throw new Error("No se pueden completar: Hay tareas pendientes de marcar o justificar.");
+  if (linkedJobs.length > 0) {
+    const allBlockers: string[] = [];
+    for (const job of linkedJobs) {
+      const { canComplete, blockers } = await validateJobCompletion(job.id, job.tenantId);
+      if (!canComplete) {
+        allBlockers.push(...blockers);
+      }
+    }
+    if (allBlockers.length > 0) {
+      throw new Error(
+        `Hay tareas de la propiedad con pasos obligatorios pendientes:\n${allBlockers.join("\n")}`
+      );
+    }
   }
 
-  // 3. Actualizar razones de items incompletos
-  for (const item of incompleteItems) {
-    await (prisma as any).cleaningChecklistItem.updateMany({
-      where: {
-        id: item.itemId,
-        cleaningId,
-        tenantId: tenant.id,
-      },
-      data: {
-        notCompletedReasonCode: item.reasonCode,
-        notCompletedReasonNote: item.reasonNote || null,
-      },
-    });
-  }
-
-  // Marcar limpieza como completada
+  // ── 3. Marcar limpieza como completada ─────────────────────────────
   await (prisma as any).cleaning.updateMany({
     where: {
       id: cleaningId,
@@ -136,10 +112,8 @@ export async function completeCleaningWithReasons(
     data: {
       status: "COMPLETED",
       completedAt: new Date(),
-      // Si hay items incompletos, marcar needsAttention
-      needsAttention: incompleteItems.length > 0,
-      attentionReason:
-        incompleteItems.length > 0 ? "CHECKLIST_INCOMPLETO" : null,
+      needsAttention: false,
+      attentionReason: null,
     },
   });
 
@@ -149,4 +123,3 @@ export async function completeCleaningWithReasons(
 
   return { success: true };
 }
-
