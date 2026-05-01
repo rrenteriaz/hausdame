@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import Page from "@/lib/ui/Page";
 import InventoryPropertyList from "./InventoryPropertyList";
+import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 
 export default async function InventoryHubPage({
   searchParams,
@@ -23,6 +24,7 @@ export default async function InventoryHubPage({
       name: true,
       shortName: true,
       groupName: true,
+      coverAssetGroupId: true,
       _count: {
         select: {
           propertyZones: { where: { isActive: true } },
@@ -34,7 +36,6 @@ export default async function InventoryHubPage({
   });
 
   // Con una sola propiedad no tiene sentido mostrar selector.
-  // Se pasa returnTo para que el botón de regreso vuelva al origen (ej. /host/menu).
   if (properties.length === 1) {
     const returnTo = resolvedSearchParams.returnTo ?? "/host/menu";
     redirect(
@@ -42,12 +43,47 @@ export default async function InventoryHubPage({
     );
   }
 
+  // Obtener thumbnails en batch
+  const thumbUrls = await getCoverThumbUrlsBatch(
+    properties.map((p: any) => ({
+      id: p.id,
+      coverAssetGroupId: p.coverAssetGroupId || null,
+    }))
+  );
+
+  // Agrupar propiedades por groupName
+  const groupMap = new Map<string, typeof properties>();
+  for (const p of properties) {
+    const groupName = (p as any).groupName || "Sin grupo";
+    if (!groupMap.has(groupName)) groupMap.set(groupName, []);
+    groupMap.get(groupName)!.push(p);
+  }
+
+  // Ordenar grupos: "Sin grupo" al final, resto alfabéticamente
+  const sortedGroups = Array.from(groupMap.entries()).sort(([a], [b]) => {
+    if (a === "Sin grupo") return 1;
+    if (b === "Sin grupo") return -1;
+    return a.localeCompare(b);
+  });
+
+  const groups = sortedGroups.map(([groupName, groupProperties]) => ({
+    name: groupName,
+    properties: groupProperties.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      shortName: p.shortName ?? null,
+      thumbUrl: thumbUrls.get(p.id) ?? null,
+      zones: p._count.propertyZones,
+      lines: p._count.inventoryLines,
+    })),
+  }));
+
   return (
     <Page
       title="Inventario"
       subtitle="Selecciona un alojamiento para gestionar su inventario"
     >
-      <InventoryPropertyList properties={properties} />
+      <InventoryPropertyList groups={groups} />
     </Page>
   );
 }

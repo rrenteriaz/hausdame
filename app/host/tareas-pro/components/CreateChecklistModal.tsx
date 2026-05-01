@@ -15,7 +15,7 @@ export default function CreateChecklistModal({ properties }: { properties: Prope
         onClick={() => setOpen(true)}
         className="w-full sm:w-auto bg-neutral-900 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-neutral-800 transition"
       >
-        + Crear checklist
+        + Nuevo grupo de tareas
       </button>
 
       {open && (
@@ -26,7 +26,7 @@ export default function CreateChecklistModal({ properties }: { properties: Prope
           />
           <div className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div className="px-6 py-4 border-b">
-              <h2 className="text-base font-semibold text-neutral-900">Nuevo checklist</h2>
+              <h2 className="text-base font-semibold text-neutral-900">Nueva tarea</h2>
             </div>
             <form action={createTaskTemplate} className="px-6 py-5 space-y-4">
               {/* Propiedad */}

@@ -21,10 +21,10 @@ export default async function TareasProPage({
   const sp = searchParams ? await searchParams : undefined;
   const propertyFilter = sp?.property;
 
-  const properties = (await prisma.property.findMany({
+  const properties = (await (prisma.property as any).findMany({
     where: { tenantId, isActive: true },
-    select: { id: true, name: true, shortName: true, coverAssetGroupId: true },
-  })).sort((a, b) =>
+    select: { id: true, name: true, shortName: true, groupName: true, coverAssetGroupId: true },
+  })).sort((a: any, b: any) =>
     (a.shortName ?? a.name).localeCompare(b.shortName ?? b.name, "es")
   );
 
@@ -45,8 +45,8 @@ export default async function TareasProPage({
 
   // Obtener thumbnails de propiedades que tienen coverAssetGroupId
   const assetGroupIds = properties
-    .map((p) => p.coverAssetGroupId)
-    .filter((id): id is string => id != null);
+    .map((p: any) => p.coverAssetGroupId)
+    .filter((id: any): id is string => id != null);
 
   const thumbAssets =
     assetGroupIds.length > 0
@@ -67,10 +67,11 @@ export default async function TareasProPage({
     countsByProperty.set(t.propertyId, entry);
   }
 
-  const propertiesForSplit = properties.map((p) => ({
+  const propertiesForSplit = properties.map((p: any) => ({
     id: p.id,
     name: p.name,
-    shortName: p.shortName,
+    shortName: p.shortName ?? null,
+    groupName: p.groupName ?? null,
     coverThumbUrl: p.coverAssetGroupId
       ? (thumbByGroupId.get(p.coverAssetGroupId) ?? null)
       : null,
@@ -96,7 +97,7 @@ export default async function TareasProPage({
   return (
     <HostWebContainer>
       <Page
-        title="Tareas Pro"
+        title="Tareas"
         subtitle="Estándares operativos por propiedad"
         showBack
         backHref="/host/menu"
@@ -111,8 +112,8 @@ export default async function TareasProPage({
           </div>
         }
       >
-        {/* Botón crear checklist — visible en ambas vistas */}
-        <div className="mb-5">
+        {/* Botón crear — solo mobile (desktop: el botón vive en el panel derecho del split) */}
+        <div className="mb-5 lg:hidden">
           <CreateChecklistModal properties={properties} />
         </div>
 
@@ -145,8 +146,8 @@ export default async function TareasProPage({
             {mobileTemplates.length === 0 ? (
               <p className="text-sm text-gray-400 py-6 text-center">
                 {propertyFilter && propertyFilter !== "all"
-                  ? "Esta propiedad aún no tiene checklists."
-                  : "Aún no hay checklists. Crea el primero."}
+                  ? "Esta propiedad aún no tiene tareas."
+                  : "Aún no hay tareas. Crea la primera."}
               </p>
             ) : (
               mobileTemplates.map((t) => {
