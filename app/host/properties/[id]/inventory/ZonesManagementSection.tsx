@@ -166,9 +166,11 @@ function SortableZoneRow({
 export default function ZonesManagementSection({
   propertyId,
   initialZones,
+  triggerClassName,
 }: {
   propertyId: string;
   initialZones: Zone[];
+  triggerClassName?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -315,7 +317,7 @@ export default function ZonesManagementSection({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"
+        className={triggerClassName ?? "rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"}
       >
         Gestión de áreas
       </button>

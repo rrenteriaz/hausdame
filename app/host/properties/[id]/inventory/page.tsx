@@ -19,8 +19,7 @@ import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import ZonesManagementSection from "./ZonesManagementSection";
 import CopyZoneInventoryModal from "./CopyZoneInventoryModal";
-import { bootstrapPropertyZones } from "@/lib/zones/bootstrapPropertyZones";
-import ZonesBannerClient from "@/lib/ui/inventory/ZonesBannerClient";
+import MobileInventoryActionBar from "./MobileInventoryActionBar";
 
 export default async function InventoryPage({
   params,
@@ -97,7 +96,7 @@ export default async function InventoryPage({
   );
 
   // Phase 12: Cargar zonas OPERATIONAL activas con conteo de items (para ZonesManagementSection)
-  const zonesQuery = {
+  let propertyZones = await prisma.propertyZone.findMany({
     where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL" as const, isActive: true },
     select: {
       id: true,
@@ -107,15 +106,7 @@ export default async function InventoryPage({
       _count: { select: { inventoryLines: { where: { isActive: true } } } },
     },
     orderBy: { sortOrder: "asc" as const },
-  };
-  // Bootstrap idempotente: crea zonas canónicas que nunca existieron.
-  // reactivate: false → respeta borrados intencionales del usuario (solo crea, no reactiva).
-  // La reactivación se reserva para getPropertyZones (picker del modal de agregar ítem).
-  const bootstrapResult = await bootstrapPropertyZones(tenantId, property.id, undefined, { reactivate: false });
-  let propertyZones = await prisma.propertyZone.findMany(zonesQuery);
-
-  // Mostrar banner solo la primera vez (cuando se crearon zonas nuevas)
-  const showZonesBanner = bootstrapResult.operationalCreated > 0;
+  });
 
   // Obtener historial de incidencias (stats) para las líneas mostradas
   const lineIds = inventoryLines.map(line => line.id);
@@ -192,8 +183,6 @@ export default async function InventoryPage({
         backHref={returnTo}
       >
         <div className="space-y-6">
-          {showZonesBanner && <ZonesBannerClient propertyId={property.id} />}
-
           {/* Lista agrupada por área */}
           {inventoryLines.length === 0 ? (
             <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
@@ -221,103 +210,121 @@ export default async function InventoryPage({
             </div>
           ) : (
             <>
-              {/* Buscador y botones */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <form
-                  method="get"
-                  className="flex-1 relative"
-                  action={`/host/properties/${property.id}/inventory`}
-                >
-                  <input
-                    type="text"
-                    name="q"
-                    placeholder="Buscar por nombre, área o categoría..."
-                    defaultValue={searchTerm}
-                    className="w-full rounded-lg border border-neutral-300 pl-3 pr-10 py-2 text-base focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-neutral-500 hover:text-neutral-700 rounded transition-colors"
-                    aria-label="Buscar"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </button>
-                  {areaFilter && (
-                    <input type="hidden" name="area" value={areaFilter} />
-                  )}
-                  {categoryFilter && (
-                    <input type="hidden" name="category" value={categoryFilter} />
-                  )}
-                  {priorityFilter && (
-                    <input type="hidden" name="priority" value={priorityFilter} />
-                  )}
-                </form>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <AddInventoryItemButton propertyId={property.id} />
-                  <ApplyTemplateModal
-                    propertyId={property.id}
-                    hasExistingInventory={inventoryLines.length > 0}
-                  />
-                  {availableProperties.length > 0 && (
-                    <CopyInventoryModal
-                      propertyId={property.id}
-                      propertyName={property.shortName || property.name}
-                      availableProperties={availableProperties}
-                    />
-                  )}
-                </div>
+              {/* MOBILE (< lg): barra compacta de acciones */}
+              <div className="lg:hidden">
+                <MobileInventoryActionBar
+                  propertyId={property.id}
+                  propertyName={property.shortName || property.name}
+                  priorityFilter={priorityFilter}
+                  searchTerm={searchTerm}
+                  areaFilter={areaFilter}
+                  categoryFilter={categoryFilter}
+                  availableProperties={availableProperties}
+                  propertyZones={propertyZones}
+                  hasExistingInventory={inventoryLines.length > 0}
+                />
               </div>
 
-              {/* Filtros de prioridad + Gestión de áreas */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                {(["ALL", "HIGH", "MEDIUM", "LOW"] as const).map((p) => {
-                  const isActive = p === "ALL" ? !priorityFilter : priorityFilter === p;
-                  const params = new URLSearchParams();
-                  if (searchTerm) params.set("q", searchTerm);
-                  if (areaFilter) params.set("area", areaFilter);
-                  if (categoryFilter) params.set("category", categoryFilter);
-                  if (p !== "ALL") params.set("priority", p);
-                  const href = `/host/properties/${property.id}/inventory${params.toString() ? `?${params.toString()}` : ""}`;
-                  const label =
-                    p === "ALL"
-                      ? "Todo"
-                      : p === "HIGH"
-                      ? "🟥 Alta"
-                      : p === "MEDIUM"
-                      ? "🟨 Media"
-                      : "🟩 Baja";
-                  return (
-                    <a
-                      key={p}
-                      href={href}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                        isActive
-                          ? "bg-neutral-900 text-white"
-                          : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                      }`}
+              {/* DESKTOP (lg+): buscador, botones y filtros de prioridad */}
+              <div className="hidden lg:block space-y-4">
+                {/* Buscador y botones */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <form
+                    method="get"
+                    className="flex-1 relative"
+                    action={`/host/properties/${property.id}/inventory`}
+                  >
+                    <input
+                      type="text"
+                      name="q"
+                      placeholder="Buscar por nombre, área o categoría..."
+                      defaultValue={searchTerm}
+                      className="w-full rounded-lg border border-neutral-300 pl-3 pr-10 py-2 text-base focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-neutral-500 hover:text-neutral-700 rounded transition-colors"
+                      aria-label="Buscar"
                     >
-                      {label}
-                    </a>
-                  );
-                })}
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </button>
+                    {areaFilter && (
+                      <input type="hidden" name="area" value={areaFilter} />
+                    )}
+                    {categoryFilter && (
+                      <input type="hidden" name="category" value={categoryFilter} />
+                    )}
+                    {priorityFilter && (
+                      <input type="hidden" name="priority" value={priorityFilter} />
+                    )}
+                  </form>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <AddInventoryItemButton propertyId={property.id} />
+                    <ApplyTemplateModal
+                      propertyId={property.id}
+                      hasExistingInventory={inventoryLines.length > 0}
+                    />
+                    {availableProperties.length > 0 && (
+                      <CopyInventoryModal
+                        propertyId={property.id}
+                        propertyName={property.shortName || property.name}
+                        availableProperties={availableProperties}
+                      />
+                    )}
+                  </div>
                 </div>
-                <ZonesManagementSection
-                  propertyId={property.id}
-                  initialZones={propertyZones}
-                />
+
+                {/* Filtros de prioridad + Gestión de áreas */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                  {(["ALL", "HIGH", "MEDIUM", "LOW"] as const).map((p) => {
+                    const isActive = p === "ALL" ? !priorityFilter : priorityFilter === p;
+                    const params = new URLSearchParams();
+                    if (searchTerm) params.set("q", searchTerm);
+                    if (areaFilter) params.set("area", areaFilter);
+                    if (categoryFilter) params.set("category", categoryFilter);
+                    if (p !== "ALL") params.set("priority", p);
+                    const href = `/host/properties/${property.id}/inventory${params.toString() ? `?${params.toString()}` : ""}`;
+                    const label =
+                      p === "ALL"
+                        ? "Todo"
+                        : p === "HIGH"
+                        ? "🟥 Alta"
+                        : p === "MEDIUM"
+                        ? "🟨 Media"
+                        : "🟩 Baja";
+                    return (
+                      <a
+                        key={p}
+                        href={href}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
+                          isActive
+                            ? "bg-neutral-900 text-white"
+                            : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                        }`}
+                      >
+                        {label}
+                      </a>
+                    );
+                  })}
+                  </div>
+                  <ZonesManagementSection
+                    propertyId={property.id}
+                    initialZones={propertyZones}
+                  />
+                </div>
               </div>
 
               {/* Info de resultados */}

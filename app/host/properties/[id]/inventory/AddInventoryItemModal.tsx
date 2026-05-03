@@ -229,7 +229,8 @@ export default function AddInventoryItemModal({
       setLoadingAreas(true);
       getPropertyZones(propertyId)
         .then((zones) => {
-          setPropertyZones(zones);
+          // Solo zonas activas para el picker del modal (las inactivas son residuales)
+          setPropertyZones(zones.filter((z) => z.isActive));
         })
         .catch((error) => {
           console.error("Error loading zones:", error);

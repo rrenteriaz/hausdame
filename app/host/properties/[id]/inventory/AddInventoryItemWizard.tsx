@@ -21,6 +21,7 @@ import {
   getPropertyZones,
   checkDuplicateInventoryLineAction,
   createPropertyZoneAction,
+  reactivatePropertyZoneAction,
 } from "@/app/host/inventory/actions";
 import {
   OPERATIONAL_CATEGORY_OPTIONS,
@@ -33,6 +34,17 @@ import { isBedSizeVariantable } from "@/lib/inventory-suggestions";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { normalizeName, normalizeVariantValue } from "@/lib/inventory-normalize";
 import { CANONICAL_VARIANT_GROUPS } from "@/lib/inventory-canonical-variants";
+
+// Áreas canónicas que se sugieren cuando una propiedad no las tiene todavía.
+// NO se crean en BD hasta que el usuario elige una.
+const DEFAULT_ZONE_SUGGESTIONS = [
+  "Entrada",
+  "Sala",
+  "Comedor",
+  "Cocina",
+  "Baño 1",
+  "Recámara 1",
+] as const;
 
 interface AddInventoryItemWizardProps {
   propertyId: string;
@@ -93,7 +105,7 @@ export default function AddInventoryItemWizard({
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [frequentItems, setFrequentItems] = useState<CatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; sortOrder: number | null; operationalCategory: PropertyZoneOperationalCategory | null }[]>([]); // Phase 7
+  const [propertyZones, setPropertyZones] = useState<{ id: string; name: string; normalizedName: string; sortOrder: number | null; operationalCategory: PropertyZoneOperationalCategory | null; isActive: boolean }[]>([]); // Phase 7
 
   // Phase 12: inline zone creation sub-form
   const [showNewZoneForm, setShowNewZoneForm] = useState(false);
@@ -730,6 +742,25 @@ export default function AddInventoryItemWizard({
               : null);
         const isVariantable = !!wizardVariantGroup;
 
+        // Zonas activas: las que el usuario puede seleccionar directamente
+        const activeZones = propertyZones.filter((z) => z.isActive);
+        const activeNormalizedNames = new Set(activeZones.map((z) => z.normalizedName));
+
+        // Para cada sugerencia canónica: si la zona activa ya existe no mostrarla
+        // (ya aparece como botón sólido). Si la zona existe inactiva → reactivable.
+        // Si no existe → creatable.
+        type SuggestionEntry = {
+          name: string;
+          inactiveZoneId: string | null; // null = crear nueva; string = reactivar
+        };
+        const suggestionEntries: SuggestionEntry[] = DEFAULT_ZONE_SUGGESTIONS
+          .filter((name) => !activeNormalizedNames.has(normalizeName(name)))
+          .map((name) => {
+            const nn = normalizeName(name);
+            const inactive = propertyZones.find((z) => !z.isActive && z.normalizedName === nn);
+            return { name, inactiveZoneId: inactive?.id ?? null };
+          });
+
         return (
           <div className="space-y-4">
             <div>
@@ -740,9 +771,11 @@ export default function AddInventoryItemWizard({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {propertyZones.map((zone) => (
+              {/* Zonas activas existentes */}
+              {activeZones.map((zone) => (
                 <button
                   key={zone.id}
+                  disabled={isCreatingZone}
                   onClick={() => {
                     handleAreaSelect(zone.id, zone.name);
                     if (isVariantable && !variantValue) {
@@ -756,12 +789,60 @@ export default function AddInventoryItemWizard({
                     propertyZoneId === zone.id
                       ? "border-neutral-900 bg-neutral-900 text-white"
                       : "border-neutral-200 hover:border-neutral-300"
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   {zone.name}
                 </button>
               ))}
+
+              {/* Sugerencias canónicas: nuevas (crear) o inactivas (reactivar) */}
+              {suggestionEntries.map(({ name, inactiveZoneId }) => (
+                <button
+                  key={name}
+                  disabled={isCreatingZone || showNewZoneForm}
+                  onClick={async () => {
+                    setIsCreatingZone(true);
+                    setNewZoneError(null);
+                    try {
+                      let zone: { id: string; name: string; normalizedName: string; sortOrder: number | null; operationalCategory: PropertyZoneOperationalCategory | null; isActive: boolean };
+                      if (inactiveZoneId) {
+                        // Zona existe inactiva → reactivar
+                        zone = await reactivatePropertyZoneAction(propertyId, inactiveZoneId);
+                        setPropertyZones((prev) =>
+                          prev.map((z) => (z.id === zone.id ? zone : z))
+                        );
+                      } else {
+                        // Zona no existe → crear
+                        zone = await createPropertyZoneAction(
+                          propertyId,
+                          name,
+                          inferZoneCategory(name) ?? null
+                        );
+                        setPropertyZones((prev) => [...prev, zone]);
+                      }
+                      handleAreaSelect(zone.id, zone.name);
+                      if (!isVariantable || variantValue) {
+                        setStep("ATTENTION");
+                      }
+                    } catch (err) {
+                      setNewZoneError(
+                        err instanceof Error ? err.message : "Error al procesar el área"
+                      );
+                    } finally {
+                      setIsCreatingZone(false);
+                    }
+                  }}
+                  className="p-4 rounded-lg border-2 border-dashed border-neutral-200 text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition disabled:opacity-50"
+                >
+                  {isCreatingZone ? "..." : name}
+                </button>
+              ))}
             </div>
+
+            {/* Error de sugerencia (solo cuando el formulario inline no está abierto) */}
+            {!showNewZoneForm && newZoneError && (
+              <p className="text-xs text-red-600">{newZoneError}</p>
+            )}
 
             {/* Phase 12: Crear nueva zona inline */}
             {!showNewZoneForm ? (

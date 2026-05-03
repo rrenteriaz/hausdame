@@ -12,12 +12,14 @@ interface CopyInventoryModalProps {
     name: string;
     shortName: string | null;
   }>;
+  triggerClassName?: string;
 }
 
 export default function CopyInventoryModal({
   propertyId,
   propertyName,
   availableProperties,
+  triggerClassName,
 }: CopyInventoryModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -114,9 +116,9 @@ export default function CopyInventoryModal({
       <button
         type="button"
         onClick={handleOpen}
-        className="w-full sm:w-auto rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 active:scale-[0.99] transition"
+        className={triggerClassName ?? "w-full sm:w-auto rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 active:scale-[0.99] transition"}
       >
-        Copiar desde otra propiedad
+        Copiar inventario
       </button>
 
       {/* Modal */}

@@ -7,11 +7,13 @@ import { applyInventoryTemplateToProperty } from "@/app/host/inventory/template-
 interface ApplyTemplateModalProps {
   propertyId: string;
   hasExistingInventory: boolean;
+  triggerClassName?: string;
 }
 
 export default function ApplyTemplateModal({
   propertyId,
   hasExistingInventory,
+  triggerClassName,
 }: ApplyTemplateModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -112,9 +114,9 @@ export default function ApplyTemplateModal({
       <button
         type="button"
         onClick={handleOpen}
-        className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"
+        className={triggerClassName ?? "rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"}
       >
-        Crear inventario desde plantilla
+        Crear desde plantilla
       </button>
 
       {/* Modal */}

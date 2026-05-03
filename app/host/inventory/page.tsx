@@ -27,7 +27,7 @@ export default async function InventoryHubPage({
       coverAssetGroupId: true,
       _count: {
         select: {
-          propertyZones: { where: { isActive: true } },
+          propertyZones: { where: { isActive: true, zoneType: "OPERATIONAL" } },
           inventoryLines: { where: { isActive: true } },
         },
       },

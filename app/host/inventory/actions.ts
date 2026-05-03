@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { bootstrapPropertyZones } from "@/lib/zones/bootstrapPropertyZones";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import {
   createInventoryLine,
@@ -1192,18 +1191,15 @@ export async function getPropertyZones(propertyId: string) {
   if (!tenantId) return [];
 
   try {
-    // Bootstrap idempotente: crea zonas canónicas que nunca han existido.
-    // reactivate: false → respeta eliminaciones manuales del usuario (no reactiva soft-deleted).
-    await bootstrapPropertyZones(tenantId, propertyId, undefined, { reactivate: false });
-
     const zones = await prisma.propertyZone.findMany({
       where: {
         tenantId,
         propertyId,
         zoneType: "OPERATIONAL",
-        isActive: true,
+        // Incluye activas e inactivas: el wizard necesita las inactivas
+        // para filtrar sugerencias y evitar errores P2002 por normalizedName.
       },
-      select: { id: true, name: true, sortOrder: true, operationalCategory: true },
+      select: { id: true, name: true, normalizedName: true, sortOrder: true, operationalCategory: true, isActive: true },
       orderBy: { sortOrder: "asc" },
     });
     return zones;
@@ -1260,7 +1256,7 @@ export async function createPropertyZoneAction(
         sortOrder,
         isActive: true,
       },
-      select: { id: true, name: true, sortOrder: true, operationalCategory: true },
+      select: { id: true, name: true, normalizedName: true, sortOrder: true, operationalCategory: true, isActive: true },
     });
     return zone;
   } catch (error: any) {
@@ -1269,6 +1265,29 @@ export async function createPropertyZoneAction(
     }
     throw error;
   }
+}
+
+/**
+ * Reactiva una zona OPERATIONAL soft-deleted para usarla en el wizard.
+ * Si ya está activa, la devuelve tal cual. Valida tenant + propiedad.
+ */
+export async function reactivatePropertyZoneAction(propertyId: string, zoneId: string) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant asociado");
+
+  const zone = await prisma.propertyZone.findFirst({
+    where: { id: zoneId, tenantId, propertyId, zoneType: "OPERATIONAL" },
+    select: { id: true, isActive: true },
+  });
+  if (!zone) throw new Error("Zona no encontrada");
+
+  const updated = await prisma.propertyZone.update({
+    where: { id: zoneId },
+    data: { isActive: true },
+    select: { id: true, name: true, normalizedName: true, sortOrder: true, operationalCategory: true, isActive: true },
+  });
+  return updated;
 }
 
 /**

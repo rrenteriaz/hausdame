@@ -60,8 +60,9 @@ export default function InventoryPropertyList({
                         )}
                       </div>
                       <p className="text-xs text-neutral-500 mt-0.5">
-                        {p.zones} {p.zones === 1 ? "área" : "áreas"} ·{" "}
-                        {p.lines} {p.lines === 1 ? "ítem" : "ítems"}
+                        {p.lines === 0
+                          ? "Sin inventario"
+                          : `${p.zones} ${p.zones === 1 ? "área" : "áreas"} · ${p.lines} ${p.lines === 1 ? "ítem" : "ítems"}`}
                       </p>
                     </div>
                   </ListRow>
