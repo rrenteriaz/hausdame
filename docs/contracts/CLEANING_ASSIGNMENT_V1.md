@@ -442,6 +442,13 @@
 - El Team no tiene `TeamMembership` con `status: ACTIVE`
 - `Cleaning.assignedMembershipId` es `null`
 
+**Nota — Roles que cuentan como ejecutores disponibles:**
+Para evaluar si el equipo tiene miembros activos, se consideran válidos los siguientes roles:
+- `TEAM_LEADER` — ejecutor por defecto; su presencia activa es suficiente para suprimir esta alerta.
+- `CLEANER` — ejecutor operativo estándar.
+
+Un equipo con solo un `TEAM_LEADER` activo **no debe** generar `NO_AVAILABLE_MEMBER`. La alerta solo aplica cuando no existe ninguna `TeamMembership` con `status: ACTIVE` y `role IN (TEAM_LEADER, CLEANER)`.
+
 **Mensaje conceptual:** "El equipo asignado no tiene miembros activos"
 
 **Severidad:** CRITICAL

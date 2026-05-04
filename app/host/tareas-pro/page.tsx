@@ -38,6 +38,7 @@ export default async function TareasProPage({
       property: { select: { name: true, shortName: true } },
       schedule: { select: { frequency: true, anchorDayOfWeek: true, anchorDayOfMonth: true } },
       _count: { select: { sections: true, jobs: true } },
+      sections: { select: { _count: { select: { steps: true } } } },
     },
   });
 
@@ -85,7 +86,7 @@ export default async function TareasProPage({
     status: t.status,
     propertyId: t.propertyId,
     sectionCount: t._count.sections,
-    jobCount: t._count.jobs,
+    stepCount: t.sections.reduce((sum, s) => sum + s._count.steps, 0),
     schedule: t.schedule,
   }));
 
@@ -127,6 +128,7 @@ export default async function TareasProPage({
             <TareasProSplitView
               properties={propertiesForSplit}
               templates={templatesForSplit}
+              initialPropertyId={propertyFilter ?? ""}
             />
           )}
         </div>
@@ -171,7 +173,7 @@ export default async function TareasProPage({
                       <p className="font-medium text-sm">{t.name}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {t.property.shortName ?? t.property.name} ·{" "}
-                        {t._count.sections} áreas · {t._count.jobs} tareas
+                        {t._count.sections} áreas · {t.sections.reduce((sum, s) => sum + s._count.steps, 0)} tareas
                       </p>
                       {isLegacyPeriodic && (
                         <p className="text-xs text-orange-600 mt-1">

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   createTaskStep,
   deleteTaskStep,
@@ -115,6 +116,7 @@ export default function ChecklistEditor({
   initialThumbsEntries: [string, Array<string | null>][];
   tenantProperties?: TenantProperty[];
 }) {
+  const router = useRouter();
   const [sections, setSections] = useState(initialSections);
   const [thumbsMap, setThumbsMap] = useState<Map<string, Array<string | null>>>(
     () => new Map(initialThumbsEntries)
@@ -130,6 +132,7 @@ export default function ChecklistEditor({
   const [photosModal, setPhotosModal] = useState<{ stepId: string; name: string } | null>(null);
   const [deleteSectionConfirm, setDeleteSectionConfirm] = useState<Section | null>(null);
   const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
 
   // Inline rename
@@ -364,7 +367,7 @@ export default function ChecklistEditor({
 
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Link href="/host/tareas-pro" className="text-gray-400 hover:text-gray-700 mt-1 shrink-0 text-lg leading-none">←</Link>
+        <button type="button" onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 mt-1 shrink-0 text-lg leading-none">←</button>
         <div className="flex-1 min-w-0">
           {editingName ? (
             <input
@@ -904,65 +907,98 @@ export default function ChecklistEditor({
       {/* Delete / Archive menu modal */}
       {deleteMenuOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteMenuOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={() => { setDeleteMenuOpen(false); setDeleteConfirm(false); }} />
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-xl p-5 space-y-4">
             <h2 className="text-base font-semibold text-neutral-900">Eliminar checklist</h2>
 
-            {/* Archivar */}
-            {template.status !== "INACTIVE" && (
-              <div className="border border-neutral-200 rounded-xl p-4 space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-neutral-800">Archivar</p>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    El checklist se desactiva y deja de generar tareas, pero conservas el historial y puedes reactivarlo cuando quieras.
+            {deleteConfirm ? (
+              /* Paso 2 — confirmación final */
+              <div className="space-y-4">
+                <div className="border border-red-200 rounded-xl p-4 bg-red-50">
+                  <p className="text-sm font-medium text-red-800">¿Estás seguro?</p>
+                  <p className="text-xs text-red-700 mt-1">
+                    {template._count.jobs > 0
+                      ? "El checklist desaparecerá de tu lista. El historial de ejecuciones se conservará internamente."
+                      : "Se eliminará el checklist con todas sus áreas y tareas. Esta acción no se puede deshacer."}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={async () => {
                     setDeleteMenuOpen(false);
+                    setDeleteConfirm(false);
                     const formData = new FormData();
                     formData.append("templateId", template.id);
-                    await archiveTaskTemplate(formData);
+                    await deleteTaskTemplate(formData);
                   }}
-                  className="w-full text-sm text-amber-700 bg-amber-50 border border-amber-200 px-4 py-2 rounded-lg font-medium hover:bg-amber-100 transition"
+                  className="w-full text-sm text-white bg-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition"
                 >
-                  Archivar checklist
+                  Sí, eliminar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  className="w-full text-sm text-neutral-500 hover:text-neutral-700 transition py-1"
+                >
+                  Cancelar
                 </button>
               </div>
+            ) : (
+              /* Paso 1 — opciones */
+              <>
+                {/* Archivar */}
+                {template.status !== "INACTIVE" && (
+                  <div className="border border-neutral-200 rounded-xl p-4 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-neutral-800">Archivar</p>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        El checklist se desactiva y deja de generar tareas, pero conservas el historial y puedes reactivarlo cuando quieras.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setDeleteMenuOpen(false);
+                        setDeleteConfirm(false);
+                        const formData = new FormData();
+                        formData.append("templateId", template.id);
+                        await archiveTaskTemplate(formData);
+                      }}
+                      className="w-full text-sm text-amber-700 bg-amber-50 border border-amber-200 px-4 py-2 rounded-lg font-medium hover:bg-amber-100 transition"
+                    >
+                      Archivar checklist
+                    </button>
+                  </div>
+                )}
+
+                {/* Eliminar */}
+                <div className="border border-red-100 rounded-xl p-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-800">Eliminar</p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      {template._count.jobs > 0
+                        ? `Este checklist tiene ${template._count.jobs} ejecución${template._count.jobs === 1 ? "" : "es"} registrada${template._count.jobs === 1 ? "" : "s"}. Desaparecerá de tu lista, pero el historial se conservará internamente.`
+                        : "Se eliminan el checklist, todas sus áreas y tareas. Esta acción no se puede deshacer."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirm(true)}
+                    className="w-full text-sm text-white bg-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition"
+                  >
+                    Eliminar checklist
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setDeleteMenuOpen(false); setDeleteConfirm(false); }}
+                  className="w-full text-sm text-neutral-500 hover:text-neutral-700 transition py-1"
+                >
+                  Cancelar
+                </button>
+              </>
             )}
-
-            {/* Eliminar */}
-            <div className="border border-red-100 rounded-xl p-4 space-y-3">
-              <div>
-                <p className="text-sm font-medium text-neutral-800">Eliminar</p>
-                <p className="text-xs text-neutral-500 mt-1">
-                  {template._count.jobs > 0
-                    ? `Este checklist tiene ${template._count.jobs} ejecución${template._count.jobs === 1 ? "" : "es"} registrada${template._count.jobs === 1 ? "" : "s"}. Desaparecerá de tu lista, pero el historial se conservará internamente.`
-                    : "Se eliminan el checklist, todas sus áreas y tareas. Esta acción no se puede deshacer."}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  setDeleteMenuOpen(false);
-                  const formData = new FormData();
-                  formData.append("templateId", template.id);
-                  await deleteTaskTemplate(formData);
-                }}
-                className="w-full text-sm text-white bg-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition"
-              >
-                Eliminar checklist
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setDeleteMenuOpen(false)}
-              className="w-full text-sm text-neutral-500 hover:text-neutral-700 transition py-1"
-            >
-              Cancelar
-            </button>
           </div>
         </div>
       )}

@@ -353,7 +353,7 @@ export default async function CleaningDetailPage({
           where: {
             teamId: cleaningTyped.teamId,
             status: "ACTIVE",
-            role: "CLEANER",
+            role: { in: ["TEAM_LEADER", "CLEANER"] },
           },
         }),
         (prisma as any).teamMember.count({

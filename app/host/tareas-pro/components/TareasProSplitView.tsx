@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { isScheduleComplete } from "@/lib/tareas-pro/domain/schedule-anchor";
 import CreateChecklistModal from "./CreateChecklistModal";
 
@@ -21,7 +22,7 @@ export type TemplateItem = {
   status: string;
   propertyId: string;
   sectionCount: number;
-  jobCount: number;
+  stepCount: number;
   schedule: {
     frequency: string;
     anchorDayOfWeek: number | null;
@@ -43,10 +44,14 @@ const SLIDE_STYLE = `
 export default function TareasProSplitView({
   properties,
   templates,
+  initialPropertyId = "",
 }: {
   properties: PropertyWithCover[];
   templates: TemplateItem[];
+  initialPropertyId?: string;
 }) {
+  const router = useRouter();
+
   // ── Derived: sorted groups ───────────────────────────────────────────────
   const groupMap = new Map<string, PropertyWithCover[]>();
   for (const p of properties) {
@@ -63,18 +68,21 @@ export default function TareasProSplitView({
   const firstGroupName = sortedGroups[0]?.[0] ?? "";
   const hasMultipleGroups = sortedGroups.length > 1;
 
-  // ── State ────────────────────────────────────────────────────────────────
-  const [mode, setMode] = useState<Mode>("group-selection");
+  // ── State — initialized from URL param when navigating back ──────────────
+  const initialGroupName = initialPropertyId
+    ? (properties.find((p) => p.id === initialPropertyId)?.groupName || "Sin grupo")
+    : "";
 
-  // State 1: which group is highlighted in the left group list
-  const [activeGroupName, setActiveGroupName] = useState<string>(firstGroupName);
-
-  // State 2: focused group + selected property
-  const [focusedGroupName, setFocusedGroupName] = useState<string>("");
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
+  const [mode, setMode] = useState<Mode>(
+    initialPropertyId ? "property-focused" : "group-selection"
+  );
+  const [activeGroupName, setActiveGroupName] = useState<string>(
+    initialPropertyId ? initialGroupName : firstGroupName
+  );
+  const [focusedGroupName, setFocusedGroupName] = useState<string>(initialGroupName);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(initialPropertyId);
 
   // ── Derived from state ───────────────────────────────────────────────────
-  // Properties shown in right panel (State 1) or left panel (State 2)
   const displayedGroupName =
     mode === "group-selection" ? activeGroupName : focusedGroupName;
   const displayedProperties = groupMap.get(displayedGroupName) ?? [];
@@ -95,14 +103,15 @@ export default function TareasProSplitView({
     setFocusedGroupName(gName);
     setSelectedPropertyId(propertyId);
     setMode("property-focused");
+    // Sincronizar URL para que router.back() desde un checklist regrese aquí
+    router.push(`/host/tareas-pro?property=${propertyId}`, { scroll: false });
   };
 
   const handleBackToGroups = () => {
     setMode("group-selection");
-    // Keep activeGroupName pointing at the group we came from so the right
-    // panel restores context naturally.
     setActiveGroupName(focusedGroupName || firstGroupName);
     setSelectedPropertyId("");
+    router.push("/host/tareas-pro", { scroll: false });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -396,7 +405,7 @@ export default function TareasProSplitView({
                         <div>
                           <p className="font-medium text-sm">{t.name}</p>
                           <p className="text-xs text-gray-400 mt-0.5">
-                            {t.sectionCount} áreas · {t.jobCount} tareas
+                            {t.sectionCount} áreas · {t.stepCount} tareas
                           </p>
                           {isLegacyPeriodic && (
                             <p className="text-xs text-orange-600 mt-1">
