@@ -434,6 +434,8 @@ export default async function CleanerCleaningDetailPage({
                 : null,
               textValue: step.response.textValue,
               notes: step.response.notes,
+              notCompletedReasonCode: step.response.notCompletedReasonCode,
+              notCompletedNote: step.response.notCompletedNote,
             }
           : null,
         evidencePhotos: step.evidenceAssets.flatMap((ea) =>

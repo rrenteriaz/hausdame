@@ -143,6 +143,14 @@ export default async function ReservationsPage({
             Confirmada
           </span>
           <span className="flex items-center gap-1.5">
+            <span className="inline-block w-4 h-3 rounded-sm" style={{ backgroundColor: "#2353C2" }} />
+            Empieza hoy
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-4 h-3 rounded-sm" style={{ backgroundColor: "#F07B21" }} />
+            Termina hoy
+          </span>
+          <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
             Atención requerida
           </span>

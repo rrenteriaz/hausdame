@@ -10,28 +10,35 @@ interface CompleteCleaningButtonProps {
   cleaningId: string;
   returnTo: string;
   inventoryCardRef?: React.RefObject<InventoryCardRef | null>;
+  tareasAnchorId?: string;
 }
 
 export default function CompleteCleaningButton({
   cleaningId,
   returnTo,
   inventoryCardRef,
+  tareasAnchorId = "tareas-pro-block",
 }: CompleteCleaningButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [inventoryRequiredModalOpen, setInventoryRequiredModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tareasBlockers, setTareasBlockers] = useState<
+    { jobId: string; blockers: string[] }[] | null
+  >(null);
 
   const handleComplete = () => {
     setErrorMessage(null);
     startTransition(async () => {
       try {
         const result = await completeCleaningWithReasons(cleaningId);
-        if (result.requiresInventoryReview) {
-          setInventoryRequiredModalOpen(true);
-        } else if (result.success) {
+        if (result.success) {
           router.push(returnTo);
           router.refresh();
+        } else if ("requiresInventoryReview" in result) {
+          setInventoryRequiredModalOpen(true);
+        } else if ("tareasBlockers" in result) {
+          setTareasBlockers(result.tareasBlockers);
         }
       } catch (err: any) {
         setErrorMessage(err?.message || "Error al completar la limpieza");
@@ -58,6 +65,20 @@ export default function CompleteCleaningButton({
     }, 100);
   };
 
+  // Bottom sheet de tareas bloqueantes
+  const totalBlockers = tareasBlockers?.reduce((sum, j) => sum + j.blockers.length, 0) ?? 0;
+
+  const handleGoToTareas = () => {
+    const el = document.getElementById(tareasAnchorId);
+    setTareasBlockers(null);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Pequeño delay para que el scroll termine antes del focus,
+      // que abre el bloque colapsado vía onFocus del section
+      setTimeout(() => el.focus({ preventScroll: true }), 400);
+    }
+  };
+
   return (
     <>
       <InventoryRequiredModal
@@ -66,6 +87,55 @@ export default function CompleteCleaningButton({
         onClose={() => setInventoryRequiredModalOpen(false)}
         onGoToInventory={handleGoToInventory}
       />
+
+      {/* Bottom sheet — Tareas obligatorias pendientes */}
+      {tareasBlockers && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setTareasBlockers(null)}
+          />
+          <div className="fixed bottom-0 inset-x-0 z-50 flex justify-center">
+            <div className="w-full sm:max-w-lg bg-white rounded-t-2xl shadow-2xl px-5 pt-3 pb-10 space-y-4">
+              {/* Handle */}
+              <div className="w-10 h-1 bg-neutral-200 rounded-full mx-auto" />
+
+              {/* Título */}
+              <h2 className="text-base font-semibold text-neutral-900">
+                Hay tareas obligatorias pendientes
+              </h2>
+
+              {/* Descripción */}
+              <p className="text-sm text-neutral-600">
+                Para completar la limpieza, primero responde las tareas obligatorias o indica por qué no pudieron completarse.
+              </p>
+
+              {/* Resumen numérico */}
+              <p className="text-sm font-medium text-red-600">
+                Quedan {totalBlockers} tarea{totalBlockers !== 1 ? "s" : ""} obligatoria{totalBlockers !== 1 ? "s" : ""} por responder.
+              </p>
+
+              {/* Acciones */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleGoToTareas}
+                  className="flex-1 rounded-lg bg-black px-4 py-2.5 text-base font-medium text-white hover:bg-neutral-800 active:scale-[0.99] transition"
+                >
+                  Ir a tareas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTareasBlockers(null)}
+                  className="px-4 py-2.5 rounded-lg border border-neutral-300 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <button
         type="button"
@@ -76,7 +146,7 @@ export default function CompleteCleaningButton({
         {isPending ? "Completando..." : "Completar limpieza"}
       </button>
 
-      {/* Bloqueador: Tareas de la propiedad con pasos obligatorios pendientes */}
+      {/* Error genérico (errores reales de servidor) */}
       {errorMessage && (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-900 mb-1">

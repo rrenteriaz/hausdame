@@ -127,6 +127,11 @@ export default function ReservationsTimelineGrid({
 }: Props) {
   const gridW = totalDays * DAY_W;
 
+  // Día de hoy en número UTC (YYYYMMDD) para comparar con fechas de reservas
+  const now = new Date();
+  const todayUtcDay =
+    now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
+
   // Agrupar reservas por propiedad
   const byProperty = new Map<string, Reservation[]>();
   for (const r of reservations) {
@@ -355,6 +360,17 @@ export default function ReservationsTimelineGrid({
                   );
                   const hasPendingCleaning = activeCleanings.length > 0;
 
+                  // Color según si la reserva inicia o sale hoy
+                  const startsToday = utcDay(res.startDate) === todayUtcDay;
+                  const endsToday = utcDay(res.endDate) === todayUtcDay;
+                  const barBg = isCancelled
+                    ? undefined
+                    : startsToday
+                    ? "#2353C2"
+                    : endsToday
+                    ? "#F07B21"
+                    : undefined;
+
                   // Extender la barra hacia el día de checkout (no aplica si ya sale de la ventana)
                   const checkoutExtension = layout.continuesInNext
                     ? 0
@@ -394,6 +410,8 @@ export default function ReservationsTimelineGrid({
                         roundRight,
                         isCancelled
                           ? "bg-neutral-200 text-neutral-500 hover:bg-neutral-300"
+                          : barBg
+                          ? "text-white hover:opacity-90"
                           : "bg-neutral-800 text-white hover:bg-neutral-700",
                         "transition-colors",
                       ].join(" ")}
@@ -402,6 +420,7 @@ export default function ReservationsTimelineGrid({
                         width: widthPx - leftInset - rightInset,
                         top: geo.top,
                         height: geo.height,
+                        ...(barBg ? { backgroundColor: barBg } : {}),
                       }}
                       title={`${nights} noche${nights !== 1 ? "s" : ""}${isCancelled ? " · cancelada" : ""}`}
                     >

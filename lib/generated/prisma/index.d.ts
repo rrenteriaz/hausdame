@@ -95373,6 +95373,8 @@ export namespace Prisma {
     numberValue: Decimal | null
     textValue: string | null
     notes: string | null
+    notCompletedReasonCode: $Enums.NotCompletedReasonCode | null
+    notCompletedNote: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -95387,6 +95389,8 @@ export namespace Prisma {
     numberValue: Decimal | null
     textValue: string | null
     notes: string | null
+    notCompletedReasonCode: $Enums.NotCompletedReasonCode | null
+    notCompletedNote: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -95401,6 +95405,8 @@ export namespace Prisma {
     numberValue: number
     textValue: number
     notes: number
+    notCompletedReasonCode: number
+    notCompletedNote: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -95425,6 +95431,8 @@ export namespace Prisma {
     numberValue?: true
     textValue?: true
     notes?: true
+    notCompletedReasonCode?: true
+    notCompletedNote?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -95439,6 +95447,8 @@ export namespace Prisma {
     numberValue?: true
     textValue?: true
     notes?: true
+    notCompletedReasonCode?: true
+    notCompletedNote?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -95453,6 +95463,8 @@ export namespace Prisma {
     numberValue?: true
     textValue?: true
     notes?: true
+    notCompletedReasonCode?: true
+    notCompletedNote?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -95554,6 +95566,8 @@ export namespace Prisma {
     numberValue: Decimal | null
     textValue: string | null
     notes: string | null
+    notCompletedReasonCode: $Enums.NotCompletedReasonCode | null
+    notCompletedNote: string | null
     createdAt: Date
     updatedAt: Date
     _count: TaskJobStepResponseCountAggregateOutputType | null
@@ -95587,6 +95601,8 @@ export namespace Prisma {
     numberValue?: boolean
     textValue?: boolean
     notes?: boolean
+    notCompletedReasonCode?: boolean
+    notCompletedNote?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     step?: boolean | TaskJobStepDefaultArgs<ExtArgs>
@@ -95603,6 +95619,8 @@ export namespace Prisma {
     numberValue?: boolean
     textValue?: boolean
     notes?: boolean
+    notCompletedReasonCode?: boolean
+    notCompletedNote?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     step?: boolean | TaskJobStepDefaultArgs<ExtArgs>
@@ -95619,6 +95637,8 @@ export namespace Prisma {
     numberValue?: boolean
     textValue?: boolean
     notes?: boolean
+    notCompletedReasonCode?: boolean
+    notCompletedNote?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     step?: boolean | TaskJobStepDefaultArgs<ExtArgs>
@@ -95635,11 +95655,13 @@ export namespace Prisma {
     numberValue?: boolean
     textValue?: boolean
     notes?: boolean
+    notCompletedReasonCode?: boolean
+    notCompletedNote?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type TaskJobStepResponseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "stepId" | "respondedAt" | "confirmed" | "boolValue" | "numberValue" | "textValue" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["taskJobStepResponse"]>
+  export type TaskJobStepResponseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "stepId" | "respondedAt" | "confirmed" | "boolValue" | "numberValue" | "textValue" | "notes" | "notCompletedReasonCode" | "notCompletedNote" | "createdAt" | "updatedAt", ExtArgs["result"]["taskJobStepResponse"]>
   export type TaskJobStepResponseInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     step?: boolean | TaskJobStepDefaultArgs<ExtArgs>
     tenant?: boolean | TenantDefaultArgs<ExtArgs>
@@ -95669,6 +95691,8 @@ export namespace Prisma {
       numberValue: Prisma.Decimal | null
       textValue: string | null
       notes: string | null
+      notCompletedReasonCode: $Enums.NotCompletedReasonCode | null
+      notCompletedNote: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["taskJobStepResponse"]>
@@ -96105,6 +96129,8 @@ export namespace Prisma {
     readonly numberValue: FieldRef<"TaskJobStepResponse", 'Decimal'>
     readonly textValue: FieldRef<"TaskJobStepResponse", 'String'>
     readonly notes: FieldRef<"TaskJobStepResponse", 'String'>
+    readonly notCompletedReasonCode: FieldRef<"TaskJobStepResponse", 'NotCompletedReasonCode'>
+    readonly notCompletedNote: FieldRef<"TaskJobStepResponse", 'String'>
     readonly createdAt: FieldRef<"TaskJobStepResponse", 'DateTime'>
     readonly updatedAt: FieldRef<"TaskJobStepResponse", 'DateTime'>
   }
@@ -103582,6 +103608,8 @@ export namespace Prisma {
     numberValue: 'numberValue',
     textValue: 'textValue',
     notes: 'notes',
+    notCompletedReasonCode: 'notCompletedReasonCode',
+    notCompletedNote: 'notCompletedNote',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -111368,6 +111396,8 @@ export namespace Prisma {
     numberValue?: DecimalNullableFilter<"TaskJobStepResponse"> | Decimal | DecimalJsLike | number | string | null
     textValue?: StringNullableFilter<"TaskJobStepResponse"> | string | null
     notes?: StringNullableFilter<"TaskJobStepResponse"> | string | null
+    notCompletedReasonCode?: EnumNotCompletedReasonCodeNullableFilter<"TaskJobStepResponse"> | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: StringNullableFilter<"TaskJobStepResponse"> | string | null
     createdAt?: DateTimeFilter<"TaskJobStepResponse"> | Date | string
     updatedAt?: DateTimeFilter<"TaskJobStepResponse"> | Date | string
     step?: XOR<TaskJobStepScalarRelationFilter, TaskJobStepWhereInput>
@@ -111384,6 +111414,8 @@ export namespace Prisma {
     numberValue?: SortOrderInput | SortOrder
     textValue?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
+    notCompletedReasonCode?: SortOrderInput | SortOrder
+    notCompletedNote?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     step?: TaskJobStepOrderByWithRelationInput
@@ -111403,6 +111435,8 @@ export namespace Prisma {
     numberValue?: DecimalNullableFilter<"TaskJobStepResponse"> | Decimal | DecimalJsLike | number | string | null
     textValue?: StringNullableFilter<"TaskJobStepResponse"> | string | null
     notes?: StringNullableFilter<"TaskJobStepResponse"> | string | null
+    notCompletedReasonCode?: EnumNotCompletedReasonCodeNullableFilter<"TaskJobStepResponse"> | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: StringNullableFilter<"TaskJobStepResponse"> | string | null
     createdAt?: DateTimeFilter<"TaskJobStepResponse"> | Date | string
     updatedAt?: DateTimeFilter<"TaskJobStepResponse"> | Date | string
     step?: XOR<TaskJobStepScalarRelationFilter, TaskJobStepWhereInput>
@@ -111419,6 +111453,8 @@ export namespace Prisma {
     numberValue?: SortOrderInput | SortOrder
     textValue?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
+    notCompletedReasonCode?: SortOrderInput | SortOrder
+    notCompletedNote?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: TaskJobStepResponseCountOrderByAggregateInput
@@ -111441,6 +111477,8 @@ export namespace Prisma {
     numberValue?: DecimalNullableWithAggregatesFilter<"TaskJobStepResponse"> | Decimal | DecimalJsLike | number | string | null
     textValue?: StringNullableWithAggregatesFilter<"TaskJobStepResponse"> | string | null
     notes?: StringNullableWithAggregatesFilter<"TaskJobStepResponse"> | string | null
+    notCompletedReasonCode?: EnumNotCompletedReasonCodeNullableWithAggregatesFilter<"TaskJobStepResponse"> | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: StringNullableWithAggregatesFilter<"TaskJobStepResponse"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"TaskJobStepResponse"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"TaskJobStepResponse"> | Date | string
   }
@@ -118992,6 +119030,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     step: TaskJobStepCreateNestedOneWithoutResponseInput
@@ -119008,6 +119048,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -119020,6 +119062,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     step?: TaskJobStepUpdateOneRequiredWithoutResponseNestedInput
@@ -119036,6 +119080,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -119050,6 +119096,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -119062,6 +119110,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -119076,6 +119126,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -125015,6 +125067,8 @@ export namespace Prisma {
     numberValue?: SortOrder
     textValue?: SortOrder
     notes?: SortOrder
+    notCompletedReasonCode?: SortOrder
+    notCompletedNote?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -125033,6 +125087,8 @@ export namespace Prisma {
     numberValue?: SortOrder
     textValue?: SortOrder
     notes?: SortOrder
+    notCompletedReasonCode?: SortOrder
+    notCompletedNote?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -125047,6 +125103,8 @@ export namespace Prisma {
     numberValue?: SortOrder
     textValue?: SortOrder
     notes?: SortOrder
+    notCompletedReasonCode?: SortOrder
+    notCompletedNote?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -140618,6 +140676,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     step: TaskJobStepCreateNestedOneWithoutResponseInput
@@ -140632,6 +140692,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -142758,6 +142820,8 @@ export namespace Prisma {
     numberValue?: DecimalNullableFilter<"TaskJobStepResponse"> | Decimal | DecimalJsLike | number | string | null
     textValue?: StringNullableFilter<"TaskJobStepResponse"> | string | null
     notes?: StringNullableFilter<"TaskJobStepResponse"> | string | null
+    notCompletedReasonCode?: EnumNotCompletedReasonCodeNullableFilter<"TaskJobStepResponse"> | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: StringNullableFilter<"TaskJobStepResponse"> | string | null
     createdAt?: DateTimeFilter<"TaskJobStepResponse"> | Date | string
     updatedAt?: DateTimeFilter<"TaskJobStepResponse"> | Date | string
   }
@@ -187339,6 +187403,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     tenant: TenantCreateNestedOneWithoutTaskJobStepResponsesInput
@@ -187353,6 +187419,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -187589,6 +187657,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     tenant?: TenantUpdateOneRequiredWithoutTaskJobStepResponsesNestedInput
@@ -187603,6 +187673,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -191723,6 +191795,8 @@ export namespace Prisma {
     numberValue?: Decimal | DecimalJsLike | number | string | null
     textValue?: string | null
     notes?: string | null
+    notCompletedReasonCode?: $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -193895,6 +193969,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     step?: TaskJobStepUpdateOneRequiredWithoutResponseNestedInput
@@ -193909,6 +193985,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -193922,6 +194000,8 @@ export namespace Prisma {
     numberValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     textValue?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notCompletedReasonCode?: NullableEnumNotCompletedReasonCodeFieldUpdateOperationsInput | $Enums.NotCompletedReasonCode | null
+    notCompletedNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

@@ -104,6 +104,9 @@ export async function validateJobCompletion(
           continue;
         }
 
+        // Paso justificado con reason code — no se validan captures
+        if (step.response.notCompletedReasonCode) continue;
+
         // Validate individual required captures
         if (step.capturesYesNoSnapshot && step.yesNoRequiredSnapshot && step.response.boolValue === null) {
           blockers.push(`${prefix} — "${step.nameSnapshot}": falta respuesta Sí/No`);

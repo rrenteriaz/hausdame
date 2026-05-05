@@ -72,6 +72,8 @@ export default async function CleanerJobPage({
             numberValue: step.response.numberValue !== null ? Number(step.response.numberValue) : null,
             textValue: step.response.textValue,
             notes: step.response.notes,
+            notCompletedReasonCode: step.response.notCompletedReasonCode,
+            notCompletedNote: step.response.notCompletedNote,
           }
         : null,
       evidencePhotos: step.evidenceAssets

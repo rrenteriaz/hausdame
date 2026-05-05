@@ -15,6 +15,8 @@ type StepResponse = {
   numberValue: number | null;
   textValue: string | null;
   notes: string | null;
+  notCompletedReasonCode: string | null;
+  notCompletedNote: string | null;
 };
 
 type JobStep = {
@@ -79,7 +81,15 @@ export default function TareasProBlock({ jobs, periodicCount = 0 }: Props) {
   );
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+    <section
+      id="tareas-pro-block"
+      tabIndex={-1}
+      className="rounded-2xl border border-neutral-200 bg-white overflow-hidden focus:outline-none"
+      onFocus={(e) => {
+        // Solo si el focus viene del propio section (scroll programático), no de hijos
+        if (e.target === e.currentTarget) setIsOpen(true);
+      }}
+    >
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

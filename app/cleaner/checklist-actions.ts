@@ -44,6 +44,13 @@ export async function updateChecklistItemCompletion(
   revalidatePath(`/cleaner/cleanings/${cleaningId}`);
 }
 
+type TareasBlockerEntry = { jobId: string; blockers: string[] };
+
+type CompleteCleaningResult =
+  | { success: true }
+  | { success: false; requiresInventoryReview: true }
+  | { success: false; tareasBlockers: TareasBlockerEntry[] };
+
 export async function completeCleaningWithReasons(
   cleaningId: string,
   // Parámetro mantenido por compatibilidad — ya no se usa para validar ni bloquear
@@ -52,7 +59,7 @@ export async function completeCleaningWithReasons(
     reasonCode: string;
     reasonNote?: string;
   }>
-): Promise<{ success: boolean; requiresInventoryReview?: boolean }> {
+): Promise<CompleteCleaningResult> {
   const tenant = await getDefaultTenant();
   if (!tenant) {
     throw new Error("No tenant found");
@@ -89,17 +96,15 @@ export async function completeCleaningWithReasons(
   });
 
   if (linkedJobs.length > 0) {
-    const allBlockers: string[] = [];
+    const tareasBlockers: TareasBlockerEntry[] = [];
     for (const job of linkedJobs) {
       const { canComplete, blockers } = await validateJobCompletion(job.id, job.tenantId);
       if (!canComplete) {
-        allBlockers.push(...blockers);
+        tareasBlockers.push({ jobId: job.id, blockers });
       }
     }
-    if (allBlockers.length > 0) {
-      throw new Error(
-        `Hay tareas de la propiedad con pasos obligatorios pendientes:\n${allBlockers.join("\n")}`
-      );
+    if (tareasBlockers.length > 0) {
+      return { success: false, tareasBlockers };
     }
   }
 
@@ -121,5 +126,5 @@ export async function completeCleaningWithReasons(
   revalidatePath("/cleaner");
   revalidatePath("/host/cleanings");
 
-  return { success: true };
+  return { success: true as const };
 }

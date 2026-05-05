@@ -9,6 +9,7 @@ import {
   completeTaskJob,
   uploadStepEvidenceAction,
   deleteStepEvidenceAction,
+  clearTaskStepResponse,
 } from "../actions";
 
 // ---- Types ----
@@ -25,6 +26,8 @@ type StepResponse = {
   numberValue: number | null;
   textValue: string | null;
   notes: string | null;
+  notCompletedReasonCode: string | null;
+  notCompletedNote: string | null;
 };
 
 type JobStep = {
@@ -85,6 +88,8 @@ type SheetState = {
   textValue: string;
   notes: string;
   evidencePhotos: EvidencePhoto[];
+  reasonCode: string | null;
+  reasonNote: string;
 };
 
 // ---- Helpers ----
@@ -99,9 +104,30 @@ function isLegacyNoCapture(step: JobStep): boolean {
   );
 }
 
+function isSimpleStep(step: JobStep): boolean {
+  return (
+    !step.capturesYesNoSnapshot &&
+    !step.capturesNumberSnapshot &&
+    !step.capturesPhotoSnapshot &&
+    !step.capturesTextSnapshot
+  );
+}
+
+const REASON_CODE_LABELS: Record<string, string> = {
+  NO_HABIA_INSUMOS: "Sin insumos",
+  NO_TUVE_ACCESO: "Sin acceso",
+  SE_ROMPIO_O_FALLO: "Falla / rotura",
+  NO_HUBO_TIEMPO: "Sin tiempo",
+  OTRO: "Otro motivo",
+};
+
 function getResponsePreview(step: JobStep): string | null {
   if (step.status !== "RESPONDED" || !step.response) return null;
   const r = step.response;
+  if (r.notCompletedReasonCode) {
+    const label = REASON_CODE_LABELS[r.notCompletedReasonCode] ?? "No completado";
+    return r.notCompletedNote ? `${label} — ${r.notCompletedNote}` : label;
+  }
   const parts: string[] = [];
   if (step.capturesYesNoSnapshot && r.boolValue !== null)
     parts.push(r.boolValue ? "Sí" : "No");
@@ -113,12 +139,18 @@ function getResponsePreview(step: JobStep): string | null {
     const count = step.evidencePhotos.length;
     if (count > 0) parts.push(`${count} foto${count === 1 ? "" : "s"}`);
   }
-  if (isLegacyNoCapture(step) && parts.length === 0) return "Completado";
+  if (isSimpleStep(step) && parts.length === 0) return "Completado";
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 function isSaveEnabled(sheet: SheetState): boolean {
   if (sheet.evidencePhotos.some((p) => p.uploading)) return false;
+  // Modo reason code: solo validar nota si OTRO
+  if (sheet.reasonCode) {
+    if (sheet.reasonCode === "OTRO" && !sheet.reasonNote.trim()) return false;
+    return true;
+  }
+  // Modo normal: validar captures requeridos
   if (sheet.capturesYesNo && sheet.yesNoRequired && sheet.yesNoValue === null) return false;
   if (sheet.capturesNumber && sheet.numberRequired && sheet.numberValue.trim() === "") return false;
   if (sheet.capturesText && sheet.textRequired && sheet.textValue.trim() === "") return false;
@@ -199,8 +231,99 @@ export default function CleanerJobExecutor({
     }
   };
 
+  // ---- Quick confirm (simple steps — no captures) ----
+  const handleQuickConfirm = async (step: JobStep, sectionId: string) => {
+    if (isCompleted || jobStatus !== "IN_PROGRESS") return;
+    // Optimistic update
+    setSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        return {
+          ...sec,
+          steps: sec.steps.map((st) => {
+            if (st.id !== step.id) return st;
+            return {
+              ...st,
+              status: "RESPONDED",
+              response: {
+                confirmed: true,
+                boolValue: null,
+                numberValue: null,
+                textValue: null,
+                notes: null,
+                notCompletedReasonCode: null,
+                notCompletedNote: null,
+              },
+            };
+          }),
+        };
+      })
+    );
+    try {
+      const formData = new FormData();
+      formData.append("stepId", step.id);
+      formData.append("jobId", job.id);
+      formData.append("confirmed", "true");
+      await respondTaskStep(formData);
+    } catch (err: any) {
+      // Rollback
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            steps: sec.steps.map((st) => {
+              if (st.id !== step.id) return st;
+              return { ...st, status: step.status, response: step.response };
+            }),
+          };
+        })
+      );
+      alert(err?.message || "Error al guardar");
+    }
+  };
+
+  // ---- Clear step (unmark simple steps) ----
+  const handleClearStep = async (step: JobStep, sectionId: string) => {
+    if (isCompleted || jobStatus !== "IN_PROGRESS") return;
+    // Optimistic update
+    setSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        return {
+          ...sec,
+          steps: sec.steps.map((st) => {
+            if (st.id !== step.id) return st;
+            return { ...st, status: "PENDING", response: null };
+          }),
+        };
+      })
+    );
+    try {
+      const formData = new FormData();
+      formData.append("stepId", step.id);
+      formData.append("jobId", job.id);
+      await clearTaskStepResponse(formData);
+    } catch (err: any) {
+      // Rollback
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            steps: sec.steps.map((st) => {
+              if (st.id !== step.id) return st;
+              return { ...st, status: step.status, response: step.response };
+            }),
+          };
+        })
+      );
+      alert(err?.message || "Error al desmarcar");
+    }
+  };
+
   // ---- Open sheet ----
-  const openSheet = (step: JobStep, sectionId: string) => {
+  const openSheet = (step: JobStep, sectionId: string, forceReasonMode = false) => {
     if (isCompleted || jobStatus !== "IN_PROGRESS") return;
     setSheet({
       stepId: step.id,
@@ -224,6 +347,8 @@ export default function CleanerJobExecutor({
       textValue: step.response?.textValue ?? "",
       notes: step.response?.notes ?? "",
       evidencePhotos: [...step.evidencePhotos],
+      reasonCode: forceReasonMode ? "OTRO" : (step.response?.notCompletedReasonCode ?? null),
+      reasonNote: forceReasonMode ? "" : (step.response?.notCompletedNote ?? ""),
     });
   };
 
@@ -235,13 +360,21 @@ export default function CleanerJobExecutor({
       const formData = new FormData();
       formData.append("stepId", sheet.stepId);
       formData.append("jobId", job.id);
-      formData.append("confirmed", "true");
-      if (sheet.capturesYesNo && sheet.yesNoValue !== null)
-        formData.append("boolValue", String(sheet.yesNoValue));
-      if (sheet.capturesNumber && sheet.numberValue.trim())
-        formData.append("numberValue", sheet.numberValue.trim());
-      if (sheet.capturesText && sheet.textValue.trim())
-        formData.append("textValue", sheet.textValue.trim());
+
+      if (sheet.reasonCode) {
+        // Modo "No pude" — enviar reason code, ignorar captures
+        formData.append("notCompletedReasonCode", sheet.reasonCode);
+        if (sheet.reasonNote.trim()) formData.append("notCompletedNote", sheet.reasonNote.trim());
+      } else {
+        // Modo normal — enviar captures
+        formData.append("confirmed", "true");
+        if (sheet.capturesYesNo && sheet.yesNoValue !== null)
+          formData.append("boolValue", String(sheet.yesNoValue));
+        if (sheet.capturesNumber && sheet.numberValue.trim())
+          formData.append("numberValue", sheet.numberValue.trim());
+        if (sheet.capturesText && sheet.textValue.trim())
+          formData.append("textValue", sheet.textValue.trim());
+      }
       if (sheet.notes.trim()) formData.append("notes", sheet.notes.trim());
       await respondTaskStep(formData);
 
@@ -256,16 +389,28 @@ export default function CleanerJobExecutor({
               return {
                 ...st,
                 status: "RESPONDED",
-                response: {
-                  confirmed: true,
-                  boolValue: sheet.capturesYesNo ? sheet.yesNoValue : null,
-                  numberValue:
-                    sheet.capturesNumber && sheet.numberValue
-                      ? parseFloat(sheet.numberValue)
-                      : null,
-                  textValue: sheet.capturesText && sheet.textValue ? sheet.textValue : null,
-                  notes: sheet.notes.trim() || null,
-                },
+                response: sheet.reasonCode
+                  ? {
+                      confirmed: null,
+                      boolValue: null,
+                      numberValue: null,
+                      textValue: null,
+                      notes: sheet.notes.trim() || null,
+                      notCompletedReasonCode: sheet.reasonCode,
+                      notCompletedNote: sheet.reasonNote.trim() || null,
+                    }
+                  : {
+                      confirmed: true,
+                      boolValue: sheet.capturesYesNo ? sheet.yesNoValue : null,
+                      numberValue:
+                        sheet.capturesNumber && sheet.numberValue
+                          ? parseFloat(sheet.numberValue)
+                          : null,
+                      textValue: sheet.capturesText && sheet.textValue ? sheet.textValue : null,
+                      notes: sheet.notes.trim() || null,
+                      notCompletedReasonCode: null,
+                      notCompletedNote: null,
+                    },
                 evidencePhotos: sheet.evidencePhotos,
               };
             }),
@@ -329,17 +474,38 @@ export default function CleanerJobExecutor({
 
   const handleDeleteEvidence = async (evidenceAssetId: string) => {
     if (!sheet) return;
+    const updatedPhotos = sheet.evidencePhotos.filter((p) => p.id !== evidenceAssetId);
     setSheet((prev) =>
-      prev
-        ? {
-            ...prev,
-            evidencePhotos: prev.evidencePhotos.filter((p) => p.id !== evidenceAssetId),
-          }
-        : null
+      prev ? { ...prev, evidencePhotos: updatedPhotos } : null
     );
     const formData = new FormData();
     formData.append("evidenceAssetId", evidenceAssetId);
     await deleteStepEvidenceAction(formData).catch(() => {});
+
+    // Si era la última foto requerida y no hay reasonCode, desmarcar el step
+    if (
+      sheet.capturesPhoto &&
+      sheet.photoRequired &&
+      !sheet.reasonCode &&
+      updatedPhotos.filter((p) => !p.uploading).length === 0
+    ) {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sheet.sectionId) return sec;
+          return {
+            ...sec,
+            steps: sec.steps.map((st) => {
+              if (st.id !== sheet.stepId) return st;
+              return { ...st, status: "PENDING", response: null, evidencePhotos: [] };
+            }),
+          };
+        })
+      );
+      const clearFd = new FormData();
+      clearFd.append("stepId", sheet.stepId);
+      clearFd.append("jobId", job.id);
+      clearTaskStepResponse(clearFd).catch(() => {});
+    }
   };
 
   // ---- Camera ----
@@ -552,36 +718,59 @@ export default function CleanerJobExecutor({
 
                   return (
                     <div key={step.id} className="divide-y divide-neutral-50">
-                      <button
-                        type="button"
-                        onClick={() => openSheet(step, section.id)}
-                        disabled={isCompleted || jobStatus !== "IN_PROGRESS"}
-                        className="w-full flex items-center gap-3 px-4 py-4 hover:bg-neutral-50 active:bg-neutral-100 transition text-left disabled:cursor-default"
+                      <div
+                        onClick={() => {
+                          if (isCompleted || jobStatus !== "IN_PROGRESS") return;
+                          if (isResponded) {
+                            handleClearStep(step, section.id);
+                          } else if (isSimpleStep(step)) {
+                            handleQuickConfirm(step, section.id);
+                          } else {
+                            openSheet(step, section.id);
+                          }
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-4 transition text-left ${
+                          !isCompleted && jobStatus === "IN_PROGRESS"
+                            ? "hover:bg-neutral-50 active:bg-neutral-100 cursor-pointer"
+                            : "cursor-default"
+                        }`}
                       >
-                        {/* Checkbox circle */}
-                        <div
-                          className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            isResponded
-                              ? "bg-green-500 border-green-500"
-                              : "border-neutral-300"
-                          }`}
-                        >
-                          {isResponded && (
-                            <svg
-                              className="w-4 h-4 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                        {/* Checkbox circle — verde si completado, ámbar si justificado */}
+                        {(() => {
+                          const hasReasonCode = isResponded && !!step.response?.notCompletedReasonCode;
+                          return (
+                            <div
+                              className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                hasReasonCode
+                                  ? "bg-amber-400 border-amber-400"
+                                  : isResponded
+                                  ? "bg-green-500 border-green-500"
+                                  : "border-neutral-300"
+                              }`}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </div>
+                              {hasReasonCode && (
+                                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              )}
+                              {isResponded && !hasReasonCode && (
+                                <svg
+                                  className="w-4 h-4 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* Name + preview */}
                         <div className="flex-1 min-w-0">
@@ -608,7 +797,7 @@ export default function CleanerJobExecutor({
                           )}
                         </div>
 
-                        {/* Capture badges / legacy badge */}
+                        {/* Capture badges / legacy badge / secondary action */}
                         {stepIsLegacy ? (
                           <span
                             className="shrink-0 text-xs text-amber-500 font-medium px-1.5 py-0.5 bg-amber-50 rounded"
@@ -634,8 +823,23 @@ export default function CleanerJobExecutor({
                               <span className="text-xs text-neutral-300">📷</span>
                             )}
                           </div>
+                        ) : !isResponded && !isCompleted && jobStatus === "IN_PROGRESS" ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openSheet(step, section.id, true);
+                            }}
+                            aria-label="No pude completar esta tarea"
+                            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-amber-400 hover:text-amber-600 hover:bg-amber-50 transition"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          </button>
                         ) : null}
-                      </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -652,45 +856,47 @@ export default function CleanerJobExecutor({
         </div>
       )}
 
-      {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-neutral-100 px-4 pt-3 pb-6">
-        <div className="max-w-lg mx-auto space-y-1.5">
-          {isCompleted ? (
-            <div className="flex items-center justify-center gap-2 py-3 text-green-600">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span className="text-sm font-medium">Limpieza finalizada</span>
-            </div>
-          ) : jobStatus === "IN_PROGRESS" ? (
-            <>
-              <button
-                type="button"
-                onClick={handleComplete}
-                disabled={completing || !canComplete}
-                className="w-full bg-neutral-900 text-white py-3.5 rounded-xl font-medium text-sm hover:bg-neutral-800 active:bg-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {completing ? "Finalizando…" : "Finalizar limpieza"}
-              </button>
-              {!canComplete && (
-                <p className="text-center text-xs text-neutral-400">
-                  Completa todas las tareas obligatorias (*) para finalizar
-                </p>
-              )}
-            </>
-          ) : null}
+      {/* Fixed bottom bar — solo en modo standalone */}
+      {!embedded && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-neutral-100 px-4 pt-3 pb-6">
+          <div className="max-w-lg mx-auto space-y-1.5">
+            {isCompleted ? (
+              <div className="flex items-center justify-center gap-2 py-3 text-green-600">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span className="text-sm font-medium">Limpieza finalizada</span>
+              </div>
+            ) : jobStatus === "IN_PROGRESS" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  disabled={completing || !canComplete}
+                  className="w-full bg-neutral-900 text-white py-3.5 rounded-xl font-medium text-sm hover:bg-neutral-800 active:bg-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {completing ? "Finalizando…" : "Finalizar limpieza"}
+                </button>
+                {!canComplete && (
+                  <p className="text-center text-xs text-neutral-400">
+                    Completa todas las tareas obligatorias (*) para finalizar
+                  </p>
+                )}
+              </>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Input cámara (con capture) */}
       <input
@@ -789,11 +995,12 @@ export default function CleanerJobExecutor({
                 )}
               </div>
 
-              {/* No captures — simple or legacy completion */}
+              {/* No captures — simple or legacy completion (hidden when in reason-only mode) */}
               {!sheet.capturesYesNo &&
                 !sheet.capturesNumber &&
                 !sheet.capturesText &&
-                !sheet.capturesPhoto && (
+                !sheet.capturesPhoto &&
+                !sheet.reasonCode && (
                   <div className="bg-neutral-50 rounded-xl px-4 py-4">
                     <p className="text-sm text-neutral-600">
                       Marca esta tarea como completada.
@@ -803,7 +1010,7 @@ export default function CleanerJobExecutor({
 
               {/* YES/NO */}
               {sheet.capturesYesNo && (
-                <div className="space-y-2">
+                <div className={`space-y-2 transition ${sheet.reasonCode ? "opacity-40 pointer-events-none" : ""}`}>
                   <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                     Sí / No{sheet.yesNoRequired ? " *" : ""}
                   </p>
@@ -844,7 +1051,7 @@ export default function CleanerJobExecutor({
 
               {/* NUMBER */}
               {sheet.capturesNumber && (
-                <div className="space-y-2">
+                <div className={`space-y-2 transition ${sheet.reasonCode ? "opacity-40 pointer-events-none" : ""}`}>
                   <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                     Número{sheet.numberRequired ? " *" : ""}
                   </p>
@@ -865,7 +1072,7 @@ export default function CleanerJobExecutor({
 
               {/* TEXT */}
               {sheet.capturesText && (
-                <div className="space-y-2">
+                <div className={`space-y-2 transition ${sheet.reasonCode ? "opacity-40 pointer-events-none" : ""}`}>
                   <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                     Texto{sheet.textRequired ? " *" : ""}
                   </p>
@@ -885,7 +1092,7 @@ export default function CleanerJobExecutor({
 
               {/* PHOTO */}
               {sheet.capturesPhoto && (
-                <div className="space-y-2">
+                <div className={`space-y-2 transition ${sheet.reasonCode ? "opacity-40 pointer-events-none" : ""}`}>
                   <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                     Fotos{sheet.photoRequired ? " *" : ""}
                   </p>
@@ -986,33 +1193,133 @@ export default function CleanerJobExecutor({
                 </div>
               )}
 
-              {/* Notes */}
-              <div>
-                <label className="text-xs font-medium text-neutral-400 mb-1.5 block uppercase tracking-wide">
-                  Nota opcional
-                </label>
-                <input
-                  type="text"
-                  value={sheet.notes}
-                  onChange={(e) =>
-                    setSheet((prev) =>
-                      prev ? { ...prev, notes: e.target.value } : null
-                    )
-                  }
-                  placeholder="Añade una observación…"
-                  className="w-full border border-neutral-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-400 transition"
-                />
-              </div>
+              {/* Notes — ocultar en reason-only mode (step simple con reasonCode) */}
+              {!(sheet.reasonCode && !sheet.capturesYesNo && !sheet.capturesNumber && !sheet.capturesText && !sheet.capturesPhoto) && (
+                <div>
+                  <label className="text-xs font-medium text-neutral-400 mb-1.5 block uppercase tracking-wide">
+                    Nota opcional
+                  </label>
+                  <input
+                    type="text"
+                    value={sheet.notes}
+                    onChange={(e) =>
+                      setSheet((prev) =>
+                        prev ? { ...prev, notes: e.target.value } : null
+                      )
+                    }
+                    disabled={!!sheet.reasonCode}
+                    placeholder="Añade una observación…"
+                    className="w-full border border-neutral-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-400 transition disabled:opacity-40 disabled:bg-neutral-50"
+                  />
+                </div>
+              )}
 
-              {/* CTA */}
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={submitting || !isSaveEnabled(sheet)}
-                className="w-full bg-neutral-900 text-white py-4 rounded-xl font-semibold text-sm hover:bg-neutral-800 active:bg-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Guardando…" : "Guardar y continuar"}
-              </button>
+              {/* No pude completar esta tarea — visible en steps requeridos/bloqueantes */}
+              {sheet.isRequired && (
+                <div className="border border-neutral-200 rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSheet((prev) => {
+                        if (!prev) return null;
+                        return prev.reasonCode
+                          ? { ...prev, reasonCode: null, reasonNote: "" }
+                          : { ...prev, reasonCode: "OTRO", reasonNote: "" };
+                      })
+                    }
+                    className={`w-full text-left px-4 py-3.5 transition ${
+                      sheet.reasonCode
+                        ? "bg-amber-50"
+                        : "bg-white hover:bg-neutral-50"
+                    }`}
+                  >
+                    <p className={`text-sm font-semibold leading-snug ${sheet.reasonCode ? "text-amber-700" : "text-neutral-800"}`}>
+                      {sheet.reasonCode ? "Justificado — toca para cancelar" : "No pude completar esta tarea"}
+                    </p>
+                    {!sheet.reasonCode && (
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Registra el motivo si no tuviste acceso, insumos, tiempo o hubo una falla.
+                      </p>
+                    )}
+                  </button>
+
+                  {sheet.reasonCode && (
+                    <div className="px-4 pb-4 pt-2 space-y-3 bg-amber-50">
+                      {/* Botones de reason code */}
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          [
+                            { code: "NO_HABIA_INSUMOS", label: "Sin insumos" },
+                            { code: "NO_TUVE_ACCESO", label: "Sin acceso" },
+                            { code: "SE_ROMPIO_O_FALLO", label: "Falla / rotura" },
+                            { code: "NO_HUBO_TIEMPO", label: "Sin tiempo" },
+                            { code: "OTRO", label: "Otro" },
+                          ] as const
+                        ).map(({ code, label }) => (
+                          <button
+                            key={code}
+                            type="button"
+                            onClick={() =>
+                              setSheet((prev) =>
+                                prev ? { ...prev, reasonCode: code, reasonNote: code !== "OTRO" ? prev.reasonNote : "" } : null
+                              )
+                            }
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                              sheet.reasonCode === code
+                                ? "bg-amber-500 border-amber-500 text-white"
+                                : "bg-white border-neutral-300 text-neutral-700 hover:border-amber-400"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Nota — obligatoria si OTRO, opcional para el resto */}
+                      <div>
+                        <label className="text-xs font-medium text-amber-700 mb-1 block">
+                          {sheet.reasonCode === "OTRO" ? "Describe el motivo *" : "Nota (opcional)"}
+                        </label>
+                        <textarea
+                          value={sheet.reasonNote}
+                          onChange={(e) =>
+                            setSheet((prev) =>
+                              prev ? { ...prev, reasonNote: e.target.value } : null
+                            )
+                          }
+                          placeholder={
+                            sheet.reasonCode === "OTRO"
+                              ? "Explica qué pasó…"
+                              : "Añade contexto si lo necesitas…"
+                          }
+                          rows={2}
+                          className="w-full border border-amber-200 bg-white rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-amber-400 transition"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Acciones */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSheet(null)}
+                  disabled={submitting}
+                  className="flex-1 border border-neutral-200 bg-white text-neutral-700 py-4 rounded-xl font-semibold text-sm hover:bg-neutral-50 active:bg-neutral-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={submitting || !isSaveEnabled(sheet)}
+                  className="flex-1 bg-neutral-900 text-white py-4 rounded-xl font-semibold text-sm hover:bg-neutral-800 active:bg-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Guardando…" : "Guardar y continuar"}
+                </button>
+              </div>
             </div>
           </div>
           </div>

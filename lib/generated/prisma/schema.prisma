@@ -1791,19 +1791,21 @@ model TaskJobStep {
 
 /// Respuesta del cleaner a un paso (una sola respuesta vigente por paso)
 model TaskJobStepResponse {
-  id          String      @id @default(cuid())
-  tenantId    String
-  stepId      String      @unique
-  respondedAt DateTime
-  confirmed   Boolean?
-  boolValue   Boolean?
-  numberValue Decimal?    @db.Decimal(12, 2)
-  textValue   String?
-  notes       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  step        TaskJobStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                     String                  @id @default(cuid())
+  tenantId               String
+  stepId                 String                  @unique
+  respondedAt            DateTime
+  confirmed              Boolean?
+  boolValue              Boolean?
+  numberValue            Decimal?                @db.Decimal(12, 2)
+  textValue              String?
+  notes                  String?
+  notCompletedReasonCode NotCompletedReasonCode?
+  notCompletedNote       String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  step                   TaskJobStep             @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }

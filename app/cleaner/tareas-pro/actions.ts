@@ -55,13 +55,39 @@ export async function startTaskJob(formData: FormData) {
 export async function respondTaskStep(formData: FormData) {
   const user = await requireUser();
 
+  const VALID_REASON_CODES = [
+    "NO_HABIA_INSUMOS",
+    "NO_TUVE_ACCESO",
+    "SE_ROMPIO_O_FALLO",
+    "NO_HUBO_TIEMPO",
+    "OTRO",
+  ] as const;
+  type ReasonCode = typeof VALID_REASON_CODES[number];
+
   const stepId = String(formData.get("stepId") || "");
   const jobId = String(formData.get("jobId") || "");
-  const confirmed = formData.get("confirmed") === "true" ? true : formData.get("confirmed") === "false" ? false : null;
-  const boolValue = formData.get("boolValue") === "true" ? true : formData.get("boolValue") === "false" ? false : null;
-  const numberValueRaw = formData.get("numberValue");
+
+  const rawReasonCode = String(formData.get("notCompletedReasonCode") || "");
+  const notCompletedReasonCode = (VALID_REASON_CODES as readonly string[]).includes(rawReasonCode)
+    ? (rawReasonCode as ReasonCode)
+    : null;
+  const notCompletedNote = String(formData.get("notCompletedNote") || "") || null;
+
+  // Server-side: OTRO requiere nota obligatoria
+  if (notCompletedReasonCode === "OTRO" && !notCompletedNote?.trim()) {
+    throw new Error("El motivo 'Otro' requiere una nota explicativa.");
+  }
+
+  // Si hay reasonCode, ignorar captures
+  const confirmed = notCompletedReasonCode
+    ? null
+    : formData.get("confirmed") === "true" ? true : formData.get("confirmed") === "false" ? false : null;
+  const boolValue = notCompletedReasonCode
+    ? null
+    : formData.get("boolValue") === "true" ? true : formData.get("boolValue") === "false" ? false : null;
+  const numberValueRaw = notCompletedReasonCode ? null : formData.get("numberValue");
   const numberValue = numberValueRaw ? parseFloat(String(numberValueRaw)) : null;
-  const textValue = String(formData.get("textValue") || "") || null;
+  const textValue = notCompletedReasonCode ? null : (String(formData.get("textValue") || "") || null);
   const notes = String(formData.get("notes") || "") || null;
 
   // NO filtrar por user.tenantId — job/step pertenecen al tenant del Host
@@ -89,6 +115,8 @@ export async function respondTaskStep(formData: FormData) {
       numberValue: numberValue !== null ? numberValue : undefined,
       textValue,
       notes,
+      notCompletedReasonCode,
+      notCompletedNote,
     },
     update: {
       respondedAt: new Date(),
@@ -97,6 +125,8 @@ export async function respondTaskStep(formData: FormData) {
       numberValue: numberValue !== null ? numberValue : undefined,
       textValue,
       notes,
+      notCompletedReasonCode,
+      notCompletedNote,
     },
   });
 
@@ -110,7 +140,54 @@ export async function respondTaskStep(formData: FormData) {
     jobId,
     eventType: "STEP_RESPONDED",
     actorId: user.id,
-    metadata: { stepId, stepName: step.nameSnapshot },
+    metadata: {
+      stepId,
+      stepName: step.nameSnapshot,
+      ...(notCompletedReasonCode ? { notCompletedReasonCode, notCompletedNote } : {}),
+    },
+  });
+
+  revalidatePath(`/cleaner/tareas-pro/${jobId}`);
+}
+
+// =====================================================================
+// LIMPIAR RESPUESTA DE PASO (desmarcar step simple)
+// =====================================================================
+
+export async function clearTaskStepResponse(formData: FormData) {
+  const user = await requireUser();
+
+  const stepId = String(formData.get("stepId") || "");
+  const jobId = String(formData.get("jobId") || "");
+
+  // NO filtrar por user.tenantId — job/step pertenecen al tenant del Host
+  const step = await prisma.taskJobStep.findFirst({
+    where: { id: stepId },
+    include: { section: true },
+  });
+  if (!step) throw new Error("Paso no encontrado");
+
+  const job = await prisma.taskJob.findFirst({ where: { id: jobId } });
+  if (!job) throw new Error("Job no encontrado");
+
+  const effectiveTenantId = job.tenantId;
+
+  // Eliminar evidencias fotográficas del step (registros de vinculación)
+  await prisma.taskJobStepEvidenceAsset.deleteMany({ where: { stepId } });
+
+  await prisma.taskJobStepResponse.deleteMany({ where: { stepId } });
+
+  await prisma.taskJobStep.update({
+    where: { id: stepId },
+    data: { status: "PENDING" },
+  });
+
+  await logTaskEvent({
+    tenantId: effectiveTenantId,
+    jobId,
+    eventType: "STEP_RESPONDED",
+    actorId: user.id,
+    metadata: { stepId, stepName: step.nameSnapshot, action: "cleared" },
   });
 
   revalidatePath(`/cleaner/tareas-pro/${jobId}`);
