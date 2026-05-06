@@ -122,15 +122,17 @@ const InventoryCard = forwardRef<InventoryCardRef, InventoryCardProps>(
 
         {isOpen && (
           <div className="px-4 pb-4 pt-0 border-t border-neutral-100 space-y-3">
-            {/* Botón para verificación rápida */}
-            <Link
-              href={`/cleaner/cleanings/${cleaningId}/inventory${
-                returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""
-              }`}
-              className="block w-full px-4 py-2 text-sm font-medium text-center bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition"
-            >
-              Verificar inventario rápidamente
-            </Link>
+            {/* Botón para verificación rápida — solo si el inventario aún no fue enviado */}
+            {!isSubmitted && (
+              <Link
+                href={`/cleaner/cleanings/${cleaningId}/inventory${
+                  returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""
+                }`}
+                className="block w-full px-4 py-2 text-sm font-medium text-center bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition"
+              >
+                Verificar inventario rápidamente
+              </Link>
+            )}
 
             <InventoryReviewPanel
               cleaningId={cleaningId}

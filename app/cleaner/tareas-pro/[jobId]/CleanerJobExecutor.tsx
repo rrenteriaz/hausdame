@@ -1214,8 +1214,8 @@ export default function CleanerJobExecutor({
                 </div>
               )}
 
-              {/* No pude completar esta tarea — visible en steps requeridos/bloqueantes */}
-              {sheet.isRequired && (
+              {/* No pude completar esta tarea — visible en steps requeridos o cuando hay reasonCode activo */}
+              {(sheet.isRequired || !!sheet.reasonCode) && (
                 <div className="border border-neutral-200 rounded-xl overflow-hidden">
                   <button
                     type="button"

@@ -193,6 +193,9 @@ export async function startCleaning(formData: FormData) {
       redirect("/cleaner");
       return;
     }
+    const memberId = formData.get("memberId")?.toString();
+    const returnToRaw = formData.get("returnTo")?.toString();
+    const returnTo = returnToRaw?.startsWith("/cleaner") ? returnToRaw : undefined;
 
     const access = await assertCleanerCanOperateCleaning(cleaningId);
     const membershipId = access.membershipId;
@@ -242,9 +245,13 @@ export async function startCleaning(formData: FormData) {
 
     revalidatePath("/cleaner");
     revalidatePath("/cleaner/cleanings");
-    
-    // Redirigir al detalle de la limpieza después de iniciar
-    redirect(`/cleaner/cleanings/${cleaningId}`);
+
+    // Preservar memberId y returnTo para mantener el contexto de navegación
+    const qs = new URLSearchParams();
+    if (memberId) qs.set("memberId", memberId);
+    if (returnTo) qs.set("returnTo", returnTo);
+    const qsStr = qs.toString();
+    redirect(`/cleaner/cleanings/${cleaningId}${qsStr ? `?${qsStr}` : ""}`);
   } catch (error: unknown) {
     const err = error as { status?: number };
     if (err?.status === 403 || err?.status === 404) {
