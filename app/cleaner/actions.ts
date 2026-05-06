@@ -253,7 +253,10 @@ export async function startCleaning(formData: FormData) {
     const qsStr = qs.toString();
     redirect(`/cleaner/cleanings/${cleaningId}${qsStr ? `?${qsStr}` : ""}`);
   } catch (error: unknown) {
-    const err = error as { status?: number };
+    const err = error as { status?: number; message?: string; digest?: string };
+    if (err?.message === "NEXT_REDIRECT" || `${err?.digest || ""}`.startsWith("NEXT_REDIRECT")) {
+      throw err;
+    }
     if (err?.status === 403 || err?.status === 404) {
       throw err;
     }

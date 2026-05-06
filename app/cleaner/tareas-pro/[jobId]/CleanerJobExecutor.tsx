@@ -926,7 +926,7 @@ export default function CleanerJobExecutor({
 
       {/* Modal cámara */}
       {showCamera && (
-        <div className="fixed inset-0 z-[70] bg-black flex flex-col">
+        <div className="fixed inset-0 z-[90] bg-black flex flex-col">
           {/* Video preview */}
           <div className="flex-1 relative overflow-hidden">
             <video
@@ -971,14 +971,17 @@ export default function CleanerJobExecutor({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-black/40 z-[60]"
             onClick={() => !submitting && setSheet(null)}
           />
 
           {/* Sheet panel — centrado y acotado al ancho estándar de la página */}
-          <div className="fixed bottom-0 inset-x-0 z-50 flex justify-center">
-          <div className="w-full sm:max-w-6xl bg-white rounded-t-2xl shadow-2xl max-h-[88vh] overflow-y-auto">
-            <div className="px-5 pt-3 pb-10 space-y-5">
+          <div className="fixed bottom-0 inset-x-0 z-[70] flex justify-center">
+          <div
+            className="w-full sm:max-w-6xl bg-white rounded-t-2xl shadow-2xl flex flex-col"
+            style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-bottom) - 4rem)' }}
+          >
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 pt-3 pb-4 space-y-5">
               {/* Handle */}
               <div className="w-10 h-1 bg-neutral-200 rounded-full mx-auto" />
 
@@ -1233,13 +1236,25 @@ export default function CleanerJobExecutor({
                         : "bg-white hover:bg-neutral-50"
                     }`}
                   >
-                    <p className={`text-sm font-semibold leading-snug ${sheet.reasonCode ? "text-amber-700" : "text-neutral-800"}`}>
-                      {sheet.reasonCode ? "Justificado — toca para cancelar" : "No pude completar esta tarea"}
-                    </p>
-                    {!sheet.reasonCode && (
-                      <p className="text-xs text-neutral-400 mt-0.5">
-                        Registra el motivo si no tuviste acceso, insumos, tiempo o hubo una falla.
-                      </p>
+                    {sheet.reasonCode ? (
+                      <>
+                        <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-0.5">
+                          ¿Por qué no se hizo esta tarea?
+                        </p>
+                        <p className="text-sm font-semibold text-amber-700 leading-snug">
+                          {sheet.stepName}
+                        </p>
+                        <p className="text-xs text-amber-500 mt-0.5">Toca para cancelar la justificación</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-semibold text-neutral-800 leading-snug">
+                          No pude completar esta tarea
+                        </p>
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                          Registra el motivo si no tuviste acceso, insumos, tiempo o hubo una falla.
+                        </p>
+                      </>
                     )}
                   </button>
 
@@ -1301,7 +1316,12 @@ export default function CleanerJobExecutor({
                 </div>
               )}
 
-              {/* Acciones */}
+            </div>
+            {/* Footer de acciones — siempre visible, nunca scrolleable */}
+            <div
+              className="shrink-0 px-5 pt-3 bg-white border-t border-neutral-100"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+            >
               <div className="flex gap-3">
                 <button
                   type="button"
