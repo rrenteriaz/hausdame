@@ -1,5 +1,7 @@
 // app/login/page.tsx
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/session";
 import LoginClient from "./LoginClient";
 
 function LoginLoading() {
@@ -13,7 +15,12 @@ function LoginLoading() {
   );
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getCurrentUser();
+  if (user) {
+    redirect("/app");
+  }
+
   return (
     <Suspense fallback={<LoginLoading />}>
       <LoginClient />

@@ -2,11 +2,11 @@
   "name": "Hausdame",
   "short_name": "Hausdame",
   "description": "Plataforma de operaciones para alquileres cortos",
-  "start_url": "/",
+  "start_url": "/login",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#ffffff",
   "lang": "es",
   "icons": [
     {

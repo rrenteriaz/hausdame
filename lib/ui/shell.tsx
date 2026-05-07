@@ -25,7 +25,7 @@ export function AppShell({
           {/* Marca Hausdame */}
           <Link href="/host/hoy" className="flex items-center shrink-0">
             <Image
-              src="/hausdame_SinFondo2.png"
+              src="/icons/hausdame_Sin fondo.png"
               alt="Hausdame logo"
               width={180}
               height={160}
