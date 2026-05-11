@@ -286,7 +286,8 @@ export default function CleanerJobExecutor({
   // ---- Clear step (unmark simple steps) ----
   const handleClearStep = async (step: JobStep, sectionId: string) => {
     if (isCompleted || jobStatus !== "IN_PROGRESS") return;
-    // Optimistic update
+    // Optimistic update — also clear evidencePhotos so reopening the step
+    // does not show stale photos from the previous completed response.
     setSections((prev) =>
       prev.map((sec) => {
         if (sec.id !== sectionId) return sec;
@@ -294,7 +295,7 @@ export default function CleanerJobExecutor({
           ...sec,
           steps: sec.steps.map((st) => {
             if (st.id !== step.id) return st;
-            return { ...st, status: "PENDING", response: null };
+            return { ...st, status: "PENDING", response: null, evidencePhotos: [] };
           }),
         };
       })
@@ -305,7 +306,7 @@ export default function CleanerJobExecutor({
       formData.append("jobId", job.id);
       await clearTaskStepResponse(formData);
     } catch (err: any) {
-      // Rollback
+      // Rollback — restore original status, response and evidencePhotos
       setSections((prev) =>
         prev.map((sec) => {
           if (sec.id !== sectionId) return sec;
@@ -313,7 +314,7 @@ export default function CleanerJobExecutor({
             ...sec,
             steps: sec.steps.map((st) => {
               if (st.id !== step.id) return st;
-              return { ...st, status: step.status, response: step.response };
+              return { ...st, status: step.status, response: step.response, evidencePhotos: step.evidencePhotos };
             }),
           };
         })
