@@ -190,6 +190,13 @@ export default function MenuDrawer({ isOpen, onClose, user }: MenuDrawerProps) {
             </button>
             <button
               type="button"
+              onClick={() => handleMenuNav("/host/messages")}
+              className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+            >
+              Mensajes
+            </button>
+            <button
+              type="button"
               onClick={() => handleMenuNav("/host/locks")}
               className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
             >
