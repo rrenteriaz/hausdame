@@ -1,75 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-  prompt(): Promise<void>;
-}
+import { useState } from 'react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const DISMISSED_KEY = 'hd-pwa-banner-dismissed';
 
 /**
- * Banner discreto de instalación PWA.
+ * Banner flotante de instalación PWA (parte inferior de la pantalla).
  *
- * - Android: usa el evento `beforeinstallprompt` para mostrar el botón nativo.
- * - iOS: muestra instrucciones manuales (Compartir → Agregar a pantalla de inicio).
- * - No aparece si la app ya está en modo standalone (ya instalada).
- * - Persiste el "no mostrar más" en localStorage.
+ * Usa usePWAInstall para toda la detección.
+ * Persiste el descarte en localStorage.
  */
 export default function PWAInstallBanner() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIOSHint, setShowIOSHint] = useState(false);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    // Ya instalada como app standalone → no mostrar nada
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-    if (isStandalone) return;
-
-    // El usuario ya descartó el banner
-    if (localStorage.getItem(DISMISSED_KEY)) return;
-
-    // Detectar iOS (Safari no dispara beforeinstallprompt)
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-    if (isIOS && isSafari) {
-      setShowIOSHint(true);
-      setVisible(true);
-      return;
-    }
-
-    // Android / Chrome: esperar el evento de instalación
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setVisible(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted' || outcome === 'dismissed') {
-      dismiss();
-    }
-  };
+  const { status, triggerInstall } = usePWAInstall();
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== 'undefined' && !!localStorage.getItem(DISMISSED_KEY)
+  );
 
   const dismiss = () => {
     localStorage.setItem(DISMISSED_KEY, '1');
-    setVisible(false);
+    setDismissed(true);
   };
 
-  if (!visible) return null;
+  const handleInstall = async () => {
+    await triggerInstall();
+    dismiss();
+  };
+
+  // No mostrar: cargando, ya instalada, descartado por el usuario, o no soportado
+  if (status === 'loading' || status === 'standalone' || status === 'unsupported' || dismissed) {
+    return null;
+  }
 
   return (
     <div
@@ -95,7 +56,7 @@ export default function PWAInstallBanner() {
             Accede más rápido y abre Hausdame como app, sin barra del navegador.
           </p>
 
-          {showIOSHint ? (
+          {status === 'ios' ? (
             <p className="mt-2 text-xs text-blue-600 font-medium">
               En iPhone: toca{' '}
               <span className="inline-flex items-center gap-0.5">

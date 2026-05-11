@@ -5,6 +5,7 @@ import Page from "@/lib/ui/Page";
 import ProfileForm from "./ProfileForm";
 import ChangePasswordForm from "./ChangePasswordForm";
 import LogoutButton from "./LogoutButton";
+import PWAInstallSection from "@/components/pwa/PWAInstallSection";
 
 export default async function AccountPage({
   searchParams,
@@ -33,6 +34,9 @@ export default async function AccountPage({
           </h2>
           <ChangePasswordForm />
         </section>
+
+        {/* Instalar app */}
+        <PWAInstallSection />
 
         {/* Cerrar sesión */}
         <section className="rounded-2xl border border-neutral-200 bg-white p-4">
