@@ -58,14 +58,13 @@ export default function PWAInstallSection() {
             </button>
           )}
 
-          {status === 'unsupported' && (
-            <span className="shrink-0 text-xs text-neutral-400">No disponible</span>
-          )}
         </div>
 
         {status === 'unsupported' && (
-          <p className="mt-2 text-xs text-neutral-400 leading-snug">
-            Tu navegador no permite instalar la app desde este botón. Puedes agregarla desde el menú del navegador.
+          <p className="mt-2 text-xs text-neutral-500 leading-snug">
+            Si no aparece el botón, abre el menú del navegador y elige{' '}
+            <strong className="text-neutral-700">Instalar app</strong> o{' '}
+            <strong className="text-neutral-700">Agregar a pantalla de inicio</strong>.
           </p>
         )}
       </section>
