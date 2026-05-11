@@ -131,11 +131,12 @@ export default function CleanerLayoutClient({
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
           <Link href="/cleaner" className="flex items-center shrink-0">
             <Image
-              src="/icons/hausdame_Sin fondo.png"
+              src="/icons/HausdameHorizontal_sinfondo.png"
               alt="Hausdame logo"
-              width={180}
-              height={160}
+              width={220}
+              height={60}
               className="object-contain"
+              style={{ height: "40px", width: "auto" }}
             />
           </Link>
 

@@ -177,6 +177,8 @@ html {
 }
 
 #landing-page .nav-logo {
+  display: flex;
+  align-items: center;
   font-size: 20px;
   font-weight: 800;
   color: var(--text);

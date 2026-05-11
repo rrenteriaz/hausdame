@@ -25,13 +25,13 @@ export function AppShell({
           {/* Marca Hausdame */}
           <Link href="/host/hoy" className="flex items-center shrink-0">
             <Image
-              src="/icons/hausdame_Sin fondo.png"
+              src="/icons/HausdameHorizontal_sinfondo.png"
               alt="Hausdame logo"
-              width={180}
-              height={160}
+              width={220}
+              height={60}
               className="object-contain"
               priority
-              style={{ width: "auto", height: "auto" }}
+              style={{ height: "40px", width: "auto" }}
             />
           </Link>
 

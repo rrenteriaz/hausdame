@@ -72,7 +72,7 @@ export default function Home() {
         <div className="container">
           <div className="nav-inner">
             <a href="#" className="nav-logo">
-              <Image src="/icons/hausdame_Sin fondo.png" alt="Hausdame" width={180} height={60} className="object-contain" style={{ display: 'block' }} />
+              <Image src="/icons/HausdameHorizontal_sinfondo.png" alt="Hausdame" width={220} height={60} className="h-10 md:h-12 w-auto object-contain" priority />
             </a>
             <ul className="nav-links">
               <li><a href="#features">Producto</a></li>
@@ -962,7 +962,7 @@ export default function Home() {
           <div className="footer-inner">
             <div className="footer-brand">
               <div className="footer-logo">
-                <Image src="/icons/hausdame_fondoblanco.png" alt="Hausdame" width={180} height={60} className="object-contain" style={{ display: 'block' }} />
+                <Image src="/icons/HausdameHorizontal_sinfondo.png" alt="Hausdame" width={220} height={60} className="object-contain" style={{ display: 'block' }} />
               </div>
               <p className="footer-desc">La plataforma de operaciones para hosts y gestores de alquileres de corta estancia.</p>
             </div>

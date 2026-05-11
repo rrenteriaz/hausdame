@@ -2,8 +2,7 @@
  * Genera los íconos PWA necesarios a partir del logo de Hausdame.
  * Uso: npx tsx scripts/generate-pwa-icons.ts
  *
- * Fuente estándar: public/icons/hausdame_fondoblanco.png (logo con fondo blanco)
- * Fuente maskable: public/icons/hausdame_Sin fondo.png (logo sin fondo, transparente)
+ * Fuente: public/icons/HausdameHorizontal_sinfondo.png (logo horizontal sin fondo)
  * Destino: public/icons/
  */
 
@@ -11,8 +10,8 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 
-const SOURCE_IMAGE = path.join(process.cwd(), 'public', 'icons', 'hausdame_fondoblanco.png');
-const SOURCE_MASKABLE = path.join(process.cwd(), 'public', 'icons', 'hausdame_Sin fondo.png');
+const SOURCE_IMAGE = path.join(process.cwd(), 'public', 'icons', 'HausdameHorizontal_sinfondo.png');
+const SOURCE_MASKABLE = path.join(process.cwd(), 'public', 'icons', 'HausdameHorizontal_sinfondo.png');
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'icons');
 
 interface IconSpec {
