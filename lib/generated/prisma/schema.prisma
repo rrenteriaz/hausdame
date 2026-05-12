@@ -73,6 +73,8 @@ model Tenant {
   variantGroups                VariantGroup[]
   workGroupExecutorsHost       WorkGroupExecutor[]           @relation("Tenant_WorkGroupExecutorsHost")
   workGroupExecutorsServices   WorkGroupExecutor[]           @relation("Tenant_WorkGroupExecutorsServices")
+  notifications                Notification[]
+  pushSubscriptions            PushSubscription[]
 }
 
 /// *
@@ -118,6 +120,8 @@ model User {
   TeamInvite_TeamInvite_createdByUserIdToUser TeamInvite[]                  @relation("TeamInvite_createdByUserIdToUser")
   teamMembers                                 TeamMember[]                  @relation("UserTeamMembers")
   TeamMembership                              TeamMembership[]
+  notifications                               Notification[]
+  pushSubscriptions                           PushSubscription[]
   avatarMedia                                 Asset?                        @relation("UserAvatar", fields: [avatarMediaId], references: [id])
   tenant                                      Tenant?                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
@@ -2363,4 +2367,64 @@ model TaskRecurringDue {
   @@index([tenantId, propertyId, status])
   @@index([tenantId, status])
   @@index([tenantId])
+}
+
+// ── Notificaciones internas ────────────────────────────────────────────────
+
+enum NotificationType {
+  CLEANING_ASSIGNED
+  CLEANING_STARTED
+  CLEANING_COMPLETED
+  CLEANING_REQUIRES_ATTENTION
+  TASK_DUE
+  TASK_COMPLETED
+  SYSTEM
+}
+
+/// Notificación interna para un usuario de Hausdame.
+/// dedupeKey permite idempotencia: si se intenta crear una notificación con el
+/// mismo userId + dedupeKey, la constraint @@unique la bloquea silenciosamente.
+/// dedupeKey es nullable; cuando es null no aplica la unicidad (múltiples SYSTEM ok).
+model Notification {
+  id        String           @id @default(cuid())
+  tenantId  String
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  href      String?
+  data      Json?
+  readAt    DateTime?
+  dedupeKey String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([tenantId])
+}
+
+/// Suscripción push Web Push API para un usuario.
+/// endpoint es único porque el navegador ya garantiza un endpoint único por dispositivo/perfil.
+model PushSubscription {
+  id        String    @id @default(cuid())
+  tenantId  String?
+  userId    String
+  endpoint  String    @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  revokedAt DateTime?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, revokedAt])
 }

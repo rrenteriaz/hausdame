@@ -2,6 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const NotificationBell = dynamic(
+  () => import("@/components/notifications/NotificationBell"),
+  { ssr: false }
+);
 
 interface NavItem {
   href: string;
@@ -134,6 +140,8 @@ export default function DesktopTopNav({ onMenuClick, isMenuOpen }: DesktopTopNav
             </Link>
           );
         })}
+        {/* Campana móvil */}
+        <NotificationBell />
         {/* Botón Menú en móvil */}
         <button
           type="button"
@@ -185,6 +193,8 @@ export default function DesktopTopNav({ onMenuClick, isMenuOpen }: DesktopTopNav
           );
         })}
         
+        {/* Campana desktop */}
+        <NotificationBell />
         {/* Botón Menú en desktop */}
         <button
           type="button"

@@ -14,6 +14,7 @@ import { assertValidScheduledDate, assertAssignmentCoherence } from "@/lib/clean
 import { buildCleaningScheduledDate } from "@/lib/datetime/buildCleaningScheduledDate";
 import { createOrUpdateInventoryReview } from "@/app/host/inventory-review/actions";
 import { InventoryReviewStatus } from "@/lib/generated/prisma";
+import { createNotification } from "@/lib/notifications/createNotification";
 // FASE 5: property-id-helper eliminado, propertyId ahora es el PK directamente
 
 export async function rescheduleCleaning(formData: FormData) {
@@ -553,18 +554,42 @@ export async function assignTeamMemberToCleaning(formData: FormData) {
     },
   });
 
+  // Notificar al cleaner asignado
+  if (finalAssigneeId) {
+    try {
+      const membership = await prisma.teamMembership.findUnique({
+        where: { id: finalAssigneeId },
+        select: { userId: true },
+      });
+      if (membership?.userId) {
+        await createNotification({
+          tenantId,
+          userId: membership.userId,
+          type: "CLEANING_ASSIGNED",
+          title: "Limpieza asignada",
+          body: "Se te ha asignado una nueva limpieza.",
+          href: `/cleaner/cleanings/${cleaningId}`,
+          dedupeKey: `cleaning:${cleaningId}:assigned:${finalAssigneeId}`,
+          sendPush: true,
+        });
+      }
+    } catch (notifError) {
+      console.error("[assignTeamMemberToCleaning] Error enviando notificación:", notifError);
+    }
+  }
+
   revalidatePath("/host/cleanings");
   revalidatePath("/host/cleanings/needs-attention");
   const returnTo = formData.get("returnTo")?.toString();
 
   // Revalidar la página del detalle de limpieza
   revalidatePath(`/host/cleanings/${cleaningId}`);
-  
+
   // Si viene desde una reserva, revalidar también esa página (pero no redirigir ahí)
   if (returnTo && returnTo.startsWith("/host/reservations/")) {
     revalidatePath(returnTo);
   }
-  
+
   // Siempre redirigir al detalle de limpieza, no al returnTo
   // Esto asegura que el usuario permanezca en la página de limpieza después de asignar
   redirect(`/host/cleanings/${cleaningId}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`);

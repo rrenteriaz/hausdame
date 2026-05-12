@@ -8,6 +8,12 @@ import { useState, Suspense } from "react";
 import { OfflineInit } from "@/components/offline/OfflineInit";
 import LogoutSyncListener from "@/lib/auth/LogoutSyncListener";
 import CleanerMenu from "@/lib/ui/CleanerMenu";
+import dynamic from "next/dynamic";
+
+const NotificationBell = dynamic(
+  () => import("@/components/notifications/NotificationBell"),
+  { ssr: false }
+);
 
 /**
  * Aislamos useSearchParams en su propio componente para cumplir el requisito
@@ -173,6 +179,7 @@ export default function CleanerLayoutClient({
                 </Link>
               );
             })}
+            <NotificationBell />
             <button
               type="button"
               onClick={() => setIsMenuOpen(true)}
@@ -205,7 +212,7 @@ export default function CleanerLayoutClient({
           className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 pb-[env(safe-area-inset-bottom)] sm:hidden"
           aria-label="Navegación principal"
         >
-          <div className={`grid h-16 ${hasInProgress ? "grid-cols-6" : "grid-cols-5"}`}>
+          <div className={`grid h-16 ${hasInProgress ? "grid-cols-7" : "grid-cols-6"}`}>
             {/* Hoy: aislado en Suspense */}
             <Suspense
               fallback={
@@ -245,6 +252,11 @@ export default function CleanerLayoutClient({
                 </Link>
               );
             })}
+
+            {/* Campana móvil */}
+            <div className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-1 py-2 transition-colors text-neutral-500">
+              <NotificationBell />
+            </div>
 
             {/* Menú */}
             <button

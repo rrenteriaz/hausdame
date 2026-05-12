@@ -14,6 +14,7 @@ import { getAccessibleTeamsForUser } from "@/lib/cleaner/getAccessibleTeamsForUs
 import { getAccessiblePropertiesAndTenants } from "@/lib/cleaner/getAccessiblePropertiesAndTenants";
 import { getServiceTeamsForPropertyViaWorkGroupsWithFallback } from "@/lib/workgroups/getServiceTeamsForPropertyViaWorkGroups";
 import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
+import { createNotification } from "@/lib/notifications/createNotification";
 
 const DEBUG_LOGS = process.env.DEBUG_LOGS === "1";
 
@@ -277,7 +278,7 @@ export async function completeCleaning(formData: FormData) {
     const membershipId = access.membershipId;
 
     // Solo permitir completar si está asignada a este miembro
-    await prisma.cleaning.updateMany({
+    const completedCount = await prisma.cleaning.updateMany({
       where: {
         id: cleaningId,
         tenantId: access.cleaning.tenantId,
@@ -289,6 +290,37 @@ export async function completeCleaning(formData: FormData) {
         completedAt: new Date(),
       },
     });
+
+    // Notificar al host cuando el cleaner completa la limpieza
+    if (completedCount.count > 0) {
+      const tenantId = access.cleaning.tenantId;
+      try {
+        const hostUsers = await prisma.user.findMany({
+          where: {
+            tenantId,
+            role: { in: ["OWNER", "ADMIN"] },
+          },
+          select: { id: true },
+        });
+
+        await Promise.all(
+          hostUsers.map((hostUser) =>
+            createNotification({
+              tenantId,
+              userId: hostUser.id,
+              type: "CLEANING_COMPLETED",
+              title: "Limpieza completada",
+              body: "Una limpieza ha sido marcada como completada por el equipo.",
+              href: `/host/cleanings/${cleaningId}`,
+              dedupeKey: `cleaning:${cleaningId}:completed`,
+              sendPush: true,
+            })
+          )
+        );
+      } catch (notifError) {
+        if (DEBUG_LOGS) console.error("[completeCleaning] Error enviando notificaciones:", notifError);
+      }
+    }
 
     revalidatePath("/cleaner");
     revalidatePath("/cleaner/cleanings");
@@ -358,6 +390,40 @@ export async function declineCleaning(formData: FormData) {
     if (result.count === 0) {
       redirect("/cleaner");
       return;
+    }
+
+    // Notificar al host que la limpieza fue declinada y requiere atención
+    try {
+      const declinedCleaning = await prisma.cleaning.findUnique({
+        where: { id: cleaningId },
+        select: { tenantId: true },
+      });
+      if (declinedCleaning?.tenantId) {
+        const tenantId = declinedCleaning.tenantId;
+        const hostUsers = await prisma.user.findMany({
+          where: {
+            tenantId,
+            role: { in: ["OWNER", "ADMIN"] },
+          },
+          select: { id: true },
+        });
+        await Promise.all(
+          hostUsers.map((hostUser) =>
+            createNotification({
+              tenantId,
+              userId: hostUser.id,
+              type: "CLEANING_REQUIRES_ATTENTION",
+              title: "Limpieza sin asignar",
+              body: "Un limpiador declinó la limpieza. Requiere reasignación.",
+              href: `/host/cleanings/${cleaningId}`,
+              dedupeKey: `cleaning:${cleaningId}:declined`,
+              sendPush: true,
+            })
+          )
+        );
+      }
+    } catch (notifError) {
+      if (DEBUG_LOGS) console.error("[declineCleaning] Error enviando notificaciones:", notifError);
     }
 
     revalidatePath("/cleaner");
