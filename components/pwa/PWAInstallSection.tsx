@@ -6,19 +6,20 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 /**
  * Sección "Instalar Hausdame" para páginas de Ajustes/Perfil.
  *
- * - standalone  → no se muestra (ya instalada).
- * - android     → botón que dispara el prompt nativo.
- * - ios         → botón que abre modal con instrucciones manuales.
- * - unsupported → mensaje informativo.
+ * Siempre visible — el contenido cambia según el estado:
  * - loading     → no renderiza nada (evita flicker de hidratación).
+ * - standalone  → botón desactivado "App instalada".
+ * - android     → botón activo "Instala en tu móvil" (prompt nativo).
+ * - ios         → botón activo "Instala en tu móvil" (modal con instrucciones).
+ * - unsupported → texto informativo, sin botón activo.
  */
 export default function PWAInstallSection() {
   const { status, triggerInstall } = usePWAInstall();
   const [iosModalOpen, setIosModalOpen] = useState(false);
   const [installing, setInstalling] = useState(false);
 
-  // Ocultar completamente si ya está instalada o aún cargando
-  if (status === 'loading' || status === 'standalone') return null;
+  // Solo omitir durante hidratación para evitar flicker
+  if (status === 'loading') return null;
 
   const handleAndroidInstall = async () => {
     setInstalling(true);
@@ -26,6 +27,47 @@ export default function PWAInstallSection() {
     setInstalling(false);
   };
 
+  // ── Estado: ya instalada ───────────────────────────────────────────────
+  if (status === 'standalone') {
+    return (
+      <section className="rounded-2xl border border-neutral-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-neutral-900">Instalar Hausdame</p>
+            <p className="text-xs text-neutral-500 mt-0.5 leading-snug">
+              Hausdame ya está instalada en este dispositivo.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="shrink-0 rounded-xl bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-400 cursor-default select-none"
+          >
+            App instalada
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Estado: instalación no disponible ─────────────────────────────────
+  if (status === 'unsupported') {
+    return (
+      <section className="rounded-2xl border border-neutral-200 bg-white p-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-neutral-900">Instalar Hausdame</p>
+          <p className="text-xs text-neutral-500 mt-0.5 leading-snug">
+            La instalación no está disponible en este navegador.
+          </p>
+          <p className="text-xs text-neutral-400 mt-1 leading-snug">
+            Recomendamos Chrome o Edge en Android/Windows, y Safari en iPhone.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Estado: puede instalarse (android o ios) ───────────────────────────
   return (
     <>
       <section className="rounded-2xl border border-neutral-200 bg-white p-4">
@@ -33,7 +75,7 @@ export default function PWAInstallSection() {
           <div className="min-w-0">
             <p className="text-sm font-semibold text-neutral-900">Instalar Hausdame</p>
             <p className="text-xs text-neutral-500 mt-0.5 leading-snug">
-              Agrega Hausdame a tu pantalla de inicio y úsala como app.
+              Accede más rápido a Hausdame desde tu pantalla de inicio.
             </p>
           </div>
 
@@ -44,7 +86,7 @@ export default function PWAInstallSection() {
               disabled={installing}
               className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-50"
             >
-              {installing ? 'Instalando…' : 'Instalar'}
+              {installing ? 'Instalando…' : 'Instala en tu móvil'}
             </button>
           )}
 
@@ -54,19 +96,10 @@ export default function PWAInstallSection() {
               onClick={() => setIosModalOpen(true)}
               className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 active:scale-[0.98] transition"
             >
-              Instalar
+              Instala en tu móvil
             </button>
           )}
-
         </div>
-
-        {status === 'unsupported' && (
-          <p className="mt-2 text-xs text-neutral-500 leading-snug">
-            Si no aparece el botón, abre el menú del navegador y elige{' '}
-            <strong className="text-neutral-700">Instalar app</strong> o{' '}
-            <strong className="text-neutral-700">Agregar a pantalla de inicio</strong>.
-          </p>
-        )}
       </section>
 
       {/* Modal instrucciones iOS */}

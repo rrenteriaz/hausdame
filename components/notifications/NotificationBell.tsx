@@ -11,7 +11,7 @@ const NotificationPanel = dynamic(() => import("./NotificationPanel"), {
 
 const POLL_INTERVAL_MS = 60_000; // Refrescar contador cada 60s
 
-export default function NotificationBell() {
+export default function NotificationBell({ openUp = false }: { openUp?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -130,6 +130,7 @@ export default function NotificationBell() {
           onClose={() => setIsOpen(false)}
           onMarkRead={handleMarkRead}
           onMarkAllRead={handleMarkAllRead}
+          openUp={openUp}
         />
       )}
     </div>

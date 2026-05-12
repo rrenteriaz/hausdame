@@ -254,8 +254,8 @@ export default function CleanerLayoutClient({
             })}
 
             {/* Campana móvil */}
-            <div className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-1 py-2 transition-colors text-neutral-500">
-              <NotificationBell />
+            <div className="relative flex items-center justify-center min-w-[44px] min-h-[44px]">
+              <NotificationBell openUp />
             </div>
 
             {/* Menú */}

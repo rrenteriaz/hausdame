@@ -25,6 +25,8 @@ interface NotificationPanelProps {
   onClose: () => void;
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
+  /** Si true, el panel se abre hacia arriba (para bottom nav fijo) */
+  openUp?: boolean;
 }
 
 export default function NotificationPanel({
@@ -32,6 +34,7 @@ export default function NotificationPanel({
   onClose,
   onMarkRead,
   onMarkAllRead,
+  openUp = false,
 }: NotificationPanelProps) {
   const router = useRouter();
   const { state: pushState, subscribe } = usePushNotifications();
@@ -61,7 +64,9 @@ export default function NotificationPanel({
   return (
     <div
       ref={panelRef}
-      className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white border border-neutral-200 rounded-xl shadow-lg z-50 flex flex-col max-h-[80vh] overflow-hidden"
+      className={`absolute right-0 w-80 sm:w-96 bg-white border border-neutral-200 rounded-xl shadow-lg z-50 flex flex-col max-h-[70vh] overflow-hidden ${
+        openUp ? "bottom-full mb-2" : "top-full mt-2"
+      }`}
       role="dialog"
       aria-label="Notificaciones"
     >

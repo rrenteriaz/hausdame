@@ -2,6 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const NotificationBell = dynamic(
+  () => import("@/components/notifications/NotificationBell"),
+  { ssr: false }
+);
 
 interface NavItem {
   href: string;
@@ -143,6 +149,11 @@ export default function HostBottomNav() {
                 </Link>
               );
             })}
+            {/* Campana de notificaciones */}
+            <div className="flex items-center justify-center min-w-[44px] min-h-[44px]">
+              <NotificationBell openUp />
+            </div>
+
             {/* Botón Menú - navega a /host/menu */}
             <Link
               href="/host/menu"
