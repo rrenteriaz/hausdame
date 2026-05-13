@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import BackChevron from "./BackChevron";
+import { useMobileHeader } from "./MobileHeaderContext";
 
 interface PageHeaderProps {
   title: React.ReactNode;
@@ -12,15 +14,6 @@ interface PageHeaderProps {
   variant?: "default" | "compact";
 }
 
-/**
- * Componente reutilizable para encabezados de página consistentes.
- * 
- * Layout:
- * - Fila 1: [BackChevron opcional + Title] / [rightActions opcional]
- * - Fila 2: subtitle con spacing adecuado
- * - Title con truncate para evitar overflow en móvil
- * - rightActions no empuja el título fuera
- */
 export default function PageHeader({
   title,
   subtitle,
@@ -30,9 +23,28 @@ export default function PageHeader({
   className = "",
   variant = "default",
 }: PageHeaderProps) {
+  const { setTitle, hasProvider, breakpoint } = useMobileHeader();
+
+  // Inyectar el título en la barra superior móvil del layout.
+  // Solo si hay provider activo y el título es un string.
+  useEffect(() => {
+    if (!hasProvider) return;
+    setTitle(typeof title === "string" ? title : null);
+    return () => setTitle(null);
+  }, [title, setTitle, hasProvider]);
+
   const titleSize = variant === "compact" ? "text-xl" : "text-2xl";
   const subtitleMargin = variant === "compact" ? "mt-1" : "mt-2";
   const spacingClass = variant === "compact" ? "space-y-1" : "space-y-2";
+
+  // En mobile, el título se muestra en la barra superior del layout.
+  // Ocultarlo aquí evita duplicarlo. El breakpoint depende del layout
+  // (Host: lg, Cleaner: sm).
+  const titleHideOnMobile = hasProvider
+    ? breakpoint === "lg"
+      ? "hidden lg:block"
+      : "hidden sm:block"
+    : "";
 
   return (
     <header className={`${spacingClass} ${className}`}>
@@ -45,7 +57,7 @@ export default function PageHeader({
               <BackChevron href={backHref} />
             </div>
           )}
-          <h1 className={`${titleSize} font-semibold tracking-tight text-neutral-900 min-w-0 truncate`}>
+          <h1 className={`${titleSize} font-semibold tracking-tight text-neutral-900 min-w-0 truncate ${titleHideOnMobile}`}>
             {title}
           </h1>
         </div>

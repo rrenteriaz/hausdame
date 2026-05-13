@@ -9,11 +9,29 @@ import { OfflineInit } from "@/components/offline/OfflineInit";
 import LogoutSyncListener from "@/lib/auth/LogoutSyncListener";
 import CleanerMenu from "@/lib/ui/CleanerMenu";
 import dynamic from "next/dynamic";
+import { MobileHeaderProvider, useMobileHeader } from "@/lib/ui/MobileHeaderContext";
 
 const NotificationBell = dynamic(
   () => import("@/components/notifications/NotificationBell"),
   { ssr: false }
 );
+
+function CleanerMobileTopBar() {
+  const { title } = useMobileHeader();
+  return (
+    <div
+      className="sm:hidden sticky top-0 z-50 bg-white"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+    >
+      <div className="flex items-center justify-between h-12 px-4">
+        <span className="text-base font-semibold text-neutral-900 truncate pr-2">
+          {title ?? ""}
+        </span>
+        <NotificationBell />
+      </div>
+    </div>
+  );
+}
 
 /**
  * Aislamos useSearchParams en su propio componente para cumplir el requisito
@@ -128,20 +146,13 @@ export default function CleanerLayoutClient({
   ];
 
   return (
+    <MobileHeaderProvider breakpoint="sm">
     <div className={`${isThreadPage ? "h-[100dvh] flex flex-col overflow-hidden bg-neutral-50" : "min-h-screen flex flex-col bg-neutral-50"}`}>
       <LogoutSyncListener />
       <OfflineInit />
 
-      {/* Barra superior móvil con campanita — siempre visible en mobile (< 640px).
-          En desktop (≥ 640px) el header ya incluye la campana. */}
-      <header
-        className="sm:hidden sticky top-0 z-50 bg-white border-b border-neutral-200"
-        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
-      >
-        <div className="flex items-center justify-end h-12 px-4">
-          <NotificationBell />
-        </div>
-      </header>
+      {/* Barra superior móvil con título + campana */}
+      <CleanerMobileTopBar />
 
       {/* Header desktop */}
       <header className="hidden sm:block border-b bg-white sticky top-0 z-50">
@@ -284,5 +295,6 @@ export default function CleanerLayoutClient({
         isTeamLeader={isTeamLeader}
       />
     </div>
+    </MobileHeaderProvider>
   );
 }
