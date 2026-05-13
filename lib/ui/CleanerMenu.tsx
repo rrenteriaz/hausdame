@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { broadcastLogout } from "@/lib/auth/logoutBroadcast";
 import BottomSheet from "./BottomSheet";
+import PWAInstallSection from "@/components/pwa/PWAInstallSection";
 
 interface CleanerMenuProps {
   isOpen: boolean;
@@ -162,6 +163,13 @@ export default function CleanerMenu({ isOpen, onClose, user, isTeamLeader = fals
 
           <button
             type="button"
+            onClick={() => handleMenuNav("/cleaner/messages")}
+            className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+          >
+            Mensajes
+          </button>
+          <button
+            type="button"
             onClick={() => handleMenuNav("/cleaner/teams")}
             className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
           >
@@ -185,6 +193,8 @@ export default function CleanerMenu({ isOpen, onClose, user, isTeamLeader = fals
           >
             {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
           </button>
+          <div className="border-t border-neutral-200 my-2" />
+          <PWAInstallSection />
         </div>
       </BottomSheet>
     );
@@ -265,6 +275,13 @@ export default function CleanerMenu({ isOpen, onClose, user, isTeamLeader = fals
 
             <button
               type="button"
+              onClick={() => handleMenuNav("/cleaner/messages")}
+              className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
+            >
+              Mensajes
+            </button>
+            <button
+              type="button"
               onClick={() => handleMenuNav("/cleaner/teams")}
               className="w-full px-4 py-3 text-left text-base text-neutral-900 hover:bg-neutral-50 rounded-lg transition"
             >
@@ -288,6 +305,8 @@ export default function CleanerMenu({ isOpen, onClose, user, isTeamLeader = fals
             >
               {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
             </button>
+            <div className="border-t border-neutral-200 my-2" />
+            <PWAInstallSection />
           </div>
         </div>
       </div>

@@ -5,7 +5,6 @@ import EditCleanerProfileModal from "./profile-edit-modal";
 import { changePassword } from "./actions";
 import CleanerAddressMapPreview from "./CleanerAddressMapPreview";
 import PropertyLocationPreview from "@/app/host/properties/[id]/PropertyLocationPreview";
-import PWAInstallSection from "@/components/pwa/PWAInstallSection";
 
 type CleanerProfileData =
   | {
@@ -288,8 +287,6 @@ export default function CleanerProfileClient({
           )}
         </div>
       </section>
-
-      <PWAInstallSection />
 
       <ChangePasswordModal
         isOpen={isPasswordOpen}

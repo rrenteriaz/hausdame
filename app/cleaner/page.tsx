@@ -49,7 +49,8 @@ export default async function CleanerPage({
             <span className="text-neutral-600 font-normal">{displayName}</span>
           </span>
         }
-        containerClassName="pt-6"
+        mobileTitle="Calendario"
+        containerClassName="pt-0 sm:pt-6"
       >
         {/* Mensaje de bienvenida integrado */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
@@ -69,7 +70,7 @@ export default async function CleanerPage({
         {/* Calendario vacío */}
         <section className="space-y-3">
           <div className="flex items-center justify-between border-b border-neutral-200">
-            <h2 className="text-base font-semibold text-neutral-800">Calendario</h2>
+            <h2 className="text-base font-semibold text-neutral-800 sm:block hidden">Calendario</h2>
             <div className="flex items-center gap-2">
               <Link
                 href="/cleaner?view=month"
@@ -121,7 +122,8 @@ export default async function CleanerPage({
             <span className="text-neutral-600 font-normal">{user.name ?? "Cleaner"}</span>
           </span>
         }
-        containerClassName="pt-6"
+        mobileTitle="Calendario"
+        containerClassName="pt-0 sm:pt-6"
       >
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
           <h2 className="text-xl font-bold text-neutral-800 mb-3">
@@ -238,7 +240,8 @@ export default async function CleanerPage({
             <span className="text-neutral-600 font-normal">{displayName}</span>
           </span>
         }
-        containerClassName="pt-6"
+        mobileTitle="Calendario"
+        containerClassName="pt-0 sm:pt-6"
       >
         {/* Mensaje de bienvenida integrado */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
@@ -258,7 +261,7 @@ export default async function CleanerPage({
         {/* Calendario vacío */}
         <section className="space-y-3">
           <div className="flex items-center justify-between border-b border-neutral-200">
-            <h2 className="text-base font-semibold text-neutral-800">Calendario</h2>
+            <h2 className="text-base font-semibold text-neutral-800 sm:block hidden">Calendario</h2>
             <div className="flex items-center gap-2">
               <Link
                 href={buildViewHref("month")}
@@ -524,7 +527,8 @@ export default async function CleanerPage({
             </span>
           </span>
         }
-        containerClassName="pt-6"
+        mobileTitle="Calendario"
+        containerClassName="pt-0 sm:pt-6"
       >
         {/* Mensaje de bienvenida integrado */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
@@ -544,7 +548,7 @@ export default async function CleanerPage({
         {/* Calendario vacío */}
         <section className="space-y-3">
           <div className="flex items-center justify-between border-b border-neutral-200">
-            <h2 className="text-base font-semibold text-neutral-800">Calendario</h2>
+            <h2 className="text-base font-semibold text-neutral-800 sm:block hidden">Calendario</h2>
             <div className="flex items-center gap-2">
               <Link
                 href={buildViewHref("month")}
@@ -886,12 +890,13 @@ export default async function CleanerPage({
           </span>
         </span>
       }
-      containerClassName="pt-6"
+      mobileTitle="Calendario"
+      containerClassName="pt-0 sm:pt-6"
     >
       {/* Calendario - tabs sticky para evitar que toques en la lista activen Mes por superposición */}
       <section className="space-y-3">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-white py-2 -mx-4 px-4 sm:mx-0 sm:px-0 mb-2">
-          <h2 className="text-base font-semibold text-neutral-800">Calendario</h2>
+          <h2 className="text-base font-semibold text-neutral-800 sm:block hidden">Calendario</h2>
 
           {/* Tabs Día / Mes - separación extra para evitar toques accidentales en dispositivos táctiles */}
           <div className="flex items-center gap-2">

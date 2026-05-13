@@ -6,6 +6,8 @@ import { useMobileHeader } from "./MobileHeaderContext";
 
 interface PageHeaderProps {
   title: React.ReactNode;
+  /** Texto alternativo para la barra superior móvil cuando title es un nodo JSX. */
+  mobileTitle?: string;
   subtitle?: React.ReactNode;
   showBack?: boolean;
   backHref?: string;
@@ -16,6 +18,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({
   title,
+  mobileTitle,
   subtitle,
   showBack = false,
   backHref,
@@ -26,12 +29,13 @@ export default function PageHeader({
   const { setTitle, hasProvider, breakpoint } = useMobileHeader();
 
   // Inyectar el título en la barra superior móvil del layout.
-  // Solo si hay provider activo y el título es un string.
+  // Prioridad: mobileTitle (string explícito) > title si es string > null.
   useEffect(() => {
     if (!hasProvider) return;
-    setTitle(typeof title === "string" ? title : null);
+    const resolved = mobileTitle ?? (typeof title === "string" ? title : null);
+    setTitle(resolved);
     return () => setTitle(null);
-  }, [title, setTitle, hasProvider]);
+  }, [title, mobileTitle, setTitle, hasProvider]);
 
   const titleSize = variant === "compact" ? "text-xl" : "text-2xl";
   const subtitleMargin = variant === "compact" ? "mt-1" : "mt-2";
@@ -53,7 +57,7 @@ export default function PageHeader({
         {/* Izquierda: BackChevron + Title */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {showBack && (
-            <div className="shrink-0 -ml-2">
+            <div className={`shrink-0 -ml-2 ${titleHideOnMobile}`}>
               <BackChevron href={backHref} />
             </div>
           )}

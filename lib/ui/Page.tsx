@@ -6,6 +6,7 @@ import PageHeader from "./PageHeader";
 
 interface PageHeaderProps {
   title: React.ReactNode;
+  mobileTitle?: string;
   subtitle?: React.ReactNode;
   showBack?: boolean;
   backHref?: string;
@@ -42,6 +43,7 @@ export default function Page({
   contentSpacing = "default",
   // PageHeader props
   title,
+  mobileTitle,
   subtitle,
   showBack = false,
   backHref,
@@ -62,6 +64,7 @@ export default function Page({
       {title && (
         <PageHeader
           title={title}
+          mobileTitle={mobileTitle}
           subtitle={subtitle}
           showBack={showBack}
           backHref={backHref}

@@ -20,7 +20,7 @@ function CleanerMobileTopBar() {
   const { title } = useMobileHeader();
   return (
     <div
-      className="sm:hidden sticky top-0 z-50 bg-white"
+      className="sm:hidden sticky top-0 z-50 bg-neutral-50"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="flex items-center justify-between h-12 px-4">
@@ -142,7 +142,6 @@ export default function CleanerLayoutClient({
       : []),
     { href: "/cleaner/history", label: "Historial", icon: "📋" },
     { href: "/cleaner/marketplace", label: "Marketplace", icon: "🔍" },
-    { href: "/cleaner/messages", label: "Mensajes", icon: "💬" },
   ];
 
   return (
@@ -219,7 +218,7 @@ export default function CleanerLayoutClient({
 
       {/* Contenido principal */}
       <main
-        className={`${isThreadPage ? "p-0 flex-1 flex flex-col overflow-hidden min-h-0 sm:h-auto sm:overflow-visible" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 pb-28 sm:pb-16"}`}
+        className={`${isThreadPage ? "p-0 flex-1 flex flex-col overflow-hidden min-h-0 sm:h-auto sm:overflow-visible" : "flex-1 px-4 pt-0 pb-4 sm:px-6 sm:py-6 pb-28 sm:pb-16"}`}
       >
         {children}
       </main>
@@ -230,7 +229,7 @@ export default function CleanerLayoutClient({
           className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 pb-[env(safe-area-inset-bottom)] sm:hidden"
           aria-label="Navegación principal"
         >
-          <div className={`grid h-16 ${hasInProgress ? "grid-cols-6" : "grid-cols-5"}`}>
+          <div className={`grid h-16 ${hasInProgress ? "grid-cols-5" : "grid-cols-4"}`}>
             {/* Hoy: aislado en Suspense */}
             <Suspense
               fallback={
