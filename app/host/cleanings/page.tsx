@@ -11,6 +11,7 @@ import DailyCleaningsViewWithModal from "./DailyCleaningsViewWithModal";
 import CreateCleaningForm from "./CreateCleaningForm";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import Page from "@/lib/ui/Page";
+import PageHeader from "@/lib/ui/PageHeader";
 import ListContainer from "@/lib/ui/ListContainer";
 import ListRow from "@/lib/ui/ListRow";
 import ListThumb from "@/lib/ui/ListThumb";
@@ -229,14 +230,10 @@ export default async function CleaningsPage({
     <div className="space-y-6">
       <HostWebContainer className="space-y-6">
         {/* Encabezado */}
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Limpiezas
-          </h1>
-          <p className="text-base text-neutral-600">
-            Crea y revisa las limpiezas de tus propiedades.
-          </p>
-        </header>
+        <PageHeader
+          title="Limpiezas"
+          subtitle="Crea y revisa las limpiezas de tus propiedades."
+        />
 
         {/* Banner de alertas */}
         {cleaningsNeedingAttentionCount > 0 && (

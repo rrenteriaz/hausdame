@@ -24,7 +24,7 @@ function HostMobileTopBar({ isMessagesPage }: { isMessagesPage: boolean }) {
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="flex items-center justify-between h-12 px-4">
-        <span className="text-base font-semibold text-neutral-900 truncate pr-2">
+        <span className="text-2xl font-semibold tracking-tight text-neutral-900 truncate pr-2">
           {title ?? ""}
         </span>
         <NotificationBell />
