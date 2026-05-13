@@ -1,15 +1,16 @@
 // hooks/usePushNotifications.ts
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 
 export type PushPermissionState =
-  | "unsupported"
-  | "denied"
-  | "default"
-  | "granted"
-  | "subscribed"
-  | "error";
+  | "unsupported"  // navegador sin soporte
+  | "denied"       // usuario denegó el permiso
+  | "default"      // permiso no solicitado aún
+  | "granted"      // permiso concedido, sin suscripción activa
+  | "subscribing"  // en proceso de suscribir (loading)
+  | "subscribed"   // suscripción activa registrada en el servidor
+  | "error";       // error genérico (ver pushError para detalle)
 
 function isPushSupported(): boolean {
   return (
@@ -31,7 +32,16 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export function usePushNotifications() {
+export interface UsePushNotificationsResult {
+  state: PushPermissionState;
+  /** Mensaje de error legible cuando state === "error". Null en otros estados. */
+  pushError: string | null;
+  subscribe: () => Promise<void>;
+  unsubscribe: () => Promise<void>;
+  isSupported: boolean;
+}
+
+export function usePushNotifications(): UsePushNotificationsResult {
   const [state, setState] = useState<PushPermissionState>(() => {
     if (!isPushSupported()) return "unsupported";
     const perm = Notification.permission;
@@ -40,32 +50,46 @@ export function usePushNotifications() {
     return "default";
   });
 
+  // Mensaje legible del último error — se limpia al iniciar un nuevo intento
+  const [pushError, setPushError] = useState<string | null>(null);
+
+  const setError = useCallback((msg: string) => {
+    setState("error");
+    setPushError(msg);
+  }, []);
+
   const subscribe = useCallback(async () => {
     if (!isPushSupported()) {
       setState("unsupported");
       return;
     }
 
+    // Limpiar error previo y mostrar loading inmediatamente
+    setPushError(null);
+    setState("subscribing");
+
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
-      console.warn("[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY no configurada.");
-      setState("error");
+      setError("Faltan claves VAPID para activar notificaciones push.");
       return;
     }
 
     try {
-      // Pedir permiso (solo se ejecuta por acción explícita del usuario)
+      // Pedir permiso (solo por acción explícita del usuario)
       const permission = await Notification.requestPermission();
       if (permission === "denied") {
         setState("denied");
+        setPushError(null);
         return;
       }
       if (permission !== "granted") {
+        // Usuario cerró el diálogo sin decidir
         setState("default");
+        setPushError(null);
         return;
       }
 
-      // Registrar service worker si no está registrado
+      // Registrar service worker
       const registration = await navigator.serviceWorker.register("/sw.js", {
         scope: "/",
       });
@@ -82,7 +106,7 @@ export function usePushNotifications() {
         keys: { p256dh: string; auth: string };
       };
 
-      // Enviar suscripción al backend
+      // Registrar en el servidor
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,15 +114,16 @@ export function usePushNotifications() {
       });
 
       if (!res.ok) {
-        throw new Error("Error registrando suscripción en el servidor");
+        throw new Error(`El servidor rechazó la suscripción (${res.status}).`);
       }
 
       setState("subscribed");
-    } catch (err) {
-      console.error("[push] Error suscribiendo:", err);
-      setState("error");
+      setPushError(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error desconocido.";
+      setError(`Error al activar notificaciones. ${message}`);
     }
-  }, []);
+  }, [setError]);
 
   const unsubscribe = useCallback(async () => {
     if (!isPushSupported()) return;
@@ -123,10 +148,11 @@ export function usePushNotifications() {
       });
 
       setState("granted");
-    } catch (err) {
-      console.error("[push] Error desuscribiendo:", err);
+      setPushError(null);
+    } catch {
+      // Error al desuscribir — no crítico
     }
   }, []);
 
-  return { state, subscribe, unsubscribe, isSupported: isPushSupported() };
+  return { state, pushError, subscribe, unsubscribe, isSupported: isPushSupported() };
 }

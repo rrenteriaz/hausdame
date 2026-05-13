@@ -132,7 +132,18 @@ export default function CleanerLayoutClient({
       <LogoutSyncListener />
       <OfflineInit />
 
-      {/* Header desktop (patrón Host) */}
+      {/* Barra superior móvil con campanita — siempre visible en mobile (< 640px).
+          En desktop (≥ 640px) el header ya incluye la campana. */}
+      <header
+        className="sm:hidden sticky top-0 z-50 bg-white border-b border-neutral-200"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <div className="flex items-center justify-end h-12 px-4">
+          <NotificationBell />
+        </div>
+      </header>
+
+      {/* Header desktop */}
       <header className="hidden sm:block border-b bg-white sticky top-0 z-50">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
           <Link href="/cleaner" className="flex items-center shrink-0">
@@ -197,11 +208,7 @@ export default function CleanerLayoutClient({
 
       {/* Contenido principal */}
       <main
-        className={`${isThreadPage ? "p-0 flex flex-col overflow-hidden min-h-0 sm:flex-1 sm:h-auto sm:overflow-visible" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 pb-28 sm:pb-16"}`}
-        style={isThreadPage ? {
-          height: "calc(var(--app-vh, 1dvh) * 100)",
-          minHeight: "calc(var(--app-vh, 1dvh) * 100)",
-        } : undefined}
+        className={`${isThreadPage ? "p-0 flex-1 flex flex-col overflow-hidden min-h-0 sm:h-auto sm:overflow-visible" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 pb-28 sm:pb-16"}`}
       >
         {children}
       </main>
@@ -212,7 +219,7 @@ export default function CleanerLayoutClient({
           className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 pb-[env(safe-area-inset-bottom)] sm:hidden"
           aria-label="Navegación principal"
         >
-          <div className={`grid h-16 ${hasInProgress ? "grid-cols-7" : "grid-cols-6"}`}>
+          <div className={`grid h-16 ${hasInProgress ? "grid-cols-6" : "grid-cols-5"}`}>
             {/* Hoy: aislado en Suspense */}
             <Suspense
               fallback={
@@ -252,11 +259,6 @@ export default function CleanerLayoutClient({
                 </Link>
               );
             })}
-
-            {/* Campana móvil */}
-            <div className="relative flex items-center justify-center min-w-[44px] min-h-[44px]">
-              <NotificationBell openUp />
-            </div>
 
             {/* Menú */}
             <button

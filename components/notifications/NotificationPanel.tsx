@@ -37,7 +37,7 @@ export default function NotificationPanel({
   openUp = false,
 }: NotificationPanelProps) {
   const router = useRouter();
-  const { state: pushState, subscribe } = usePushNotifications();
+  const { state: pushState, pushError, subscribe } = usePushNotifications();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Cerrar al hacer click fuera
@@ -64,15 +64,17 @@ export default function NotificationPanel({
   return (
     <div
       ref={panelRef}
-      className={`absolute right-0 w-80 sm:w-96 bg-white border border-neutral-200 rounded-xl shadow-lg z-50 flex flex-col max-h-[70vh] overflow-hidden ${
+      // w-80 con max-w para no salir de pantalla en teléfonos pequeños
+      // right-0 alineado al borde derecho del padre (fixed top-right en móvil)
+      className={`absolute right-0 w-80 max-w-[calc(100vw-1rem)] bg-white border border-neutral-200 rounded-xl shadow-lg z-50 flex flex-col max-h-[70vh] overflow-hidden ${
         openUp ? "bottom-full mb-2" : "top-full mt-2"
       }`}
       role="dialog"
       aria-label="Notificaciones"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-        <span className="font-semibold text-neutral-900">Notificaciones</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
+        <span className="font-semibold text-neutral-900 text-sm">Notificaciones</span>
         {unreadCount > 0 && (
           <button
             type="button"
@@ -102,7 +104,6 @@ export default function NotificationPanel({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Indicador no leída */}
                     <div className="mt-1.5 shrink-0">
                       {!n.readAt ? (
                         <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -127,32 +128,106 @@ export default function NotificationPanel({
         )}
       </div>
 
-      {/* Push opt-in */}
-      {(pushState === "default" || pushState === "error") && (
-        <div className="border-t border-neutral-100 px-4 py-3">
-          <button
-            type="button"
-            onClick={subscribe}
-            className="w-full text-sm text-center text-neutral-600 hover:text-neutral-900 transition-colors"
-          >
-            Activar notificaciones
-          </button>
-        </div>
-      )}
-      {pushState === "unsupported" && (
-        <div className="border-t border-neutral-100 px-4 py-3">
-          <p className="text-xs text-center text-neutral-400">
-            Las notificaciones no están disponibles en este navegador
-          </p>
-        </div>
-      )}
-      {pushState === "denied" && (
-        <div className="border-t border-neutral-100 px-4 py-3">
-          <p className="text-xs text-center text-neutral-400">
-            Permiso denegado. Puedes activarlo desde la configuración del navegador.
-          </p>
-        </div>
-      )}
+      {/* Footer: estado de push notifications */}
+      <PushFooter state={pushState} pushError={pushError} onSubscribe={subscribe} />
     </div>
   );
+}
+
+// ── Footer de push según estado ───────────────────────────────────────────
+
+function PushFooter({
+  state,
+  pushError,
+  onSubscribe,
+}: {
+  state: ReturnType<typeof usePushNotifications>["state"];
+  pushError: string | null;
+  onSubscribe: () => Promise<void>;
+}) {
+  // Permiso concedido y suscripción activa — no mostrar nada
+  if (state === "subscribed") return null;
+  // Permiso concedido pero sin suscripción — ofrecer activar
+  if (state === "granted") {
+    return (
+      <div className="border-t border-neutral-100 px-4 py-3 shrink-0">
+        <button
+          type="button"
+          onClick={onSubscribe}
+          className="w-full text-sm text-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
+        >
+          Activar notificaciones push
+        </button>
+      </div>
+    );
+  }
+
+  // Solicitando permiso / suscribiendo
+  if (state === "subscribing") {
+    return (
+      <div className="border-t border-neutral-100 px-4 py-3 shrink-0">
+        <p className="text-xs text-center text-neutral-400">Activando notificaciones…</p>
+      </div>
+    );
+  }
+
+  // No solicitado aún → botón principal
+  if (state === "default") {
+    return (
+      <div className="border-t border-neutral-100 px-4 py-3 shrink-0">
+        <button
+          type="button"
+          onClick={onSubscribe}
+          className="w-full text-sm text-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
+        >
+          Activar notificaciones
+        </button>
+      </div>
+    );
+  }
+
+  // Error (VAPID missing, red error, etc.)
+  if (state === "error") {
+    return (
+      <div className="border-t border-neutral-100 px-4 py-3 shrink-0 space-y-2">
+        <p className="text-xs text-center text-red-500 leading-snug">
+          {pushError ?? "Error al activar notificaciones."}
+        </p>
+        {/* Solo mostrar retry si no es error de configuración */}
+        {pushError && !pushError.includes("VAPID") && (
+          <button
+            type="button"
+            onClick={onSubscribe}
+            className="w-full text-xs text-center text-neutral-500 hover:text-neutral-900 transition-colors"
+          >
+            Intentar de nuevo
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Permiso denegado
+  if (state === "denied") {
+    return (
+      <div className="border-t border-neutral-100 px-4 py-3 shrink-0">
+        <p className="text-xs text-center text-neutral-400 leading-snug">
+          Permiso denegado. Puedes activarlo desde la configuración del navegador.
+        </p>
+      </div>
+    );
+  }
+
+  // Sin soporte
+  if (state === "unsupported") {
+    return (
+      <div className="border-t border-neutral-100 px-4 py-3 shrink-0">
+        <p className="text-xs text-center text-neutral-400 leading-snug">
+          Las notificaciones no están disponibles en este navegador.
+        </p>
+      </div>
+    );
+  }
+
+  return null;
 }

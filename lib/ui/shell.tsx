@@ -4,7 +4,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { DesktopNav } from "./HostNavigation";
+
+const NotificationBell = dynamic(
+  () => import("@/components/notifications/NotificationBell"),
+  { ssr: false }
+);
 
 export function AppShell({
   children,
@@ -18,11 +24,22 @@ export function AppShell({
 
   return (
     <div className={`${isMessagesPage ? "h-[100dvh] flex flex-col overflow-hidden" : "min-h-screen flex flex-col"}`}>
-      {/* Header tipo Airbnb: simple, limpio - oculto en móvil (Host usa bottom nav) y en páginas de mensajes */}
+
+      {/* Barra superior móvil — siempre visible en mobile, oculta cuando aparece el header desktop.
+          En páginas de mensajes el header desktop aparece desde sm (640px), en el resto desde lg (1024px). */}
+      <header
+        className={`sticky top-0 z-50 bg-white border-b border-neutral-200 ${isMessagesPage ? "sm:hidden" : "lg:hidden"}`}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <div className="flex items-center justify-end h-12 px-4">
+          <NotificationBell />
+        </div>
+      </header>
+
+      {/* Header desktop — oculto en móvil */}
       {/* GUARDRAIL: Header oculto en mobile Host (ver LAYOUT_BREAKPOINT_GUARDRAILS_V1.md) */}
       <header className={`border-b bg-white sticky top-0 z-50 ${isMessagesPage ? "hidden sm:block" : "hidden lg:block"}`}>
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-          {/* Marca Hausdame */}
           <Link href="/host/hoy" className="flex items-center shrink-0">
             <Image
               src="/icons/HausdameHorizontal_sinfondo.png"
@@ -34,20 +51,13 @@ export function AppShell({
               style={{ height: "40px", width: "auto" }}
             />
           </Link>
-
-          {/* Navegación (TopNav) - solo desktop */}
           <DesktopNav menuUser={menuUser} />
         </div>
       </header>
 
       {/* Contenido principal */}
-      {/* En páginas de mensajes: altura fija usando --app-vh si está disponible, sin scroll del main (solo el área de mensajes scrollea) */}
       <main
-        className={`${isMessagesPage ? "p-0 flex flex-col min-h-0 flex-1 sm:flex-1 sm:h-auto" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 pb-20 sm:pb-6"}`}
-        style={isMessagesPage ? {
-          height: "calc(var(--app-vh, 1dvh) * 100)",
-          maxHeight: "calc(var(--app-vh, 1dvh) * 100)"
-        } : undefined}
+        className={`${isMessagesPage ? "p-0 flex flex-col min-h-0 flex-1" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 pb-20 sm:pb-6"}`}
       >
         {children}
       </main>
