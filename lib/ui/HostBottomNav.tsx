@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 interface NavItem {
@@ -12,6 +13,15 @@ interface NavItem {
 
 export default function HostBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Guarda el último path que NO sea /host/menu para poder volver.
+  const prevPathRef = useRef<string>("/host/hoy");
+  useEffect(() => {
+    if (pathname && pathname !== "/host/menu") {
+      prevPathRef.current = pathname;
+    }
+  }, [pathname]);
 
   const navItems: NavItem[] = [
     {
@@ -143,16 +153,23 @@ export default function HostBottomNav() {
                 </Link>
               );
             })}
-            {/* Botón Menú - navega a /host/menu */}
-            <Link
-              href="/host/menu"
-              className={`flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-3 py-2 transition-colors ${
+            {/* Botón Menú — toggle: abre /host/menu o vuelve a la página anterior */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isMenuActive) {
+                  router.push(prevPathRef.current);
+                } else {
+                  router.push("/host/menu");
+                }
+              }}
+              className={`relative flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] px-3 py-2 transition-colors ${
                 isMenuActive
                   ? "text-neutral-900"
                   : "text-neutral-500 hover:text-neutral-700"
               }`}
               aria-label="Menú"
-              aria-current={isMenuActive ? "page" : undefined}
+              aria-expanded={isMenuActive}
             >
               <svg
                 className="w-6 h-6"
@@ -173,7 +190,7 @@ export default function HostBottomNav() {
               {isMenuActive && (
                 <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-neutral-900 rounded-full" />
               )}
-            </Link>
+            </button>
           </div>
         </div>
       </nav>
