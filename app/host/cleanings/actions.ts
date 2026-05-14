@@ -596,6 +596,7 @@ export async function assignTeamMemberToCleaning(formData: FormData) {
 }
 
 export async function createCleaning(formData: FormData) {
+  console.log("★★★ [createCleaning] v2 — INICIO ★★★");
   const propertyId = formData.get("propertyId")?.toString();
   const scheduledAtStr = formData.get("scheduledAt")?.toString();
   const notes = formData.get("notes")?.toString().trim() || null;
@@ -650,6 +651,8 @@ export async function createCleaning(formData: FormData) {
   // Usar el teamId resuelto por el helper (puede ser null si no hay team)
   const resolvedTeamId = assignment.teamId;
 
+  console.log("[createCleaning] assignedMembershipId resolved:", assignedMembershipId ?? "null (OPEN)");
+
   assertValidScheduledDate(scheduledDate, "createCleaning");
   assertAssignmentCoherence({ assignedMembershipId, needsAttention, attentionReason }, "createCleaning");
 
@@ -675,18 +678,18 @@ export async function createCleaning(formData: FormData) {
     },
   });
 
-  // PASO 5: Si se auto-asignó (1 membership), crear CleaningAssignee (opcional, para compatibilidad)
-  // Nota: La asignación principal está en cleaning.assignedMembershipId
+  console.log("[createCleaning] cleaningId created:", cleaning.id, "assignmentStatus:", assignmentStatus);
+
+  // PASO 5: Si se auto-asignó (1 membership), crear CleaningAssignee + notificación
   if (assignedMembershipId) {
-    // Obtener el userId de la membership para crear CleaningAssignee si es necesario
-    const membership = await prisma.teamMembership.findFirst({
-      where: {
-        id: assignedMembershipId,
-        Team: { tenantId },
-      },
+    // Igual que assignTeamMemberToCleaning: findUnique sin filtro de tenantId extra
+    const membership = await prisma.teamMembership.findUnique({
+      where: { id: assignedMembershipId },
       select: { userId: true },
     });
-    
+
+    console.log("[createCleaning] membership for notification:", membership?.userId ?? "NOT FOUND");
+
     if (membership) {
       // Crear CleaningAssignee para compatibilidad (si la tabla existe y se usa)
       try {
@@ -694,20 +697,22 @@ export async function createCleaning(formData: FormData) {
           data: {
             tenantId,
             cleaningId: cleaning.id,
-            userId: membership.userId, // Usar userId en lugar de memberId
+            userId: membership.userId,
             status: "ASSIGNED",
             assignedAt: new Date(),
-            assignedByUserId: null, // Auto-asignado
+            assignedByUserId: null,
           },
         });
+        console.log("[createCleaning] assignee created for userId:", membership.userId);
       } catch (error) {
-        // Si CleaningAssignee no existe o falla, continuar (la asignación principal está en cleaning.assignedMembershipId)
         console.warn("[createCleaning] Error creando CleaningAssignee (puede no existir):", error);
       }
 
       // Notificar al cleaner auto-asignado
+      console.log("[createCleaning] notification target userId:", membership.userId);
+      console.log("[createCleaning] calling createNotification...");
       try {
-        await createNotification({
+        const notifResult = await createNotification({
           tenantId,
           userId: membership.userId,
           type: "CLEANING_ASSIGNED",
@@ -717,10 +722,15 @@ export async function createCleaning(formData: FormData) {
           dedupeKey: `cleaning:${cleaning.id}:assigned:${assignedMembershipId}`,
           sendPush: true,
         });
+        console.log("[createCleaning] createNotification result:", notifResult?.id ?? "null (dedupe o error)");
       } catch (notifError) {
         console.error("[createCleaning] Error enviando notificación:", notifError);
       }
+    } else {
+      console.warn("[createCleaning] membership NOT FOUND para assignedMembershipId:", assignedMembershipId);
     }
+  } else {
+    console.log("[createCleaning] Sin assignedMembershipId — limpieza OPEN, sin notificación.");
   }
 
   console.log("[assignment-model] createCleaning", {
