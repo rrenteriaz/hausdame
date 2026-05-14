@@ -238,6 +238,18 @@ export async function cancelCleaning(formData: FormData) {
     return;
   }
 
+  // Fetch antes del update para notificar correctamente al cleaner asignado.
+  // Solo notificamos si la limpieza tenía cleaner y no estaba ya CANCELLED/COMPLETED.
+  const cleaningBefore = await prisma.cleaning.findFirst({
+    where: { id, tenantId },
+    select: {
+      status: true,
+      assignedMembershipId: true,
+      propertyName: true,
+      propertyShortName: true,
+    },
+  });
+
   await prisma.cleaning.updateMany({
     where: {
       id,
@@ -253,6 +265,30 @@ export async function cancelCleaning(formData: FormData) {
     where: { assignedCleaningId: id, tenantId, status: "ASSIGNED" },
     data: { status: "PENDING_ASSIGNMENT", assignedCleaningId: null, assignedAt: null },
   });
+
+  // Notificar al cleaner asignado si la limpieza tenía asignación y no estaba ya cerrada
+  if (
+    cleaningBefore?.assignedMembershipId &&
+    cleaningBefore.status !== "CANCELLED" &&
+    cleaningBefore.status !== "COMPLETED"
+  ) {
+    const membership = await prisma.teamMembership.findUnique({
+      where: { id: cleaningBefore.assignedMembershipId },
+      select: { userId: true },
+    });
+    if (membership?.userId) {
+      await createNotification({
+        tenantId,
+        userId: membership.userId,
+        type: "SYSTEM",
+        title: "Limpieza cancelada",
+        body: `La limpieza programada en ${cleaningBefore.propertyShortName ?? cleaningBefore.propertyName ?? "tu propiedad"} fue cancelada.`,
+        href: "/cleaner",
+        dedupeKey: `cleaning:${id}:cancelled`,
+        sendPush: true,
+      });
+    }
+  }
 
   revalidatePath("/host/cleanings");
   revalidatePath("/host/tareas-pro/pendientes");

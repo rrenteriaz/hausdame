@@ -11,6 +11,7 @@ import { resolveAutoAssignment } from "@/lib/cleanings/resolveAutoAssignment";
 import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
 import { buildCleaningScheduledDate } from "@/lib/datetime/buildCleaningScheduledDate";
 import { assertValidScheduledDate, assertAssignmentCoherence } from "@/lib/cleanings/assertCleaningInvariants";
+import { createNotification } from "@/lib/notifications/createNotification";
 
 export type SyncReason = "cron" | "bulk" | "manual";
 
@@ -226,6 +227,26 @@ async function executeSyncCore(
         });
 
         if (parsed.status === "CONFIRMED") {
+          // ── Notificar a OWNER/ADMIN del tenant sobre nueva reserva ──────────
+          const hostUsers = await prisma.user.findMany({
+            where: { tenantId, role: { in: ["OWNER", "ADMIN"] } },
+            select: { id: true },
+          });
+          await Promise.all(
+            hostUsers.map((u) =>
+              createNotification({
+                tenantId,
+                userId: u.id,
+                type: "SYSTEM",
+                title: "Nueva reserva",
+                body: `Reserva confirmada en ${property.shortName ?? property.name}.`,
+                href: `/host/reservations`,
+                dedupeKey: `reservation:${newReservation.id}:created`,
+                sendPush: true,
+              })
+            )
+          );
+
           const scheduledAtOriginal = calculateCleaningDate(
             parsed.endDate,
             property.checkOutTime
@@ -271,6 +292,26 @@ async function executeSyncCore(
             assignedMembershipId: assignment.assignedMembershipId,
             assignmentStatus: assignment.assignmentStatus,
           });
+
+          // ── Notificar al cleaner auto-asignado (solo si queda asignado) ────
+          if (assignment.assignedMembershipId) {
+            const membership = await prisma.teamMembership.findUnique({
+              where: { id: assignment.assignedMembershipId },
+              select: { userId: true },
+            });
+            if (membership?.userId) {
+              await createNotification({
+                tenantId,
+                userId: membership.userId,
+                type: "CLEANING_ASSIGNED",
+                title: "Limpieza asignada",
+                body: `Nueva limpieza en ${property.shortName ?? property.name}.`,
+                href: `/cleaner/cleanings/${createdCleaning.id}`,
+                dedupeKey: `cleaning:${createdCleaning.id}:assigned:${assignment.assignedMembershipId}`,
+                sendPush: true,
+              });
+            }
+          }
 
           await createChecklistSnapshotForCleaning(
             tenantId,
@@ -325,6 +366,26 @@ async function executeSyncCore(
             where: { id: cleaning.id },
             data: { status: "CANCELLED" },
           });
+
+          // Notificar al cleaner asignado si la limpieza tenía asignación y no estaba ya cancelada
+          if (cleaning.assignedMembershipId && cleaning.status !== "CANCELLED") {
+            const membership = await prisma.teamMembership.findUnique({
+              where: { id: cleaning.assignedMembershipId },
+              select: { userId: true },
+            });
+            if (membership?.userId) {
+              await createNotification({
+                tenantId,
+                userId: membership.userId,
+                type: "SYSTEM",
+                title: "Limpieza cancelada",
+                body: `La limpieza programada en ${cleaning.propertyShortName ?? cleaning.propertyName ?? property.shortName ?? property.name} fue cancelada.`,
+                href: "/cleaner",
+                dedupeKey: `cleaning:${cleaning.id}:cancelled`,
+                sendPush: true,
+              });
+            }
+          }
         } else if (
           reservationStart <= today &&
           today < reservationEnd

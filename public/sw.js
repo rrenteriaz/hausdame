@@ -36,13 +36,16 @@ self.addEventListener('push', (event) => {
 
   const title = payload.title || 'Hausdame';
   const options = {
-    body: payload.body || '',
-    icon: payload.icon || '/icons/icon-192.png',
-    badge: payload.badge || '/icons/icon-192.png',
+    body:              payload.body || '',
+    icon:              payload.icon  || '/icons/icon-192.png',
+    badge:             payload.badge || '/icons/icon-192.png',
+    vibrate:           [200, 100, 200],
+    tag:               payload.tag  || 'hausdame',
+    renotify:          true,
+    requireInteraction: false,
     data: {
       href: payload.href || '/',
     },
-    requireInteraction: false,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

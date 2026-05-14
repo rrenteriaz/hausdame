@@ -47,7 +47,7 @@ export async function createNotification(
 
     if (sendPush) {
       // Fire-and-forget: nunca bloquea el flujo principal
-      sendPushNotificationsToUser(userId, { title, body, href }).catch((err) => {
+      sendPushNotificationsToUser(userId, { title, body, href, tag: type }).catch((err) => {
         console.error("[createNotification] Push falló (no bloqueante):", err);
       });
     }
@@ -66,7 +66,7 @@ export async function createNotification(
 
 async function sendPushNotificationsToUser(
   userId: string,
-  payload: { title: string; body: string; href?: string }
+  payload: { title: string; body: string; href?: string; tag?: string }
 ): Promise<void> {
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId, revokedAt: null },
@@ -87,6 +87,7 @@ async function sendPushNotificationsToUser(
         title: payload.title,
         body: payload.body,
         href: payload.href,
+        tag: payload.tag,
         icon: "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
       });
