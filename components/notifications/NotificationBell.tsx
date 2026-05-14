@@ -51,6 +51,16 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
     };
   }, [fetchCount]);
 
+  // Badging API — sincroniza el badge del ícono PWA con el contador de no leídas
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return;
+    if (unreadCount > 0) {
+      navigator.setAppBadge(unreadCount).catch(() => {});
+    } else {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }, [unreadCount]);
+
   function handleOpen() {
     setIsOpen((prev) => {
       if (!prev) {

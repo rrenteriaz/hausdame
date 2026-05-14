@@ -5,7 +5,7 @@
  * Soporta push notifications via Web Push API.
  */
 
-const SW_VERSION = 'v2';
+const SW_VERSION = 'v3';
 
 self.addEventListener('install', () => {
   // Activa inmediatamente sin esperar a que cierren las pestañas antiguas.
@@ -25,13 +25,20 @@ self.addEventListener('fetch', (event) => {
 // ── Push Notifications ─────────────────────────────────────────────────────
 
 self.addEventListener('push', (event) => {
-  if (!event.data) return;
+  console.log('[SW] push recibido', new Date().toISOString());
+
+  if (!event.data) {
+    console.log('[SW] push sin datos, ignorando');
+    return;
+  }
 
   let payload;
   try {
     payload = event.data.json();
+    console.log('[SW] payload parseado:', JSON.stringify(payload));
   } catch {
     payload = { title: 'Hausdame', body: event.data.text() };
+    console.log('[SW] payload como texto:', payload.body);
   }
 
   const title = payload.title || 'Hausdame';
@@ -48,7 +55,23 @@ self.addEventListener('push', (event) => {
     },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  const showAndBadge = async () => {
+    console.log('[SW] ejecutando showNotification');
+    await self.registration.showNotification(title, options);
+
+    // Badging API — muestra indicador en el ícono de la PWA al llegar push
+    if ('setAppBadge' in navigator) {
+      try {
+        // Si el payload incluye un conteo exacto lo usamos, si no mostramos punto genérico
+        const count = typeof payload.badgeCount === 'number' ? payload.badgeCount : undefined;
+        await navigator.setAppBadge(count);
+      } catch {
+        // falla silenciosamente
+      }
+    }
+  };
+
+  event.waitUntil(showAndBadge());
 });
 
 self.addEventListener('notificationclick', (event) => {
