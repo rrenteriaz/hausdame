@@ -1,7 +1,7 @@
 // hooks/usePushNotifications.ts
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export type PushPermissionState =
   | "unsupported"  // navegador sin soporte
@@ -52,6 +52,21 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
   // Mensaje legible del último error — se limpia al iniciar un nuevo intento
   const [pushError, setPushError] = useState<string | null>(null);
+
+  // Restaurar estado desde suscripción existente en el browser (Service Worker)
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    if (Notification.permission !== "granted") return;
+
+    navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((sub) => {
+        if (sub) setState("subscribed");
+      })
+      .catch(() => {
+        // No bloqueante — si falla, estado queda en "granted"
+      });
+  }, []);
 
   const setError = useCallback((msg: string) => {
     setState("error");

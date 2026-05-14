@@ -28,6 +28,7 @@ export async function createNotification(
   const { tenantId, userId, type, title, body, href, data, dedupeKey, sendPush } = input;
 
   try {
+    console.log("[createNotification] Creando notificación:", { userId, type, title, sendPush, dedupeKey });
     const notification = await prisma.notification.create({
       data: {
         tenantId,
@@ -42,6 +43,7 @@ export async function createNotification(
       },
       select: { id: true },
     });
+    console.log("[createNotification] Notificación creada:", notification.id);
 
     if (sendPush) {
       // Fire-and-forget: nunca bloquea el flujo principal
@@ -71,7 +73,11 @@ async function sendPushNotificationsToUser(
     select: { id: true, endpoint: true, p256dh: true, auth: true },
   });
 
-  if (subscriptions.length === 0) return;
+  console.log(`[sendPush] userId=${userId} subscriptions=${subscriptions.length}`);
+  if (subscriptions.length === 0) {
+    console.warn("[sendPush] Sin subscriptions activas para userId:", userId);
+    return;
+  }
 
   const expiredIds: string[] = [];
 

@@ -48,9 +48,13 @@ export async function sendPushToSubscription(
   payload: PushPayload
 ): Promise<boolean> {
   const wp = await getWebPush();
-  if (!wp) return false;
+  if (!wp) {
+    console.warn("[push] web-push no disponible (faltan VAPID keys)");
+    return false;
+  }
 
   try {
+    console.log("[push] Enviando a endpoint:", subscription.endpoint.slice(-20));
     await wp.sendNotification(
       {
         endpoint: subscription.endpoint,
@@ -61,14 +65,16 @@ export async function sendPushToSubscription(
       },
       JSON.stringify(payload)
     );
+    console.log("[push] Enviado OK:", subscription.endpoint.slice(-20));
     return true;
   } catch (err: unknown) {
     const error = err as { statusCode?: number; message?: string };
     // 410 Gone = suscripción expirada/revocada
     if (error.statusCode === 410) {
+      console.warn("[push] Suscripción expirada (410):", subscription.endpoint.slice(-20));
       return false; // caller debe revocar la suscripción
     }
-    console.error("[push] Error enviando push:", error.message || err);
+    console.error("[push] Error enviando push:", error.statusCode, error.message || err);
     return false;
   }
 }

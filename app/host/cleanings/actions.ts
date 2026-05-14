@@ -704,6 +704,22 @@ export async function createCleaning(formData: FormData) {
         // Si CleaningAssignee no existe o falla, continuar (la asignación principal está en cleaning.assignedMembershipId)
         console.warn("[createCleaning] Error creando CleaningAssignee (puede no existir):", error);
       }
+
+      // Notificar al cleaner auto-asignado
+      try {
+        await createNotification({
+          tenantId,
+          userId: membership.userId,
+          type: "CLEANING_ASSIGNED",
+          title: "Limpieza asignada",
+          body: `Nueva limpieza en ${property.shortName ?? property.name}.`,
+          href: `/cleaner/cleanings/${cleaning.id}`,
+          dedupeKey: `cleaning:${cleaning.id}:assigned:${assignedMembershipId}`,
+          sendPush: true,
+        });
+      } catch (notifError) {
+        console.error("[createCleaning] Error enviando notificación:", notifError);
+      }
     }
   }
 
