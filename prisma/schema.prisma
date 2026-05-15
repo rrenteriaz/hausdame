@@ -254,37 +254,37 @@ model Property {
   timeZone                String?
   checkInTime             String?
   checkOutTime            String?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
   userId                  String
   groupName               String?
   notificationEmail       String?
-  isActive                Boolean                 @default(true)
-  idOld                   String?                 @unique
-  id                      String                  @id @default(cuid())
+  isActive                Boolean                    @default(true)
+  idOld                   String?                    @unique
+  id                      String                     @id @default(cuid())
   coverAssetGroupId       String?
-  coverMediaId            String?                 @unique
+  coverMediaId            String?                    @unique
   latitude                Float?
   longitude               Float?
   wifiSsid                String?
   wifiPassword            String?
   accessCode              String?
-  icalLastSyncedAt        DateTime?               @db.Timestamptz(6)
-  icalLastSyncAttemptAt   DateTime?               @db.Timestamptz(6)
-  icalSyncInProgressUntil DateTime?               @db.Timestamptz(6)
-  icalLastSyncError       String?                 @db.VarChar(500)
+  icalLastSyncedAt        DateTime?                  @db.Timestamptz(6)
+  icalLastSyncAttemptAt   DateTime?                  @db.Timestamptz(6)
+  icalSyncInProgressUntil DateTime?                  @db.Timestamptz(6)
+  icalLastSyncError       String?                    @db.VarChar(500)
   chatThreads             ChatThread[]
   cleanerReviews          CleanerReview[]
   cleanings               Cleaning[]
-  hostWorkGroupProperties HostWorkGroupProperty[] @relation("Property_HostWorkGroupProperties")
+  hostWorkGroupProperties HostWorkGroupProperty[]    @relation("Property_HostWorkGroupProperties")
   inventoryChecks         InventoryCheck[]
   inventoryLines          InventoryLine[]
   inventoryLogs           InventoryLog[]
   inventoryReviews        InventoryReview[]
   locks                   Lock[]
-  coverMedia              Asset?                  @relation("PropertyCover", fields: [coverMediaId], references: [id])
-  tenant                  Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user                    User                    @relation("PropertyOwner", fields: [userId], references: [id])
+  coverMedia              Asset?                     @relation("PropertyCover", fields: [coverMediaId], references: [id])
+  tenant                  Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                    User                       @relation("PropertyOwner", fields: [userId], references: [id])
   admins                  PropertyAdmin[]
   propertyApplications    PropertyApplication[]
   propertyChecklistItems  PropertyChecklistItem[]
@@ -295,7 +295,7 @@ model Property {
   propertyOpenings        PropertyOpening[]
   teams                   PropertyTeam[]
   propertyZones           PropertyZone[]
-  reservations            Reservation[]           @relation("ReservationProperty")
+  reservations            Reservation[]              @relation("ReservationProperty")
   taskCarryForwards       TaskCarryForward[]
   taskJobs                TaskJob[]
   taskRecurringDues       TaskRecurringDue[]
@@ -573,25 +573,25 @@ model MetricEvent {
 /// *
 /// * Equipo de limpieza
 model Team {
-  id                  String              @id @default(cuid())
+  id                  String                     @id @default(cuid())
   tenantId            String
   name                String
   notes               String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
   inactivatedAt       DateTime?
   inactivatedByUserId String?
-  status              TeamStatus          @default(ACTIVE)
+  status              TeamStatus                 @default(ACTIVE)
   chatParticipants    ChatParticipant[]
   chatThreads         ChatThread[]
   cleanings           Cleaning[]
   properties          PropertyTeam[]
-  inactivatedByUser   User?               @relation("TeamInactivatedBy", fields: [inactivatedByUserId], references: [id])
-  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inactivatedByUser   User?                      @relation("TeamInactivatedBy", fields: [inactivatedByUserId], references: [id])
+  tenant              Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   TeamInvite          TeamInvite[]
   members             TeamMember[]
   TeamMembership      TeamMembership[]
-  workGroupExecutors  WorkGroupExecutor[] @relation("Team_WorkGroupExecutors")
+  workGroupExecutors  WorkGroupExecutor[]        @relation("Team_WorkGroupExecutors")
   assignmentConfigs   PropertyAssignmentConfig[]
 
   @@unique([tenantId, name])
@@ -1496,19 +1496,19 @@ model TeamInvite {
 }
 
 model TeamMembership {
-  id               String                 @id @default(cuid())
-  teamId           String
-  userId           String
-  role             TeamRole
-  status           TeamMembershipStatus   @default(PENDING)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  chatParticipants ChatParticipant[]
-  Cleaning         Cleaning[]
-  propertyAccesses PropertyMemberAccess[]
+  id                String                     @id @default(cuid())
+  teamId            String
+  userId            String
+  role              TeamRole
+  status            TeamMembershipStatus       @default(PENDING)
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  chatParticipants  ChatParticipant[]
+  Cleaning          Cleaning[]
+  propertyAccesses  PropertyMemberAccess[]
   assignmentConfigs PropertyAssignmentConfig[]
-  Team             Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  User             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Team              Team                       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  User              User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@index([teamId])
@@ -1518,14 +1518,14 @@ model TeamMembership {
 
 /// Plantilla operativa que define el estándar de una propiedad
 model TaskTemplate {
-  id          String                @id @default(cuid())
-  tenantId    String
-  propertyId  String
-  name        String
-  description String?
-  status      TaskTemplateStatus    @default(DRAFT)
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  id            String                @id @default(cuid())
+  tenantId      String
+  propertyId    String
+  name          String
+  description   String?
+  status        TaskTemplateStatus    @default(DRAFT)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
   jobs          TaskJob[]
   recurringDues TaskRecurringDue[]
   sections      TaskSectionTemplate[]
@@ -1597,18 +1597,18 @@ model TaskSectionReferenceAsset {
 
 /// Paso individual dentro de una sección de plantilla
 model TaskStepTemplate {
-  id               String                   @id @default(cuid())
-  tenantId         String
-  sectionId        String
-  name             String
-  description      String?
-  isRequired       Boolean                  @default(true)
-  blocksCompletion Boolean                  @default(false)
-  order            Int                      @default(0)
-  numberMin        Decimal?                 @db.Decimal(12, 2)
-  numberMax        Decimal?                 @db.Decimal(12, 2)
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
+  id                   String                   @id @default(cuid())
+  tenantId             String
+  sectionId            String
+  name                 String
+  description          String?
+  isRequired           Boolean                  @default(true)
+  blocksCompletion     Boolean                  @default(false)
+  order                Int                      @default(0)
+  numberMin            Decimal?                 @db.Decimal(12, 2)
+  numberMax            Decimal?                 @db.Decimal(12, 2)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
   stepFrequency        TaskScheduleFrequency?
   /// Ancla temporal para scheduling propio del paso (solo aplica si stepFrequency=WEEKLY/MONTHLY)
   stepAnchorDayOfWeek  Int?
@@ -1617,21 +1617,21 @@ model TaskStepTemplate {
   intervalDays         Int?
   /// Para frecuencia INTERVAL: fecha de inicio desde la que se calcula el intervalo
   startDate            DateTime?
-  capturesNumber   Boolean                  @default(false)
-  capturesPhoto    Boolean                  @default(false)
-  capturesText     Boolean                  @default(false)
-  capturesYesNo    Boolean                  @default(false)
-  numberRequired   Boolean                  @default(false)
-  photoRequired    Boolean                  @default(false)
-  textRequired     Boolean                  @default(false)
-  yesNoRequired    Boolean                  @default(false)
+  capturesNumber       Boolean                  @default(false)
+  capturesPhoto        Boolean                  @default(false)
+  capturesText         Boolean                  @default(false)
+  capturesYesNo        Boolean                  @default(false)
+  numberRequired       Boolean                  @default(false)
+  photoRequired        Boolean                  @default(false)
+  textRequired         Boolean                  @default(false)
+  yesNoRequired        Boolean                  @default(false)
   /// "LEGACY_V1" = created before multi-capture model; "MULTI_CAPTURE_V2" = explicitly configured
-  captureVersion   String                   @default("LEGACY_V1")
-  options          TaskStepOption[]
-  referenceAssets  TaskStepReferenceAsset[]
-  recurringDues    TaskRecurringDue[]
-  section          TaskSectionTemplate      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  captureVersion       String                   @default("LEGACY_V1")
+  options              TaskStepOption[]
+  referenceAssets      TaskStepReferenceAsset[]
+  recurringDues        TaskRecurringDue[]
+  section              TaskSectionTemplate      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  tenant               Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([sectionId])
@@ -1795,21 +1795,21 @@ model TaskJobStep {
 
 /// Respuesta del cleaner a un paso (una sola respuesta vigente por paso)
 model TaskJobStepResponse {
-  id          String      @id @default(cuid())
-  tenantId    String
-  stepId      String      @unique
-  respondedAt DateTime
-  confirmed   Boolean?
-  boolValue   Boolean?
-  numberValue Decimal?    @db.Decimal(12, 2)
-  textValue   String?
+  id                     String                  @id @default(cuid())
+  tenantId               String
+  stepId                 String                  @unique
+  respondedAt            DateTime
+  confirmed              Boolean?
+  boolValue              Boolean?
+  numberValue            Decimal?                @db.Decimal(12, 2)
+  textValue              String?
   notes                  String?
   notCompletedReasonCode NotCompletedReasonCode?
   notCompletedNote       String?
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
-  step                   TaskJobStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
-  tenant                 Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  step                   TaskJobStep             @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }
@@ -2327,41 +2327,41 @@ enum TaskRecurringDueStatus {
 /// del mismo período. Si existe una obligación abierta (PENDING_ASSIGNMENT o ASSIGNED)
 /// para un template, el siguiente período no crea una nueva hasta que se resuelva.
 model TaskRecurringDue {
-  id                 String                 @id @default(cuid())
-  tenantId           String
-  propertyId         String
-  templateId         String
+  id         String @id @default(cuid())
+  tenantId   String
+  propertyId String
+  templateId String
 
   /// Frecuencia de la recurrencia: DAILY | WEEKLY | MONTHLY
-  frequency          TaskScheduleFrequency
+  frequency TaskScheduleFrequency
 
   /// Clave del período al que corresponde esta obligación.
   /// Template-level:  "daily:2024-04-10" | "weekly:2024-W15" | "monthly:2024-04"
   /// Step-level:      "step:{stepId}:weekly:2024-W15"  (stepId embebido para unicidad)
-  periodKey          String
+  periodKey String
 
   /// Paso específico que originó esta obligación (solo para dues step-level).
   /// null = obligación a nivel de template completo.
-  stepId             String?
+  stepId String?
 
-  status             TaskRecurringDueStatus @default(PENDING_ASSIGNMENT)
+  status TaskRecurringDueStatus @default(PENDING_ASSIGNMENT)
 
   /// Limpieza a la que fue asignada (cuando status = ASSIGNED)
   assignedCleaningId String?
 
-  assignedAt         DateTime?
-  completedAt        DateTime?
-  skippedAt          DateTime?
-  skipReason         String?
+  assignedAt  DateTime?
+  completedAt DateTime?
+  skippedAt   DateTime?
+  skipReason  String?
 
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  template           TaskTemplate           @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  property           Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant             Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  assignedCleaning   Cleaning?              @relation(fields: [assignedCleaningId], references: [id], onDelete: SetNull)
-  step               TaskStepTemplate?      @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  template         TaskTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  property         Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedCleaning Cleaning?         @relation(fields: [assignedCleaningId], references: [id], onDelete: SetNull)
+  step             TaskStepTemplate? @relation(fields: [stepId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, templateId, periodKey])
   @@index([tenantId, propertyId, status])
@@ -2399,8 +2399,8 @@ model Notification {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, dedupeKey])
   @@index([userId, readAt])
@@ -2422,8 +2422,8 @@ model PushSubscription {
   updatedAt DateTime  @updatedAt
   revokedAt DateTime?
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant    Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, revokedAt])

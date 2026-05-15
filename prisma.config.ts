@@ -49,9 +49,10 @@ function getEnvOrUndefined(key: string): string | undefined {
   }
 }
 
-// Para migraciones, preferir MIGRATE_DATABASE_URL o convertir DATABASE_URL a directa
+// Para migraciones, preferir MIGRATE_DATABASE_URL, luego DIRECT_URL, o convertir DATABASE_URL a directa
 const databaseUrl =
   getEnvOrUndefined("MIGRATE_DATABASE_URL") ||
+  getEnvOrUndefined("DIRECT_URL") ||
   getDirectConnectionUrl(getEnvOrUndefined("DATABASE_URL"));
 
 
