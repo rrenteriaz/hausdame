@@ -12,6 +12,10 @@ import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import PropertiesSplitView from "./PropertiesSplitView";
+import { getHostOnboardingProgress } from "@/lib/onboarding/host";
+import EmptyStateWithGuide from "@/components/onboarding/EmptyStateWithGuide";
+import HostOnboardingGuide from "@/components/onboarding/HostOnboardingGuide";
+import HostSetupProgressCard from "@/components/onboarding/HostSetupProgressCard";
 
 export default async function PropertiesPage({
   searchParams,
@@ -28,11 +32,11 @@ export default async function PropertiesPage({
   // Usar safeReturnTo común con fallback explícito para el back del Page
   const returnTo = safeReturnTo(params?.returnTo, "/host/menu");
 
-  const [properties, inactivePropertiesCount] = await Promise.all([
+  const [properties, inactivePropertiesCount, onboardingProgress] = await Promise.all([
     prisma.property.findMany({
       where: { 
         tenantId,
-        ...({ isActive: true } as any), // Solo mostrar propiedades activas - Temporal hasta que TypeScript reconozca el campo
+        isActive: true,
       },
       select: {
         id: true,
@@ -45,17 +49,18 @@ export default async function PropertiesPage({
       },
       orderBy: { shortName: "asc" },
     }),
-    (prisma.property as any).count({
+    prisma.property.count({
       where: {
         tenantId,
-        ...({ isActive: false } as any), // Contar propiedades inactivas
+        isActive: false,
       },
     }),
+    getHostOnboardingProgress(tenantId),
   ]);
 
   // Obtener thumbnails en batch
   const thumbUrls = await getCoverThumbUrlsBatch(
-    properties.map((p) => ({ id: p.id, coverAssetGroupId: (p as any).coverAssetGroupId || null }))
+    properties.map((p) => ({ id: p.id, coverAssetGroupId: p.coverAssetGroupId || null }))
   );
 
   // Helper para construir returnTo (para detalles de propiedad)
@@ -76,6 +81,17 @@ export default async function PropertiesPage({
 
       {/* Lista de propiedades */}
       <section className="space-y-4">
+        {properties.length > 0 && onboardingProgress.completedSteps < onboardingProgress.totalSteps && (
+          <HostSetupProgressCard
+            progress={onboardingProgress}
+            storageKey={`hausdame:onboarding:v1:${user.id}:host:setup-card:dismissed`}
+            context="properties"
+            actions={{
+              "first-property": <CreatePropertyForm />,
+            }}
+          />
+        )}
+
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-neutral-800">
             Tus propiedades
@@ -91,18 +107,27 @@ export default async function PropertiesPage({
         </div>
 
         {properties.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
-            Todavía no has registrado ninguna propiedad.
-            <br />
-            Usa el botón "Agregar propiedad" para agregar la primera.
-          </div>
+          <EmptyStateWithGuide
+            storageKey={`hausdame:onboarding:v1:${user.id}:host:properties:dismissed`}
+            title="Todavía no has registrado ninguna propiedad"
+            description="Agrega tu primera propiedad para conectar calendario, organizar grupos y preparar el trabajo de limpieza."
+            fallbackAction={<CreatePropertyForm />}
+          >
+            <HostOnboardingGuide
+              progress={onboardingProgress}
+              context="properties"
+              actions={{
+                "first-property": <CreatePropertyForm />,
+              }}
+            />
+          </EmptyStateWithGuide>
         ) : (
           (() => {
             // Agrupar propiedades por groupName
             const propertiesByGroup = new Map<string, typeof properties>();
 
             properties.forEach((p) => {
-              const groupName = (p as any).groupName || "Sin grupo";
+              const groupName = p.groupName || "Sin grupo";
               if (!propertiesByGroup.has(groupName)) {
                 propertiesByGroup.set(groupName, []);
               }
@@ -209,9 +234,11 @@ export default async function PropertiesPage({
         )}
 
         {/* Botón para agregar propiedad al final */}
-        <div className="flex justify-end">
-          <CreatePropertyForm />
-        </div>
+        {properties.length > 0 && (
+          <div className="flex justify-end">
+            <CreatePropertyForm />
+          </div>
+        )}
       </section>
     </div>
     </Page>

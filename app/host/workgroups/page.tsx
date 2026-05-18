@@ -9,6 +9,10 @@ import ListContainer from "@/lib/ui/ListContainer";
 import ListThumb from "@/lib/ui/ListThumb";
 import StopPropagationDiv from "@/lib/ui/StopPropagationDiv";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
+import { getHostOnboardingProgress } from "@/lib/onboarding/host";
+import EmptyStateWithGuide from "@/components/onboarding/EmptyStateWithGuide";
+import HostOnboardingGuide from "@/components/onboarding/HostOnboardingGuide";
+import HostSetupProgressCard from "@/components/onboarding/HostSetupProgressCard";
 
 export default async function WorkGroupsPage({
   searchParams,
@@ -22,15 +26,18 @@ export default async function WorkGroupsPage({
   const params = searchParams ? await searchParams : {};
   const returnTo = safeReturnTo(params?.returnTo, "/host/menu");
 
-  const workGroups = await prisma.hostWorkGroup.findMany({
-    where: { tenantId },
-    select: {
-      id: true,
-      name: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [workGroups, onboardingProgress] = await Promise.all([
+    prisma.hostWorkGroup.findMany({
+      where: { tenantId },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    getHostOnboardingProgress(tenantId),
+  ]);
 
   // Obtener conteos de propiedades y ejecutores por workGroup
   const workGroupIds = workGroups.map((wg) => wg.id);
@@ -68,16 +75,36 @@ export default async function WorkGroupsPage({
     <Page title="Grupos de trabajo" subtitle="Gestiona los grupos de trabajo y sus asignaciones a propiedades" showBack backHref={returnTo}>
       <div className="space-y-6">
         <section className="space-y-4">
+          {workGroups.length > 0 && onboardingProgress.completedSteps < onboardingProgress.totalSteps && (
+            <HostSetupProgressCard
+              progress={onboardingProgress}
+              storageKey={`hausdame:onboarding:v1:${user.id}:host:setup-card:dismissed`}
+              context="workgroups"
+              actions={{
+                "first-workgroup": <CreateWorkGroupForm />,
+              }}
+            />
+          )}
+
           <h2 className="text-base font-semibold text-neutral-800">
             Tus grupos de trabajo
           </h2>
 
           {workGroups.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
-              Todavía no has creado ningún grupo de trabajo.
-              <br />
-              Usa el botón &quot;Crear grupo de trabajo&quot; para agregar el primero.
-            </div>
+            <EmptyStateWithGuide
+              storageKey={`hausdame:onboarding:v1:${user.id}:host:workgroups:dismissed`}
+              title="Todavía no has creado ningún grupo de trabajo"
+              description="Crea un WorkGroup para conectar tus propiedades con equipos de limpieza y preparar invitaciones."
+              fallbackAction={<CreateWorkGroupForm />}
+            >
+              <HostOnboardingGuide
+                progress={onboardingProgress}
+                context="workgroups"
+                actions={{
+                  "first-workgroup": <CreateWorkGroupForm />,
+                }}
+              />
+            </EmptyStateWithGuide>
           ) : (
             <ListContainer>
               {workGroups.map((workGroup, index) => {
@@ -132,9 +159,11 @@ export default async function WorkGroupsPage({
             </ListContainer>
           )}
 
-          <div className="flex justify-end">
-            <CreateWorkGroupForm />
-          </div>
+          {workGroups.length > 0 && (
+            <div className="flex justify-end">
+              <CreateWorkGroupForm />
+            </div>
+          )}
         </section>
       </div>
     </Page>
