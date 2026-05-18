@@ -20,6 +20,8 @@ import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import { isPastDateOnly } from "@/lib/datetime/isPastDateOnly";
 import { getCdmxDate } from "@/lib/datetime/cdmxToday";
 import PropertyLocationPreview from "./PropertyLocationPreview";
+import { getPropertySetupProgress } from "@/lib/onboarding/property";
+import PropertySetupProgressCard from "@/components/onboarding/PropertySetupProgressCard";
 
 function formatDateRange(start: Date, end: Date): string {
   const startStr = start.toLocaleString("es-MX", {
@@ -207,6 +209,7 @@ export default async function PropertyDetailPage({
     wifiSsid: string | null;
     wifiPassword: string | null;
     accessCode: string | null;
+    icalLastSyncError: string | null;
   };
   
   const assignedWorkGroupIds = new Set(assignedWorkGroups.map((wgp) => wgp.workGroupId));
@@ -271,6 +274,17 @@ export default async function PropertyDetailPage({
     }
     executorsByWorkGroup.get(executor.workGroupId)!.push(executor);
   }
+
+  const activeChecklistItems = (checklistItems as Array<{ isActive: boolean; area: string }>).filter(
+    (item) => item.isActive
+  );
+
+  const propertySetupProgress = getPropertySetupProgress({
+    property: typedProperty,
+    assignedWorkGroupsCount: assignedWorkGroups.length,
+    activeExecutorsCount: executors.filter((executor) => executor.status === "ACTIVE").length,
+    activeChecklistItemsCount: activeChecklistItems.length,
+  });
 
   // Obtener las limpiezas de esta propiedad, ordenadas por fecha más reciente (FASE 4: usar propertyId)
   const cleanings = await (prisma as any).cleaning.findMany({
@@ -337,8 +351,17 @@ export default async function PropertyDetailPage({
           variant="compact"
         >
 
+      {(propertySetupProgress.isOperational === false || propertySetupProgress.hasWarnings) && (
+        <PropertySetupProgressCard
+          progress={propertySetupProgress}
+          propertyId={typedProperty.id}
+          storageKey={`hausdame:onboarding:v1:${user.id}:host:property:${typedProperty.id}:dismissed`}
+          returnTo={`/host/properties/${typedProperty.id}?returnTo=${encodeURIComponent(returnTo)}`}
+        />
+      )}
+
       {/* Información de la propiedad */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
+      <section id="property-info" className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4 scroll-mt-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-neutral-800">Información de la propiedad</h2>
           <EditPropertyModal property={typedProperty} returnTo={returnTo} />
@@ -534,22 +557,23 @@ export default async function PropertyDetailPage({
       </section>
 
       {/* Grupos de trabajo asignados */}
-      <WorkGroupsSection
-        propertyId={typedProperty.id}
-        workGroups={workGroups}
-        assignedWorkGroups={assignedWorkGroups}
-        executorsByWorkGroup={executorsByWorkGroup}
-        executorTeamsMap={executorTeamsMap}
-        returnTo={returnTo}
-      />
+      <div id="property-workgroups" className="scroll-mt-4">
+        <WorkGroupsSection
+          propertyId={typedProperty.id}
+          workGroups={workGroups}
+          assignedWorkGroups={assignedWorkGroups}
+          executorsByWorkGroup={executorsByWorkGroup}
+          executorTeamsMap={executorTeamsMap}
+          returnTo={returnTo}
+        />
+      </div>
 
       {/* Checklist Summary */}
-      <div className="mt-6">
+      <div id="property-checklist" className="mt-6 scroll-mt-4">
         <ChecklistSummary
           propertyId={typedProperty.id}
-          itemsByArea={checklistItems
-            .filter((item: any) => item.isActive)
-            .reduce((acc: any, item: any) => {
+          itemsByArea={activeChecklistItems
+            .reduce((acc, item) => {
               if (!acc[item.area]) acc[item.area] = 0;
               acc[item.area]++;
               return acc;
@@ -735,4 +759,3 @@ export default async function PropertyDetailPage({
     </HostWebContainer>
   );
 }
-
