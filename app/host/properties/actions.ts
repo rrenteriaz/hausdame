@@ -343,6 +343,10 @@ export async function createProperty(formData: FormData) {
   const shortName = formData.get("shortName")?.toString().trim() || null;
   const address = formData.get("address")?.toString().trim() || null;
   const icalUrl = formData.get("icalUrl")?.toString().trim() || null;
+  const timeZone = formData.get("timeZone")?.toString().trim() || null;
+  const checkInTime = formData.get("checkInTime")?.toString().trim() || null;
+  const checkOutTime = formData.get("checkOutTime")?.toString().trim() || null;
+  const groupName = formData.get("groupName")?.toString().trim() || null;
 
   if (!name) {
     revalidatePath("/host/properties");
@@ -372,6 +376,10 @@ export async function createProperty(formData: FormData) {
         shortName, // Ahora es obligatorio
         address: address ?? undefined,
         icalUrl: icalUrl ?? undefined,
+        timeZone: timeZone ?? undefined,
+        checkInTime: checkInTime ?? undefined,
+        checkOutTime: checkOutTime ?? undefined,
+        groupName: groupName ?? undefined,
         propertyZones: {
           create: [
             // Zonas operacionales base
@@ -388,18 +396,16 @@ export async function createProperty(formData: FormData) {
         },
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const details =
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : { message: String(error) };
     console.error('Error creando propiedad:', error);
-    console.error('Error details:', {
-      message: error?.message,
-      code: error?.code,
-      meta: error?.meta,
-      stack: error?.stack,
-    });
+    console.error('Error details:', details);
     throw error;
   }
 
   // Refresca la página de propiedades para ver la nueva en la lista
   revalidatePath("/host/properties");
 }
-

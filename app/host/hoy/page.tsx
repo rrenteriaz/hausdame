@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import Page from "@/lib/ui/Page";
 import HoyClient from "./HoyClient";
 import { getHoyData, getProximasData } from "./data";
+import CreatePropertyForm from "../properties/CreatePropertyForm";
+import HostGettingStartedCard from "@/components/onboarding/HostGettingStartedCard";
 
 export default async function HoyPage({
   searchParams,
@@ -35,6 +37,17 @@ export default async function HoyPage({
     getHoyData(tenantId, selectedPropertyId || undefined),
     getProximasData(tenantId, selectedPropertyId || undefined),
   ]);
+
+  if (properties.length === 0) {
+    return (
+      <Page
+        title="Actividad"
+        subtitle="Prepara tu operación antes de recibir reservas y limpiezas"
+      >
+        <HostGettingStartedCard action={<CreatePropertyForm />} />
+      </Page>
+    );
+  }
 
   return (
     <Page

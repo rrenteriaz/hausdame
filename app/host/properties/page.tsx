@@ -13,8 +13,6 @@ import CollapsibleSection from "@/lib/ui/CollapsibleSection";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
 import PropertiesSplitView from "./PropertiesSplitView";
 import { getHostOnboardingProgress } from "@/lib/onboarding/host";
-import EmptyStateWithGuide from "@/components/onboarding/EmptyStateWithGuide";
-import HostOnboardingGuide from "@/components/onboarding/HostOnboardingGuide";
 import HostSetupProgressCard from "@/components/onboarding/HostSetupProgressCard";
 
 export default async function PropertiesPage({
@@ -71,13 +69,14 @@ export default async function PropertiesPage({
     <Page title="Propiedades" subtitle="Gestiona aquí tus alojamientos conectados a Hausdame" showBack backHref={returnTo}>
       <div className="space-y-6">
 
-      {/* Botón temporal: Sincronizar iCal (todas) */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-neutral-700">
-          Sincronización masiva
-        </h2>
-        <SyncAllIcalButton />
-      </section>
+      {properties.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-neutral-700">
+            Sincronización masiva
+          </h2>
+          <SyncAllIcalButton />
+        </section>
+      )}
 
       {/* Lista de propiedades */}
       <section className="space-y-4">
@@ -107,20 +106,26 @@ export default async function PropertiesPage({
         </div>
 
         {properties.length === 0 ? (
-          <EmptyStateWithGuide
-            storageKey={`hausdame:onboarding:v1:${user.id}:host:properties:dismissed`}
-            title="Todavía no has registrado ninguna propiedad"
-            description="Agrega tu primera propiedad para conectar calendario, organizar grupos y preparar el trabajo de limpieza."
-            fallbackAction={<CreatePropertyForm />}
-          >
-            <HostOnboardingGuide
-              progress={onboardingProgress}
-              context="properties"
-              actions={{
-                "first-property": <CreatePropertyForm />,
-              }}
-            />
-          </EmptyStateWithGuide>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-neutral-950">
+                  No has registrado ninguna propiedad
+                </h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600">
+                  Agrega tu primera propiedad para comenzar a sincronizar
+                  reservas y organizar limpiezas.
+                </p>
+                <p className="mt-3 text-xs leading-5 text-neutral-500">
+                  Más adelante podrás organizar propiedades, crear equipos e
+                  invitar cleaners.
+                </p>
+              </div>
+              <div className="w-full sm:w-auto sm:shrink-0">
+                <CreatePropertyForm />
+              </div>
+            </div>
+          </div>
         ) : (
           (() => {
             // Agrupar propiedades por groupName
