@@ -19,9 +19,16 @@ import Page from "@/lib/ui/Page";
 import Link from "next/link";
 import { getTeamDisplayName } from "@/lib/cleaner/teamDisplayName";
 import CreateCleanerTeamButton from "./CreateCleanerTeamButton";
+import CleanerEmptyStateCard from "../CleanerEmptyStateCard";
 
-export default async function CleanerTeamsPage() {
+export default async function CleanerTeamsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ joined?: string }>;
+}) {
   const user = await requireCleanerUser();
+  const params = searchParams ? await searchParams : undefined;
+  const showJoinedConfirmation = params?.joined === "1";
 
   // BUGFIX: antes se asumía el team por tenant/Team; ahora la fuente es TeamMembership ACTIVE.
   const memberships = await prisma.teamMembership.findMany({
@@ -92,6 +99,7 @@ export default async function CleanerTeamsPage() {
 
   // Obtener conteos de propiedades: priorizar WGE, fallback a PropertyTeam
   const propertyCountsMap = new Map<string, number>();
+  const activeExecutorsCountMap = new Map<string, number>();
   
   if (teamIds.length > 0) {
     // Obtener WorkGroupExecutors ACTIVE para identificar qué teams usan WGE
@@ -106,6 +114,13 @@ export default async function CleanerTeamsPage() {
         hostTenantId: true,
       },
     });
+
+    for (const executor of executors) {
+      activeExecutorsCountMap.set(
+        executor.teamId,
+        (activeExecutorsCountMap.get(executor.teamId) ?? 0) + 1
+      );
+    }
 
     // WGE: fallback to PropertyTeam must be per-team (teams without ACTIVE executors), not global.
     const teamsWithExecutors = new Set(executors.map((e) => e.teamId));
@@ -136,7 +151,7 @@ export default async function CleanerTeamsPage() {
       for (const [hostTenantId, workGroupIds] of workGroupIdsByTenant.entries()) {
         // Primero verificar que los WorkGroups están ACTIVE
         // Filtrar por WorkGroupExecutor.status = "ACTIVE" AND HostWorkGroup.status = "ACTIVE"
-        const activeWorkGroups = await (prisma as any).hostWorkGroup.findMany({
+        const activeWorkGroups = await prisma.hostWorkGroup.findMany({
           where: {
             id: { in: Array.from(workGroupIds) },
             tenantId: hostTenantId,
@@ -147,7 +162,7 @@ export default async function CleanerTeamsPage() {
           },
         });
 
-        const activeWorkGroupIds = new Set(activeWorkGroups.map((wg: any) => wg.id));
+        const activeWorkGroupIds = new Set(activeWorkGroups.map((wg) => wg.id));
 
         if (activeWorkGroupIds.size === 0) {
           continue;
@@ -156,7 +171,7 @@ export default async function CleanerTeamsPage() {
         const properties = await prisma.hostWorkGroupProperty.findMany({
           where: {
             tenantId: hostTenantId,
-            workGroupId: { in: Array.from(activeWorkGroupIds) as unknown as string[] },
+            workGroupId: { in: Array.from(activeWorkGroupIds) },
             property: {
               isActive: true,
             },
@@ -187,7 +202,7 @@ export default async function CleanerTeamsPage() {
 
     // Fallback a PropertyTeam por-team para teams sin WorkGroupExecutor ACTIVE
     if (teamsNeedingFallback.length > 0) {
-      const propertyTeamCounts = await (prisma as any).propertyTeam.groupBy({
+      const propertyTeamCounts = await prisma.propertyTeam.groupBy({
         by: ["teamId"],
         where: {
           teamId: { in: teamsNeedingFallback },
@@ -217,15 +232,18 @@ export default async function CleanerTeamsPage() {
   return (
     <Page title="Equipos" showBack backHref="/cleaner">
       <div className="p-4 space-y-4">
+        {showJoinedConfirmation && <CleanerEmptyStateCard variant="joined" />}
+
         {teams.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-center space-y-3">
             <p className="text-neutral-600 text-base">
-              Aún no perteneces a ningún equipo
+              Aún no estás conectado a un Host
             </p>
             <p className="text-neutral-500 text-sm">
-              Crea tu primer equipo o espera a que un líder te invite.
+              Pídele al Host que te envíe un enlace de invitación. Cuando lo aceptes,
+              tu equipo aparecerá aquí.
             </p>
-            <div className="flex justify-center">
+            <div className="flex justify-center pt-1">
               <CreateCleanerTeamButton />
             </div>
           </div>
@@ -234,21 +252,21 @@ export default async function CleanerTeamsPage() {
             {teams.map((item) => {
             const propertiesCount = Number(propertyCountsMap.get(item.team.id) ?? 0);
             const membersCount = Number(activeMembersMap.get(item.team.id) ?? 0);
-            // Solo el TL activo (membersCount === 1) significa que no hay ejecutores adicionales
-            const isTlOnly = membersCount <= 1;
+            const activeExecutorsCount = Number(activeExecutorsCountMap.get(item.team.id) ?? 0);
+            const hasActiveExecutor = activeExecutorsCount > 0;
             const isPaused = item.team.status === "PAUSED";
             const badgeLabel = isPaused
               ? "Pausado"
               : propertiesCount === 0
               ? "Sin WG asignado"
-              : isTlOnly
+              : !hasActiveExecutor
               ? "Sin ejecutores"
               : "Activo";
             const badgeClassName = isPaused
               ? "bg-neutral-100 text-neutral-700"
               : propertiesCount === 0
               ? "bg-amber-100 text-amber-800"
-              : isTlOnly
+              : !hasActiveExecutor
               ? "bg-amber-100 text-amber-800"
               : "bg-emerald-100 text-emerald-800";
             const leaderMembership = item.team.TeamMembership[0] ?? null;

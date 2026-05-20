@@ -85,7 +85,9 @@ export default function MyCleaningsSection({
 
         {filteredMyCleanings.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-sm text-neutral-600">
-            No hay limpiezas en esta categoría.
+            {localMyFilter === "in_progress"
+              ? "No tienes limpiezas en progreso."
+              : "No tienes limpiezas pendientes asignadas."}
           </div>
         ) : (
           <ListContainer>

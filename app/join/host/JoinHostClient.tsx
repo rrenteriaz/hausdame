@@ -1,7 +1,7 @@
 // app/join/host/JoinHostClient.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -26,11 +26,39 @@ interface JoinHostClientProps {
   isAuthenticated: boolean;
 }
 
+const MONTHS_ES_MX = [
+  "ene",
+  "feb",
+  "mar",
+  "abr",
+  "may",
+  "jun",
+  "jul",
+  "ago",
+  "sep",
+  "oct",
+  "nov",
+  "dic",
+];
+
+function formatMexicoCityDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  const cdmxDate = new Date(date.getTime() - 6 * 60 * 60 * 1000);
+  const day = String(cdmxDate.getUTCDate()).padStart(2, "0");
+  const month = MONTHS_ES_MX[cdmxDate.getUTCMonth()];
+  const year = cdmxDate.getUTCFullYear();
+  const hour24 = cdmxDate.getUTCHours();
+  const hour12 = String(hour24 % 12 || 12).padStart(2, "0");
+  const minute = String(cdmxDate.getUTCMinutes()).padStart(2, "0");
+  const period = hour24 >= 12 ? "p.m." : "a.m.";
+
+  return `${day} ${month} ${year}, ${hour12}:${minute} ${period}`;
+}
+
 export default function JoinHostClient({
   inviteInfo,
   token,
   autoClaim,
-  isAuthenticated,
 }: JoinHostClientProps) {
   const router = useRouter();
   const [isClaiming, setIsClaiming] = useState(false);
@@ -39,7 +67,7 @@ export default function JoinHostClient({
 
   const joinRedirect = `/join/host?token=${token}`;
 
-  const handleClaim = async () => {
+  const handleClaim = useCallback(async () => {
     setIsClaiming(true);
     setError(null);
 
@@ -60,7 +88,7 @@ export default function JoinHostClient({
         } else if (res.status === 410) {
           setError(data.error || "Esta invitación ha expirado o ha sido revocada");
         } else if (res.status === 403) {
-          setError(data.error || "No tienes permiso para aceptar esta invitación. Solo Team Leaders (Cleaners) pueden aceptar.");
+          setError(data.error || "No tienes permiso para aceptar esta invitación. Solo usuarios Cleaner pueden aceptar.");
         } else {
           setError(data.error || "Error al aceptar la invitación");
         }
@@ -69,12 +97,13 @@ export default function JoinHostClient({
       }
 
       const redirectTo = data.redirectTo || "/cleaner/teams";
-      router.replace(redirectTo);
-    } catch (err) {
+      const separator = redirectTo.includes("?") ? "&" : "?";
+      router.replace(`${redirectTo}${separator}joined=1`);
+    } catch {
       setError("Error de conexión");
       setIsClaiming(false);
     }
-  };
+  }, [joinRedirect, router, token]);
 
   // Auto-claim si autoClaim es true (viene de signup/login)
   useEffect(() => {
@@ -91,18 +120,7 @@ export default function JoinHostClient({
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [autoClaim, autoClaimTriggered, isClaiming, inviteInfo.status]);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-MX", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  }, [autoClaim, autoClaimTriggered, handleClaim, isClaiming, inviteInfo.status]);
 
   const formatStatus = (status: string): { label: string; className: string } => {
     switch (status) {
@@ -153,7 +171,9 @@ export default function JoinHostClient({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-neutral-700">
             <div>
               <p className="text-xs text-neutral-500">Vigencia</p>
-              <p className="font-medium text-neutral-900">{formatDate(inviteInfo.expiresAt)}</p>
+              <p className="font-medium text-neutral-900">
+                {formatMexicoCityDateTime(inviteInfo.expiresAt)}
+              </p>
             </div>
             <div>
               <p className="text-xs text-neutral-500">Rol</p>

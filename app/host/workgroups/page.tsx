@@ -17,7 +17,7 @@ import HostSetupProgressCard from "@/components/onboarding/HostSetupProgressCard
 export default async function WorkGroupsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ returnTo?: string }>;
+  searchParams?: Promise<{ create?: string; returnTo?: string }>;
 }) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
@@ -25,8 +25,9 @@ export default async function WorkGroupsPage({
 
   const params = searchParams ? await searchParams : {};
   const returnTo = safeReturnTo(params?.returnTo, "/host/menu");
+  const shouldOpenCreateModal = params?.create === "1";
 
-  const [workGroups, onboardingProgress] = await Promise.all([
+  const [workGroups, activeProperties, onboardingProgress] = await Promise.all([
     prisma.hostWorkGroup.findMany({
       where: { tenantId },
       select: {
@@ -35,6 +36,16 @@ export default async function WorkGroupsPage({
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.property.findMany({
+      where: { tenantId, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        shortName: true,
+        address: true,
+      },
+      orderBy: { shortName: "asc" },
     }),
     getHostOnboardingProgress(tenantId),
   ]);
@@ -81,7 +92,12 @@ export default async function WorkGroupsPage({
               storageKey={`hausdame:onboarding:v1:${user.id}:host:setup-card:dismissed`}
               context="workgroups"
               actions={{
-                "first-workgroup": <CreateWorkGroupForm />,
+                "first-workgroup": (
+                  <CreateWorkGroupForm
+                    initialOpen={shouldOpenCreateModal}
+                    availableProperties={activeProperties}
+                  />
+                ),
               }}
             />
           )}
@@ -95,13 +111,23 @@ export default async function WorkGroupsPage({
               storageKey={`hausdame:onboarding:v1:${user.id}:host:workgroups:dismissed`}
               title="Todavía no has creado ningún grupo de trabajo"
               description="Crea un WorkGroup para conectar tus propiedades con equipos de limpieza y preparar invitaciones."
-              fallbackAction={<CreateWorkGroupForm />}
+              fallbackAction={
+                <CreateWorkGroupForm
+                  initialOpen={shouldOpenCreateModal}
+                  availableProperties={activeProperties}
+                />
+              }
             >
               <HostOnboardingGuide
                 progress={onboardingProgress}
                 context="workgroups"
                 actions={{
-                  "first-workgroup": <CreateWorkGroupForm />,
+                  "first-workgroup": (
+                    <CreateWorkGroupForm
+                      initialOpen={shouldOpenCreateModal}
+                      availableProperties={activeProperties}
+                    />
+                  ),
                 }}
               />
             </EmptyStateWithGuide>
@@ -161,7 +187,10 @@ export default async function WorkGroupsPage({
 
           {workGroups.length > 0 && (
             <div className="flex justify-end">
-              <CreateWorkGroupForm />
+              <CreateWorkGroupForm
+                initialOpen={shouldOpenCreateModal}
+                availableProperties={activeProperties}
+              />
             </div>
           )}
         </section>

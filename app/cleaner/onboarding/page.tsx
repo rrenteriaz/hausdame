@@ -20,32 +20,18 @@ export default async function CleanerOnboardingPage() {
       <div className="space-y-6">
         <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           <h2 className="text-xl font-bold text-neutral-800 mb-3">
-            Bienvenido a Hausdame
+            Aún no estás conectado a un Host
           </h2>
           <p className="text-base text-neutral-700 mb-4">
-            Para ver y gestionar limpiezas necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
+            Pídele al Host que te envíe un enlace de invitación. Cuando lo aceptes,
+            verás aquí tus propiedades, limpiezas y asignaciones.
+          </p>
+          <p className="text-sm text-neutral-500">
+            Si ya tienes un enlace, ábrelo desde el mensaje que recibiste para conectar tu cuenta.
           </p>
         </div>
 
         <div className="space-y-3">
-          <Link
-            href="/cleaner/marketplace"
-            className="block w-full rounded-xl border border-neutral-200 bg-white p-4 hover:bg-neutral-50 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-base font-medium text-neutral-900">
-                  Explorar marketplace
-                </p>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  Busca oportunidades de trabajo disponibles
-                </p>
-              </div>
-              <span className="text-neutral-400">→</span>
-            </div>
-          </Link>
-
           <Link
             href="/cleaner/profile"
             className="block w-full rounded-xl border border-neutral-200 bg-white p-4 hover:bg-neutral-50 transition-colors"

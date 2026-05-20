@@ -16,6 +16,8 @@ export default function HostOnboardingGuide({
 }: HostOnboardingGuideProps) {
   const eyebrow = context === "workgroups" ? "Grupos de trabajo" : "Propiedades";
   const currentKey = progress.currentStep?.key;
+  const contextualActionKey =
+    context === "workgroups" ? "first-workgroup" : "first-property";
 
   return (
     <div className="space-y-4">
@@ -41,7 +43,7 @@ export default function HostOnboardingGuide({
             step={step}
             index={index}
             active={step.key === currentKey}
-            action={actions[step.key]}
+            action={step.key === contextualActionKey ? actions[step.key] : undefined}
           />
         ))}
       </div>

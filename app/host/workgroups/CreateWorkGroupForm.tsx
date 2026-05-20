@@ -1,12 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import NewWorkGroupModal from "./NewWorkGroupModal";
 
-export default function CreateWorkGroupForm() {
+type WorkGroupPropertyOption = {
+  id: string;
+  name: string;
+  shortName: string | null;
+  address?: string | null;
+};
+
+type CreateWorkGroupFormProps = {
+  initialOpen?: boolean;
+  availableProperties?: WorkGroupPropertyOption[];
+};
+
+export default function CreateWorkGroupForm({
+  initialOpen = false,
+  availableProperties = [],
+}: CreateWorkGroupFormProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const consumedInitialOpen = useRef(false);
+  const [isOpen, setIsOpen] = useState(initialOpen);
+
+  useEffect(() => {
+    if (!initialOpen || consumedInitialOpen.current) return;
+    consumedInitialOpen.current = true;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get("create") === "1") {
+      params.delete("create");
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    }
+  }, [initialOpen, pathname, router, searchParams]);
 
   const handleSuccess = () => {
     router.refresh();
@@ -26,6 +58,8 @@ export default function CreateWorkGroupForm() {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSuccess={handleSuccess}
+        availableProperties={availableProperties}
+        guided
       />
     </>
   );

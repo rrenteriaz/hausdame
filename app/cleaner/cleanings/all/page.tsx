@@ -254,6 +254,14 @@ export default async function AllCleaningsPage({
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
   const monthParamForLinks = formatMonthParam(monthDate);
+  const emptyCopy =
+    availableProperties.length === 0
+      ? "Aún no tienes propiedades conectadas. Cuando el Host asigne propiedades a tu equipo, tus limpiezas aparecerán aquí."
+      : scope === "upcoming"
+      ? "No tienes limpiezas próximas en los próximos días."
+      : scope === "history"
+      ? "Aún no hay limpiezas completadas para los filtros seleccionados."
+      : "No tienes limpiezas asignadas para los filtros seleccionados.";
 
   return (
     <Page
@@ -293,7 +301,7 @@ export default async function AllCleaningsPage({
       {allCleanings.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center mt-4">
           <p className="text-base text-neutral-600">
-            No hay limpiezas para los filtros seleccionados.
+            {emptyCopy}
           </p>
         </div>
       ) : (

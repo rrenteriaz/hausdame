@@ -1,5 +1,5 @@
 // app/host/workgroups/[id]/page.tsx
-import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
@@ -12,7 +12,13 @@ import ExecutorsSection from "./ExecutorsSection";
 import ToggleWorkGroupStatusButton from "./ToggleWorkGroupStatusButton";
 import { getExecutorsForWorkGroupsForUi } from "@/lib/workgroups/resolveWorkGroupsForProperty";
 import { safeReturnTo } from "@/lib/navigation/safeReturnTo";
-import { getInviteLink } from "@/lib/invites/links";
+import { getInviteLink, getInviteRequestBaseUrl } from "@/lib/invites/links";
+
+type ExecutorPerson = {
+  name: string | null;
+  email: string | null;
+  role: string | null;
+};
 
 export default async function WorkGroupDetailPage({
   params,
@@ -27,6 +33,7 @@ export default async function WorkGroupDetailPage({
 
   const resolvedParams = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const requestHeaders = await headers();
   const currentUser = await getCurrentUser();
 
   const workGroup = await prisma.hostWorkGroup.findFirst({
@@ -113,7 +120,8 @@ export default async function WorkGroupDetailPage({
 
   // Obtener información del líder efectivo desde TeamMembership para cada executor
   // Mapear teamId -> nombre del líder efectivo (TEAM_LEADER ACTIVE, o fallback al primer miembro ACTIVE)
-  const executorLeaderByTeamId: Record<string, { name: string | null; email: string | null }> = {};
+  const executorLeaderByTeamId: Record<string, { name: string | null; email: string | null; role: string | null }> = {};
+  const executorMembersByTeamId: Record<string, ExecutorPerson[]> = {};
   if (executorTeamIds.length > 0) {
     // Obtener todos los TeamMemberships ACTIVE para estos teams (para calcular líder efectivo)
     const allMemberships = await prisma.teamMembership.findMany({
@@ -145,6 +153,12 @@ export default async function WorkGroupDetailPage({
 
     // Para cada team, determinar líder efectivo
     for (const [teamId, memberships] of membershipsByTeamId.entries()) {
+      executorMembersByTeamId[teamId] = memberships.map((membership) => ({
+        name: membership.User.name,
+        email: membership.User.email,
+        role: membership.role,
+      }));
+
       // Buscar TEAM_LEADER explícito
       const explicitLeader = memberships.find((m: { teamId: string; role: string; createdAt: Date; User: { name: string | null; email: string | null } }) => m.role === "TEAM_LEADER");
       
@@ -166,6 +180,7 @@ export default async function WorkGroupDetailPage({
         executorLeaderByTeamId[teamId] = {
           name: effectiveLeader.User.name,
           email: effectiveLeader.User.email,
+          role: effectiveLeader.role,
         };
       }
     }
@@ -191,41 +206,32 @@ export default async function WorkGroupDetailPage({
   }
 
   // Obtener invitaciones para este WorkGroup
-  // Manejar caso cuando el modelo aún no está disponible (antes de migración o reinicio del servidor)
-  let invites: any[] = [];
-  try {
-    if ((prisma as any).hostWorkGroupInvite) {
-      invites = await (prisma as any).hostWorkGroupInvite.findMany({
-        where: {
-          tenantId: tenantId,
-          workGroupId: workGroup.id,
+  const invites = await prisma.hostWorkGroupInvite.findMany({
+    where: {
+      tenantId: tenantId,
+      workGroupId: workGroup.id,
+    },
+    include: {
+      createdByUser: {
+        select: {
+          name: true,
         },
-        include: {
-          createdByUser: {
-            select: {
-              name: true,
-            },
-          },
-          claimedByUser: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
+      },
+      claimedByUser: {
+        select: {
+          name: true,
+          email: true,
         },
-        orderBy: { createdAt: "desc" },
-      });
-    }
-  } catch (error) {
-    // Si el modelo no existe aún, usar array vacío
-    console.warn("[WorkGroupDetailPage] HostWorkGroupInvite model not available:", error);
-    invites = [];
-  }
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
   // Inyectar inviteLink generado en servidor
-  const invitesWithLinks = invites.map((invite: any) => ({
+  const inviteBaseUrl = getInviteRequestBaseUrl(requestHeaders);
+  const invitesWithLinks = invites.map((invite) => ({
     ...invite,
-    inviteLink: getInviteLink(invite.token, "workgroup"),
+    inviteLink: getInviteLink(invite.token, "workgroup", inviteBaseUrl),
   }));
 
   // Validar returnTo y usar fallback seguro
@@ -282,8 +288,8 @@ export default async function WorkGroupDetailPage({
         <WorkGroupPropertiesCard
           workGroupId={workGroup.id}
           canEdit={canEditProperties}
-          assignedProperties={assignedProperties as any}
-          allProperties={allActiveProperties as any}
+          assignedProperties={assignedProperties}
+          allProperties={allActiveProperties}
           assignedPropertyIds={workGroupPropertyIds}
         />
 
@@ -293,7 +299,9 @@ export default async function WorkGroupDetailPage({
           executors={executors}
           executorTeamsById={executorTeamsById}
           executorLeaderByTeamId={executorLeaderByTeamId}
+          executorMembersByTeamId={executorMembersByTeamId}
           executorMembersCountByTeamId={executorMembersCountByTeamId}
+          assignedPropertiesCount={assignedProperties.length}
           canEdit={canEditProperties}
           returnTo={returnTo}
         />
@@ -303,7 +311,7 @@ export default async function WorkGroupDetailPage({
           <WorkGroupInvitesSection
             workGroupId={workGroup.id}
             workGroupName={workGroup.name}
-            invites={invitesWithLinks as any}
+            invites={invitesWithLinks}
             returnTo={returnTo}
           />
         )}

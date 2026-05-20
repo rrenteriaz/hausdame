@@ -162,7 +162,9 @@ export default function CleanerSections({
 
           {filteredMyCleanings.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
-              No hay limpiezas en esta categoría.
+              {localMyFilter === "in_progress"
+                ? "No tienes limpiezas en progreso."
+                : "No tienes limpiezas pendientes asignadas."}
             </div>
           ) : (
             <ListContainer>
@@ -249,7 +251,7 @@ export default function CleanerSections({
         >
           {eligibleCleanings.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
-              No hay limpiezas disponibles en este momento.
+              No hay limpiezas disponibles por ahora. Cuando el Host publique limpiezas abiertas para tus propiedades, aparecerán aquí.
             </div>
           ) : (
             <ListContainer>

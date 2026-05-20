@@ -1,6 +1,6 @@
 // app/api/host-workgroups/[workGroupId]/invites/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getInviteLink } from "@/lib/invites/links";
+import { getInviteLink, getInviteRequestBaseUrl } from "@/lib/invites/links";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getDefaultTenant } from "@/lib/tenant";
@@ -13,6 +13,18 @@ function generateSecureToken(): string {
   // Generar 32 bytes aleatorios y convertir a base64url (sin padding)
   const bytes = randomBytes(32);
   return bytes.toString("base64url");
+}
+
+async function readJsonBody(req: NextRequest): Promise<Record<string, unknown>> {
+  const rawBody = await req.text();
+  if (!rawBody.trim()) return {};
+
+  try {
+    const parsed = JSON.parse(rawBody);
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -35,8 +47,14 @@ export async function POST(
       return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
     }
 
-    const body = await req.json();
-    const { prefillName, expiresInDays = 7 } = body;
+    const body = await readJsonBody(req);
+    const prefillName =
+      typeof body.prefillName === "string" ? body.prefillName : null;
+    const expiresInDays =
+      typeof body.expiresInDays === "number" ||
+      typeof body.expiresInDays === "string"
+        ? body.expiresInDays
+        : 7;
 
     // Validar que el WorkGroup existe y pertenece al tenant
     const workGroup = await prisma.hostWorkGroup.findFirst({
@@ -62,17 +80,9 @@ export async function POST(
     let attempts = 0;
     const maxAttempts = 5;
 
-    // Verificar que el modelo está disponible
-    if (!(prisma as any).hostWorkGroupInvite) {
-      return NextResponse.json(
-        { error: "El modelo HostWorkGroupInvite no está disponible. Por favor, regenera Prisma Client y reinicia el servidor." },
-        { status: 500 }
-      );
-    }
-
     do {
       token = generateSecureToken();
-      const existing = await (prisma as any).hostWorkGroupInvite.findUnique({
+      const existing = await prisma.hostWorkGroupInvite.findUnique({
         where: { token },
       });
       if (!existing) break;
@@ -93,7 +103,7 @@ export async function POST(
     const trimmedPrefill = prefillName?.trim() || null;
 
     // Crear invite
-    const invite = await (prisma as any).hostWorkGroupInvite.create({
+    const invite = await prisma.hostWorkGroupInvite.create({
       data: {
         tenantId: tenant.id,
         workGroupId,
@@ -106,8 +116,9 @@ export async function POST(
       },
     });
 
-    // Construir link usando el origin real del request
-    const inviteLink = getInviteLink(token, "workgroup", req.nextUrl.origin);
+    // Construir link usando el origin real del navegador/request.
+    const requestBaseUrl = getInviteRequestBaseUrl(req.headers, req.nextUrl.origin);
+    const inviteLink = getInviteLink(token, "workgroup", requestBaseUrl);
 
     return NextResponse.json({
       ok: true,
@@ -119,11 +130,13 @@ export async function POST(
       },
       inviteLink,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creando invite:", error);
+    const message =
+      error instanceof Error ? error.message : "Error al crear invitación";
     return NextResponse.json(
-      { error: error.message || "Error al crear invitación" },
-      { status: error.status || 500 }
+      { error: message },
+      { status: 500 }
     );
   }
 }

@@ -16,12 +16,12 @@ import { getCoverThumbUrlsBatch } from "@/lib/media/getCoverThumbUrl";
 import CleanerMonthlyCalendar from "@/lib/ui/CleaningsCalendar/CleanerMonthlyCalendar";
 import CleanerDailyCalendar from "@/lib/ui/CleaningsCalendar/CleanerDailyCalendar";
 import SummaryCards from "./SummaryCards";
-import NoMembershipPage from "./NoMembershipPage";
+import CleanerEmptyStateCard from "./CleanerEmptyStateCard";
 
 export default async function CleanerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ memberId?: string; myFilter?: string; view?: string; date?: string; month?: string }>;
+  searchParams?: Promise<{ memberId?: string; myFilter?: string; view?: string; date?: string; month?: string; joined?: string }>;
 }) {
   // Resolver contexto del cleaner (membership o legacy)
   // OPTIMIZACIÓN: Resolver una sola vez y reutilizar en getCleanerCleanings
@@ -52,58 +52,7 @@ export default async function CleanerPage({
         mobileTitle="Calendario"
         containerClassName="pt-0 sm:pt-6"
       >
-        {/* Mensaje de bienvenida integrado */}
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
-          <h2 className="text-xl font-bold text-neutral-800 mb-3">
-            ¡Bienvenido a Hausdame!
-          </h2>
-          <p className="text-neutral-700 mb-3">
-            Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
-          </p>
-          <p className="text-neutral-600 text-sm">
-            Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
-            Mientras tanto, puedes explorar la plataforma y familiarizarte con el flujo de trabajo.
-          </p>
-        </div>
-
-        {/* Calendario vacío */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between border-b border-neutral-200">
-            <h2 className="text-base font-semibold text-neutral-800 sm:block hidden">Calendario</h2>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/cleaner?view=month"
-                className="px-3 py-2 text-base font-medium transition text-black border-b-2 border-black"
-              >
-                Mes
-              </Link>
-              <Link
-                href="/cleaner?view=day"
-                className="px-3 py-2 text-base font-medium transition text-neutral-600 hover:text-black"
-              >
-                Día
-              </Link>
-            </div>
-          </div>
-          <CleanerMonthlyCalendar
-            monthDate={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
-            myCleanings={[]}
-            memberCleanings={[]}
-            lostCleanings={[]}
-            availableCleanings={[]}
-          />
-        </section>
-
-        {/* Tarjetas de resumen con 0 */}
-        <SummaryCards
-          myCount={0}
-          availableCount={0}
-          inProgressCount={0}
-          memberId={undefined}
-          returnTo="/cleaner"
-        />
-
+        <CleanerEmptyStateCard variant="waiting-invitation" />
       </Page>
     );
   }
@@ -125,19 +74,7 @@ export default async function CleanerPage({
         mobileTitle="Calendario"
         containerClassName="pt-0 sm:pt-6"
       >
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
-          <h2 className="text-xl font-bold text-neutral-800 mb-3">
-            ¡Bienvenido a Hausdame!
-          </h2>
-          <p className="text-neutral-700 mb-3">
-            Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
-          </p>
-          <p className="text-neutral-600 text-sm">
-            Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
-            Mientras tanto, puedes explorar la plataforma y familiarizarte con el flujo de trabajo.
-          </p>
-        </div>
+        <CleanerEmptyStateCard variant="waiting-invitation" />
       </Page>
     );
   }
@@ -243,20 +180,7 @@ export default async function CleanerPage({
         mobileTitle="Calendario"
         containerClassName="pt-0 sm:pt-6"
       >
-        {/* Mensaje de bienvenida integrado */}
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
-          <h2 className="text-xl font-bold text-neutral-800 mb-3">
-            ¡Bienvenido a Hausdame!
-          </h2>
-          <p className="text-neutral-700 mb-3">
-            Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
-          </p>
-          <p className="text-neutral-600 text-sm">
-            Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
-            Mientras tanto, puedes explorar la plataforma y familiarizarte con el flujo de trabajo.
-          </p>
-        </div>
+        <CleanerEmptyStateCard variant="waiting-invitation" className="mb-6" />
 
         {/* Calendario vacío */}
         <section className="space-y-3">
@@ -530,20 +454,7 @@ export default async function CleanerPage({
         mobileTitle="Calendario"
         containerClassName="pt-0 sm:pt-6"
       >
-        {/* Mensaje de bienvenida integrado */}
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 mb-6">
-          <h2 className="text-xl font-bold text-neutral-800 mb-3">
-            ¡Bienvenido a Hausdame!
-          </h2>
-          <p className="text-neutral-700 mb-3">
-            Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
-          </p>
-          <p className="text-neutral-600 text-sm">
-            Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
-            Mientras tanto, puedes explorar la plataforma y familiarizarte con el flujo de trabajo.
-          </p>
-        </div>
+        <CleanerEmptyStateCard variant="connected-no-properties" className="mb-6" />
 
         {/* Calendario vacío */}
         <section className="space-y-3">
@@ -879,6 +790,15 @@ export default async function CleanerPage({
     return `/cleaner?${urlParams.toString()}`;
   };
 
+  const showJoinedConfirmation = params?.joined === "1";
+  const hasNoCleanerActivity =
+    myCount === 0 &&
+    availableCount === 0 &&
+    inProgressCount === 0 &&
+    myCleaningsForCalendar.length === 0 &&
+    eligibleCleaningsForCalendar.length === 0 &&
+    memberCleaningsForCalendar.length === 0;
+
   return (
     <Page
       title={
@@ -893,6 +813,14 @@ export default async function CleanerPage({
       mobileTitle="Calendario"
       containerClassName="pt-0 sm:pt-6"
     >
+      {showJoinedConfirmation && (
+        <CleanerEmptyStateCard variant="joined" className="mb-4" />
+      )}
+
+      {!showJoinedConfirmation && hasNoCleanerActivity && (
+        <CleanerEmptyStateCard variant="no-cleanings-today" className="mb-4" />
+      )}
+
       {/* Calendario - tabs sticky para evitar que toques en la lista activen Mes por superposición */}
       <section className="space-y-3">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-white py-2 -mx-4 px-4 sm:mx-0 sm:px-0 mb-2">

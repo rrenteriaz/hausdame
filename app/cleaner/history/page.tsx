@@ -123,7 +123,7 @@ export default async function CleanerHistoryPage({
 
         {completedCleanings.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-base text-neutral-600">
-            No hay limpiezas completadas en los filtros seleccionados.
+            Aún no hay limpiezas completadas para los filtros seleccionados.
           </div>
         ) : (
           <ListContainer>

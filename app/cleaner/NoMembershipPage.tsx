@@ -10,15 +10,14 @@ export default function NoMembershipPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-8 text-center">
           <h1 className="text-2xl font-bold text-neutral-800 mb-4">
-            ¡Bienvenido a Hausdame!
+            Aún no estás conectado a un Host
           </h1>
           <p className="text-neutral-700 mb-4">
-            Para empezar a ver y aceptar limpiezas, necesitas unirte a un equipo de trabajo.
-            Un Host debe enviarte una invitación para que puedas acceder a las limpiezas disponibles de sus propiedades.
+            Pídele al Host que te envíe un enlace de invitación. Cuando lo aceptes,
+            verás aquí tus propiedades y limpiezas.
           </p>
           <p className="text-neutral-600 text-sm mb-6">
-            Cuando aceptes una invitación, las limpiezas se mostrarán en tu calendario.
-            Mientras tanto, puedes explorar la plataforma y familiarizarte con el flujo de trabajo.
+            Si ya tienes un enlace, ábrelo desde el mensaje que recibiste para conectar tu cuenta.
           </p>
           <div>
             <Link

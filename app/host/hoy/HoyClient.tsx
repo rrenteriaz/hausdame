@@ -6,6 +6,7 @@ import PropertyFilterIconButton from "@/lib/ui/PropertyFilterIconButton";
 import HoyTabContent from "./HoyTabContent";
 import ProximasTabContent from "./ProximasTabContent";
 import { HoyData, ProximasData } from "./types";
+import type { HostOnboardingProgress } from "@/lib/onboarding/host";
 
 interface Property {
   id: string;
@@ -19,6 +20,7 @@ interface HoyClientProps {
   activeTab: "hoy" | "proximas";
   hoyData: HoyData;
   proximasData: ProximasData;
+  onboardingProgress: HostOnboardingProgress;
 }
 
 export default function HoyClient({
@@ -27,6 +29,7 @@ export default function HoyClient({
   activeTab,
   hoyData,
   proximasData,
+  onboardingProgress,
 }: HoyClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -115,7 +118,11 @@ export default function HoyClient({
 
       {/* Contenido del tab activo */}
       {activeTab === "hoy" ? (
-        <HoyTabContent selectedPropertyId={selectedPropertyId} data={hoyData} />
+        <HoyTabContent
+          selectedPropertyId={selectedPropertyId}
+          data={hoyData}
+          onboardingProgress={onboardingProgress}
+        />
       ) : (
         <ProximasTabContent selectedPropertyId={selectedPropertyId} data={proximasData} />
       )}

@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getAccessibleTeamsForUser } from "@/lib/cleaner/getAccessibleTeamsForUser";
 import { getCurrentUser } from "@/lib/auth/session";
 import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";
-import { getCleanerCleaningsList } from "@/lib/cleaner/cleanings/query";
+import { getCleanerCleaningsList, getCleanerScope } from "@/lib/cleaner/cleanings/query";
 import { redirect } from "next/navigation";
 import Page from "@/lib/ui/Page";
 import ListContainer from "@/lib/ui/ListContainer";
@@ -50,6 +50,8 @@ export default async function AvailableCleaningsPage({
     return <NoMembershipPage />;
   }
 
+  const cleanerScope = await getCleanerScope(context);
+
   const now = new Date();
   const { start, end } = getAvailabilityWindow(now, { includePastOpen: true });
 
@@ -91,7 +93,11 @@ export default async function AvailableCleaningsPage({
     <Page title="Limpiezas disponibles" subtitle="Sin asignar" containerClassName="pt-6" showBack backHref={backHref}>
       {displayItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-          <p className="text-base text-neutral-600">No hay limpiezas disponibles en este momento.</p>
+          <p className="text-base text-neutral-600">
+            {cleanerScope.propertyIds.length === 0
+              ? "Aún no tienes propiedades conectadas. Cuando el Host asigne propiedades a tu equipo, las limpiezas disponibles aparecerán aquí."
+              : "No hay limpiezas disponibles por ahora. Cuando el Host publique limpiezas abiertas para tus propiedades, aparecerán aquí."}
+          </p>
         </div>
       ) : (
         <ListContainer>

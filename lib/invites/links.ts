@@ -6,10 +6,11 @@
 /**
  * Gets the base URL for the application.
  * Priority:
- * 1. APP_BASE_URL (canonical)
- * 2. NEXT_PUBLIC_APP_URL (compatibility)
- * 3. window.location.origin (client-only fallback)
- * 4. http://localhost:8080 (development fallback)
+ * 1. providedBaseUrl (request/current origin)
+ * 2. APP_BASE_URL (canonical)
+ * 3. NEXT_PUBLIC_APP_URL (compatibility)
+ * 4. window.location.origin (client-only fallback)
+ * 5. http://localhost:3000 (development fallback)
  */
 export function getBaseUrl(providedBaseUrl?: string): string {
   // 0. Use provided URL if available (from request origin)
@@ -61,7 +62,49 @@ export function getBaseUrl(providedBaseUrl?: string): string {
   }
 
   // 5. Development fallback
-  return "http://localhost:8080";
+  return "http://localhost:3000";
+}
+
+function normalizeLocalHost(host: string): string {
+  return host.replace(/^0\.0\.0\.0(?=:\d+$|$)/, "localhost");
+}
+
+function normalizeBaseUrl(value: string | null): string | undefined {
+  if (!value) return undefined;
+
+  try {
+    const url = new URL(value);
+    if (!url.protocol.startsWith("http")) return undefined;
+    url.host = normalizeLocalHost(url.host);
+    return url.origin.replace(/\/$/, "");
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Derives the public origin from an incoming request. Prefer Origin/Referer so
+ * local mobile testing keeps the same host the browser is actually using
+ * (for example 192.168.x.x:3000 instead of localhost or 0.0.0.0).
+ */
+export function getInviteRequestBaseUrl(
+  headers: Pick<Headers, "get">,
+  fallbackOrigin?: string
+): string | undefined {
+  const origin = normalizeBaseUrl(headers.get("origin"));
+  if (origin) return origin;
+
+  const referer = normalizeBaseUrl(headers.get("referer"));
+  if (referer) return referer;
+
+  const forwardedHost = headers.get("x-forwarded-host");
+  const host = forwardedHost || headers.get("host");
+  if (host) {
+    const forwardedProto = headers.get("x-forwarded-proto") || "http";
+    return normalizeBaseUrl(`${forwardedProto}://${normalizeLocalHost(host)}`);
+  }
+
+  return normalizeBaseUrl(fallbackOrigin ?? null);
 }
 
 export type InviteType = "team" | "property" | "workgroup";

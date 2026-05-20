@@ -52,7 +52,7 @@ export default function OnboardingStepCard({
       {!step.completed && (
         <div className="mt-4">
           {action ? (
-            action
+            <div className="w-full sm:inline-flex sm:w-auto">{action}</div>
           ) : step.href ? (
             <Link
               href={step.href}

@@ -1,15 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { HoyData } from "./types";
+import { BlockItem, HoyData } from "./types";
 import EmptyState from "./EmptyState";
+import HostOnboardingActivityCard from "@/components/onboarding/HostOnboardingActivityCard";
+import type { HostOnboardingProgress } from "@/lib/onboarding/host";
 
 interface HoyTabContentProps {
   selectedPropertyId: string;
   data: HoyData;
+  onboardingProgress: HostOnboardingProgress;
 }
 
-export default function HoyTabContent({ selectedPropertyId, data }: HoyTabContentProps) {
+export default function HoyTabContent({
+  selectedPropertyId,
+  data,
+  onboardingProgress,
+}: HoyTabContentProps) {
   // Construir URL de retorno preservando tab y propertyId
   const buildReturnUrl = () => {
     const params = new URLSearchParams();
@@ -63,15 +70,20 @@ export default function HoyTabContent({ selectedPropertyId, data }: HoyTabConten
   ].filter(Boolean) as Array<{
     title: string;
     count: number;
-    items: any[];
+    items: BlockItem[];
     href: string;
   }>;
 
   // Verificar condición de empty state para tab "Hoy"
   // Empty state solo si TODOS los bloques relevantes están en 0
   const isEmpty = visibleBlocks.length === 0;
+  const hasOnboardingPending =
+    onboardingProgress.completedSteps < onboardingProgress.totalSteps;
 
-  // Si está vacío, mostrar solo el empty state
+  if (isEmpty && hasOnboardingPending) {
+    return <HostOnboardingActivityCard progress={onboardingProgress} />;
+  }
+
   if (isEmpty) {
     return (
       <EmptyState message={`Todo está en orden hoy.\nNo hay tareas pendientes ni incidencias que atender.`} />
@@ -80,6 +92,10 @@ export default function HoyTabContent({ selectedPropertyId, data }: HoyTabConten
 
   return (
     <div className="space-y-6">
+      {hasOnboardingPending && (
+        <HostOnboardingActivityCard progress={onboardingProgress} />
+      )}
+
       {visibleBlocks.map((block) => (
         <BlockCard
           key={block.title}

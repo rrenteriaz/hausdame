@@ -68,7 +68,7 @@ export default function AvailableCleaningsSection({
       >
         {eligibleCleanings.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-4 text-center text-sm text-neutral-600">
-            No hay limpiezas disponibles en este momento.
+            No hay limpiezas disponibles por ahora. Cuando el Host publique limpiezas abiertas para tus propiedades, aparecerán aquí.
           </div>
         ) : (
           <ListContainer>

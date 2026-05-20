@@ -14,6 +14,21 @@ function redirectBack(formData: FormData) {
   redirect("/host/workgroups");
 }
 
+function isTenantNameUniqueError(error: unknown) {
+  if (typeof error !== "object" || error === null) return false;
+  const prismaError = error as {
+    code?: unknown;
+    meta?: { target?: unknown };
+  };
+  const target = prismaError.meta?.target;
+  return (
+    prismaError.code === "P2002" &&
+    Array.isArray(target) &&
+    target.includes("tenantId") &&
+    target.includes("name")
+  );
+}
+
 export async function createWorkGroup(formData: FormData) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
@@ -26,7 +41,6 @@ export async function createWorkGroup(formData: FormData) {
   }
 
   const name = formData.get("name")?.toString().trim();
-  const notes = formData.get("notes")?.toString().trim() || null;
   const returnTo = formData.get("returnTo")?.toString();
 
   if (!name) {
@@ -63,19 +77,19 @@ export async function createWorkGroup(formData: FormData) {
       },
     });
 
-    revalidatePath("/host/workgroups");
-
     // Si hay returnTo, redirigir (comportamiento original)
     if (returnTo) {
+      revalidatePath("/host/workgroups");
       redirectBack(formData);
       return;
     }
 
-    // Si no hay returnTo, retornar el ID y nombre (para uso en modales)
+    // Si no hay returnTo, retornar el ID y nombre para flujos client-side.
+    // El componente decide cuándo refrescar para no desmontar modales guiados.
     return { id: workGroup.id, name: workGroup.name };
-  } catch (error: any) {
+  } catch (error) {
     // Manejar error de constraint único (nombre duplicado)
-    if (error?.code === "P2002" && error?.meta?.target?.includes("tenantId") && error?.meta?.target?.includes("name")) {
+    if (isTenantNameUniqueError(error)) {
       throw new Error("Ya existe un grupo de trabajo con ese nombre en este tenant.");
     }
     // Re-lanzar otros errores
@@ -139,9 +153,9 @@ export async function updateWorkGroup(formData: FormData) {
     revalidatePath("/host/workgroups");
     revalidatePath(`/host/workgroups/${id}`);
     redirectBack(formData);
-  } catch (error: any) {
+  } catch (error) {
     // Manejar error de constraint único (nombre duplicado)
-    if (error?.code === "P2002" && error?.meta?.target?.includes("tenantId") && error?.meta?.target?.includes("name")) {
+    if (isTenantNameUniqueError(error)) {
       throw new Error("Ya existe un grupo de trabajo con ese nombre en este tenant.");
     }
     // Re-lanzar otros errores
@@ -159,6 +173,7 @@ export async function updateWorkGroupProperties(formData: FormData) {
 
   const workGroupId = String(formData.get("workGroupId") || "");
   const rawPropertyIds = formData.get("propertyIds")?.toString() || "[]";
+  const skipRevalidate = formData.get("skipRevalidate")?.toString() === "true";
   let propertyIds: string[] = [];
   try {
     propertyIds = JSON.parse(rawPropertyIds);
@@ -230,8 +245,10 @@ export async function updateWorkGroupProperties(formData: FormData) {
     });
   }
 
-  revalidatePath("/host/workgroups");
-  revalidatePath(`/host/workgroups/${workGroupId}`);
+  if (!skipRevalidate) {
+    revalidatePath("/host/workgroups");
+    revalidatePath(`/host/workgroups/${workGroupId}`);
+  }
 }
 
 export async function deleteWorkGroup(formData: FormData) {

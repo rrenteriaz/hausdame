@@ -34,6 +34,9 @@ function getCtaHref(stepKey: HostOnboardingStepKey) {
   if (stepKey === "first-property" || stepKey === "organize-properties") {
     return "/host/properties";
   }
+  if (stepKey === "first-workgroup") {
+    return "/host/workgroups?create=1";
+  }
   return "/host/workgroups";
 }
 

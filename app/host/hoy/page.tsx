@@ -5,7 +5,8 @@ import Page from "@/lib/ui/Page";
 import HoyClient from "./HoyClient";
 import { getHoyData, getProximasData } from "./data";
 import CreatePropertyForm from "../properties/CreatePropertyForm";
-import HostGettingStartedCard from "@/components/onboarding/HostGettingStartedCard";
+import HostOnboardingActivityCard from "@/components/onboarding/HostOnboardingActivityCard";
+import { getHostOnboardingProgress } from "@/lib/onboarding/host";
 
 export default async function HoyPage({
   searchParams,
@@ -21,7 +22,7 @@ export default async function HoyPage({
   const activeTab = params?.tab === "proximas" ? "proximas" : "hoy";
 
   // Obtener todas las propiedades para el filtro
-  const [properties, hoyData, proximasData] = await Promise.all([
+  const [properties, hoyData, proximasData, onboardingProgress] = await Promise.all([
     prisma.property.findMany({
       where: {
         tenantId,
@@ -36,6 +37,7 @@ export default async function HoyPage({
     }),
     getHoyData(tenantId, selectedPropertyId || undefined),
     getProximasData(tenantId, selectedPropertyId || undefined),
+    getHostOnboardingProgress(tenantId),
   ]);
 
   if (properties.length === 0) {
@@ -44,7 +46,10 @@ export default async function HoyPage({
         title="Actividad"
         subtitle="Prepara tu operación antes de recibir reservas y limpiezas"
       >
-        <HostGettingStartedCard action={<CreatePropertyForm />} />
+        <HostOnboardingActivityCard
+          progress={onboardingProgress}
+          firstPropertyAction={<CreatePropertyForm />}
+        />
       </Page>
     );
   }
@@ -60,6 +65,7 @@ export default async function HoyPage({
         activeTab={activeTab}
         hoyData={hoyData}
         proximasData={proximasData}
+        onboardingProgress={onboardingProgress}
       />
     </Page>
   );

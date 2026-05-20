@@ -5,6 +5,88 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { ensureCleanerPersonalTeam } from "@/lib/teams/provisioning";
 import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";
 import { assertNoConflictingExecutor } from "@/lib/workgroups/assertNoConflictingExecutor";
+import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
+import { resolveAutoAssignment } from "@/lib/cleanings/resolveAutoAssignment";
+
+function isUniqueSlugError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false;
+  }
+
+  const prismaError = error as {
+    code?: unknown;
+    meta?: { target?: unknown };
+  };
+
+  return (
+    prismaError.code === "P2002" &&
+    Array.isArray(prismaError.meta?.target) &&
+    prismaError.meta.target.includes("slug")
+  );
+}
+
+async function backfillOpenCleaningsForWorkGroupInvite(
+  hostTenantId: string,
+  workGroupId: string
+) {
+  const propertyLinks = await prisma.hostWorkGroupProperty.findMany({
+    where: {
+      tenantId: hostTenantId,
+      workGroupId,
+      property: { isActive: true },
+    },
+    select: {
+      propertyId: true,
+    },
+  });
+
+  for (const propertyLink of propertyLinks) {
+    const { propertyId } = propertyLink;
+    const { teamIds } = await resolveAvailableTeamsForProperty(hostTenantId, propertyId);
+    const resolvedTeamId = teamIds.length === 1 ? teamIds[0] : null;
+    const assignment = await resolveAutoAssignment(propertyId, resolvedTeamId);
+
+    if (
+      assignment.assignmentStatus !== "ASSIGNED" ||
+      !assignment.teamId ||
+      !assignment.assignedMembershipId
+    ) {
+      console.log("[WG_INVITE_BACKFILL] skipped", {
+        workGroupId,
+        propertyId,
+        teamCount: teamIds.length,
+        assignmentStatus: assignment.assignmentStatus,
+        attentionReason: assignment.attentionReason,
+      });
+      continue;
+    }
+
+    const result = await prisma.cleaning.updateMany({
+      where: {
+        tenantId: hostTenantId,
+        propertyId,
+        status: "PENDING",
+        assignmentStatus: "OPEN",
+        teamId: null,
+        assignedMembershipId: null,
+        assignedMemberId: null,
+      },
+      data: {
+        teamId: assignment.teamId,
+        assignedMembershipId: assignment.assignedMembershipId,
+        assignmentStatus: "ASSIGNED",
+        needsAttention: false,
+        attentionReason: null,
+      },
+    });
+
+    console.log("[WG_INVITE_BACKFILL] assigned open cleanings", {
+      workGroupId,
+      propertyId,
+      updated: result.count,
+    });
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -21,20 +103,20 @@ export async function POST(
   // Validar que el usuario es CLEANER
   if (user.role !== "CLEANER") {
     return NextResponse.json(
-      { error: "Solo Team Leaders (Cleaners) pueden aceptar esta invitación" },
+      { error: "Solo usuarios Cleaner pueden aceptar esta invitación" },
       { status: 403 }
     );
   }
 
   // Verificar que el modelo está disponible
-  if (!(prisma as any).hostWorkGroupInvite) {
+  if (!("hostWorkGroupInvite" in prisma)) {
     return NextResponse.json(
       { error: "El modelo HostWorkGroupInvite no está disponible. Por favor, regenera Prisma Client y reinicia el servidor." },
       { status: 500 }
     );
   }
 
-  const invite = await (prisma as any).hostWorkGroupInvite.findUnique({
+  const invite = await prisma.hostWorkGroupInvite.findUnique({
     where: { token },
     include: {
       workGroup: {
@@ -102,8 +184,8 @@ export async function POST(
             select: { id: true },
           });
           break;
-        } catch (error: any) {
-          if (error.code === "P2002" && error.meta?.target?.includes("slug")) {
+        } catch (error: unknown) {
+          if (isUniqueSlugError(error)) {
             attempts++;
             finalSlug = `${tenantSlug}-${attempts}`;
           } else {
@@ -156,7 +238,7 @@ export async function POST(
     } else {
       teamId = leaderMembership.Team.id;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error resolviendo contexto del cleaner:", error);
     return NextResponse.json(
       { error: "Error al resolver tu equipo. Por favor, intenta nuevamente." },
@@ -203,7 +285,7 @@ export async function POST(
       });
 
       // Marcar invite como CLAIMED
-      await (tx as any).hostWorkGroupInvite.update({
+      await tx.hostWorkGroupInvite.update({
         where: { id: invite.id },
         data: {
           status: "CLAIMED",
@@ -212,12 +294,18 @@ export async function POST(
         },
       });
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error al crear WorkGroupExecutor o actualizar invite:", error);
     return NextResponse.json(
       { error: "Error al aceptar la invitación. Por favor, intenta nuevamente." },
       { status: 500 }
     );
+  }
+
+  try {
+    await backfillOpenCleaningsForWorkGroupInvite(hostTenantId, workGroupId);
+  } catch (error: unknown) {
+    console.error("[WG_INVITE_BACKFILL] non-blocking error:", error);
   }
 
   return NextResponse.json({
