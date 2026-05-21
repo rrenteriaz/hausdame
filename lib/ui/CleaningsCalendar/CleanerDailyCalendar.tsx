@@ -1,6 +1,7 @@
 // lib/ui/CleaningsCalendar/CleanerDailyCalendar.tsx
 "use client";
 
+import { useMemo } from "react";
 import CleanerCleaningLink from "@/lib/ui/CleanerCleaningLink";
 import { acceptCleaning } from "@/app/cleaner/actions";
 import ListContainer from "@/lib/ui/ListContainer";
@@ -32,8 +33,8 @@ interface CleanerDailyCalendarProps {
   basePath: string;
   currentMemberId: string;
   returnTo: string;
-  myThumbUrls: Map<string, string | null>;
-  availableThumbUrls: Map<string, string | null>;
+  myThumbUrlEntries: [string, string | null][];
+  availableThumbUrlEntries: [string, string | null][];
 }
 
 function StatusBadge({ bg, text, label }: { bg: string; text: string; label: string }) {
@@ -54,9 +55,18 @@ export default function CleanerDailyCalendar({
   basePath,
   currentMemberId,
   returnTo,
-  myThumbUrls,
-  availableThumbUrls,
+  myThumbUrlEntries,
+  availableThumbUrlEntries,
 }: CleanerDailyCalendarProps) {
+  const myThumbUrls = useMemo(
+    () => new Map(myThumbUrlEntries),
+    [myThumbUrlEntries]
+  );
+  const availableThumbUrls = useMemo(
+    () => new Map(availableThumbUrlEntries),
+    [availableThumbUrlEntries]
+  );
+
   const [y, m, d] = (dateParam || "").split("-").map(Number);
   const localRefDate =
     y && m && d

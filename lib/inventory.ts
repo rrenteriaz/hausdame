@@ -1,6 +1,7 @@
 // lib/inventory.ts
 import prisma from "@/lib/prisma";
 import { InventoryCategory, InventoryCondition, InventoryPriority, Prisma } from "@/lib/generated/prisma";
+import { isMissingPrismaSchemaError } from "@/lib/prisma-schema-errors";
 import { normalizeName, normalizeVariantValue } from "./inventory-normalize";
 
 export interface InventoryLineWithItem {
@@ -58,6 +59,7 @@ export async function listInventoryByProperty(
   lines: InventoryLineWithItem[];
   total: number;
   hasMore: boolean;
+  schemaUnavailable?: boolean;
 }> {
   const page = options?.page || 1;
   const pageSize = options?.pageSize || 50;
@@ -95,7 +97,8 @@ export async function listInventoryByProperty(
     ];
   }
 
-  const [lines, total] = await Promise.all([
+  let schemaUnavailable = false;
+  const inventoryResult = await Promise.all([
     prisma.inventoryLine.findMany({
       where,
       include: {
@@ -130,7 +133,22 @@ export async function listInventoryByProperty(
       take: pageSize + 1, // +1 para saber si hay más
     }),
     prisma.inventoryLine.count({ where }),
-  ]);
+  ]).catch((error) => {
+    if (!isMissingPrismaSchemaError(error)) {
+      throw error;
+    }
+
+    console.warn("[EMPTY_STATE_DIAG]", {
+      scope: "listInventoryByProperty",
+      reason: "inventory_schema_unavailable",
+      tenantId,
+      propertyId,
+    });
+
+    schemaUnavailable = true;
+    return [[] as InventoryLineWithItem[], 0] as [InventoryLineWithItem[], number];
+  });
+  const [lines, total] = inventoryResult as [InventoryLineWithItem[], number];
 
   const hasMore = lines.length > pageSize;
   const paginatedLines = hasMore ? lines.slice(0, pageSize) : lines;
@@ -139,6 +157,7 @@ export async function listInventoryByProperty(
     lines: paginatedLines,
     total,
     hasMore,
+    schemaUnavailable,
   };
 }
 
@@ -1776,4 +1795,3 @@ export async function copyInventoryBetweenProperties({
     }
   );
 }
-

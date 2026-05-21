@@ -20,6 +20,7 @@ import { fetchInventoryHistoryStats } from "@/lib/inventory-history-queries";
 import ZonesManagementSection from "./ZonesManagementSection";
 import CopyZoneInventoryModal from "./CopyZoneInventoryModal";
 import MobileInventoryActionBar from "./MobileInventoryActionBar";
+import { isMissingPrismaSchemaError } from "@/lib/prisma-schema-errors";
 
 export default async function InventoryPage({
   params,
@@ -83,7 +84,11 @@ export default async function InventoryPage({
     : undefined;
 
   // Obtener todo el inventario sin paginación
-  const { lines: inventoryLines, total } = await listInventoryByProperty(
+  const {
+    lines: inventoryLines,
+    total,
+    schemaUnavailable: inventoryLinesSchemaUnavailable = false,
+  } = await listInventoryByProperty(
     tenantId,
     property.id,
     {
@@ -96,6 +101,7 @@ export default async function InventoryPage({
   );
 
   // Phase 12: Cargar zonas OPERATIONAL activas con conteo de items (para ZonesManagementSection)
+  let inventorySchemaUnavailable = inventoryLinesSchemaUnavailable;
   let propertyZones = await prisma.propertyZone.findMany({
     where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL" as const, isActive: true },
     select: {
@@ -106,6 +112,20 @@ export default async function InventoryPage({
       _count: { select: { inventoryLines: { where: { isActive: true } } } },
     },
     orderBy: { sortOrder: "asc" as const },
+  }).catch((error) => {
+    if (!isMissingPrismaSchemaError(error)) {
+      throw error;
+    }
+
+    inventorySchemaUnavailable = true;
+    console.warn("[EMPTY_STATE_DIAG]", {
+      route: "/host/properties/[id]/inventory",
+      reason: "property_zone_schema_unavailable",
+      tenantId,
+      propertyId: property.id,
+    });
+
+    return [];
   });
 
   // Obtener historial de incidencias (stats) para las líneas mostradas
@@ -114,6 +134,9 @@ export default async function InventoryPage({
     fetchInventoryHistoryStats(lineIds, tenantId),
     getInventoryLineImageThumbsBatch(inventoryLines.map(l => ({ id: l.id, itemId: l.item.id }))),
   ]);
+  const lineThumbsEntries: [string, Array<string | null>][] = Array.from(
+    lineThumbsMap.entries()
+  );
 
   // Enriquecer líneas con stats de historial
   const enrichedLines = inventoryLines.map(line => ({
@@ -183,30 +206,40 @@ export default async function InventoryPage({
         backHref={returnTo}
       >
         <div className="space-y-6">
+          {inventorySchemaUnavailable && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Inventario todavía no está inicializado para esta base de datos. La app seguirá disponible mientras se completa la configuración.
+            </div>
+          )}
+
           {/* Lista agrupada por área */}
           {inventoryLines.length === 0 ? (
             <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
               <p className="text-base text-neutral-700 font-medium mb-4">
-                Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad.
+                {inventorySchemaUnavailable
+                  ? "No hay inventario disponible por ahora."
+                  : "Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad."}
               </p>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
-                <AddInventoryItemButton propertyId={property.id} />
-                <ApplyTemplateModal
-                  propertyId={property.id}
-                  hasExistingInventory={false}
-                />
-                {availableProperties.length > 0 && (
-                  <CopyInventoryModal
+              {!inventorySchemaUnavailable && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
+                  <AddInventoryItemButton propertyId={property.id} />
+                  <ApplyTemplateModal
                     propertyId={property.id}
-                    propertyName={property.shortName || property.name}
-                    availableProperties={availableProperties}
+                    hasExistingInventory={false}
                   />
-                )}
-                <ZonesManagementSection
-                  propertyId={property.id}
-                  initialZones={propertyZones}
-                />
-              </div>
+                  {availableProperties.length > 0 && (
+                    <CopyInventoryModal
+                      propertyId={property.id}
+                      propertyName={property.shortName || property.name}
+                      availableProperties={availableProperties}
+                    />
+                  )}
+                  <ZonesManagementSection
+                    propertyId={property.id}
+                    initialZones={propertyZones}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -386,7 +419,7 @@ export default async function InventoryPage({
                         <InventoryList
                           lines={zoneLines}
                           propertyId={property.id}
-                          lineThumbsMap={lineThumbsMap}
+                          lineThumbsEntries={lineThumbsEntries}
                           tenantId={tenantId}
                         />
                       )}
@@ -402,4 +435,3 @@ export default async function InventoryPage({
     </HostWebContainer>
   );
 }
-

@@ -37,8 +37,8 @@ interface WorkGroupsSectionProps {
   propertyId: string;
   workGroups: WorkGroup[];
   assignedWorkGroups: AssignedWorkGroup[];
-  executorsByWorkGroup: Map<string, Executor[]>;
-  executorTeamsMap: Map<string, Team>;
+  executorsByWorkGroup: Record<string, Executor[]>;
+  executorTeamsById: Record<string, Team>;
   returnTo: string;
 }
 
@@ -47,7 +47,7 @@ export default function WorkGroupsSection({
   workGroups,
   assignedWorkGroups: initialAssignedWorkGroups,
   executorsByWorkGroup,
-  executorTeamsMap,
+  executorTeamsById,
   returnTo,
 }: WorkGroupsSectionProps) {
   const [isPending, startTransition] = useTransition();
@@ -66,7 +66,7 @@ export default function WorkGroupsSection({
           <ul className="space-y-3">
             {assignedWorkGroups.map((wgp) => {
               const workGroupDetailHref = `/host/workgroups/${wgp.workGroupId}?returnTo=${encodeURIComponent(returnTo)}`;
-              const workGroupExecutors = executorsByWorkGroup.get(wgp.workGroupId) || [];
+              const workGroupExecutors = executorsByWorkGroup[wgp.workGroupId] ?? [];
               return (
                 <li
                   key={wgp.id}
@@ -126,7 +126,7 @@ export default function WorkGroupsSection({
                       <p className="text-xs font-medium text-neutral-600">Equipos ejecutores:</p>
                       <ul className="space-y-1">
                         {workGroupExecutors.map((executor) => {
-                          const team = executorTeamsMap.get(executor.teamId);
+                          const team = executorTeamsById[executor.teamId];
                           const teamStatus = team?.status || executor.status;
                           // Host UI muestra displayName derivado cuando Team.name es genérico
                           const displayName = team

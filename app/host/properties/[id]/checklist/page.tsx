@@ -69,6 +69,9 @@ export default async function PropertyChecklistPage({
   // Obtener thumbs de imágenes para todos los items (batch)
   const checklistItemIds = checklistItems.map((item: any) => item.id);
   const itemThumbsMap = await getChecklistItemImageThumbsBatch(checklistItemIds);
+  const itemThumbsEntries: [string, Array<string | null>][] = Array.from(
+    itemThumbsMap.entries()
+  );
 
   return (
     <HostWebContainer className="space-y-4">
@@ -94,7 +97,7 @@ export default async function PropertyChecklistPage({
           valueLabel: item.valueLabel,
         }))}
         allProperties={allProperties}
-        itemThumbsMap={itemThumbsMap}
+        itemThumbsEntries={itemThumbsEntries}
       />
     </HostWebContainer>
   );

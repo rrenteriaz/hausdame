@@ -29,7 +29,7 @@ interface ChecklistManagerProps {
   propertyId: string;
   items: ChecklistItem[];
   allProperties: Array<{ id: string; name: string; shortName?: string | null }>;
-  itemThumbsMap?: Map<string, Array<string | null>>;
+  itemThumbsEntries?: [string, Array<string | null>][];
 }
 
 const AREA_LABELS: Record<ChecklistArea, string> = {
@@ -60,7 +60,7 @@ export default function ChecklistManager({
   propertyId,
   items,
   allProperties,
-  itemThumbsMap: initialItemThumbsMap,
+  itemThumbsEntries = [],
 }: ChecklistManagerProps) {
   const [isPending, startTransition] = useTransition();
   const [itemsState, setItemsState] = useState<ChecklistItem[]>(() => items);
@@ -91,7 +91,9 @@ export default function ChecklistManager({
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
   const [photosItemId, setPhotosItemId] = useState<string | null>(null);
   const [photosItemTitle, setPhotosItemTitle] = useState<string | null>(null);
-  const [itemThumbsMap, setItemThumbsMap] = useState<Map<string, Array<string | null>>>(initialItemThumbsMap || new Map());
+  const [itemThumbsMap, setItemThumbsMap] = useState<Map<string, Array<string | null>>>(
+    () => new Map(itemThumbsEntries)
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Handler para cerrar preview con Escape
@@ -1123,4 +1125,3 @@ export default function ChecklistManager({
     </div>
   );
 }
-

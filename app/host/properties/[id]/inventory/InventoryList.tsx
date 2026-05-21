@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ListContainer from "@/lib/ui/ListContainer";
 import {
   editInventoryCache,
@@ -45,18 +45,26 @@ interface InventoryLineWithHistory extends InventoryLineWithItem {
 interface InventoryListProps {
   lines: InventoryLineWithHistory[];
   propertyId: string;
-  lineThumbsMap: Map<string, Array<string | null>>;
-  reportsByLineId?: Map<string, ReportForLine>;
+  lineThumbsEntries: [string, Array<string | null>][];
+  reportsByLineIdEntries?: [string, ReportForLine][];
   tenantId?: string;
 }
 
 export default function InventoryList({
   lines,
   propertyId,
-  lineThumbsMap,
-  reportsByLineId = new Map(),
+  lineThumbsEntries,
+  reportsByLineIdEntries = [],
   tenantId,
 }: InventoryListProps) {
+  const lineThumbsMap = useMemo(
+    () => new Map(lineThumbsEntries),
+    [lineThumbsEntries]
+  );
+  const reportsByLineId = useMemo(
+    () => new Map(reportsByLineIdEntries),
+    [reportsByLineIdEntries]
+  );
   const [selectedLine, setSelectedLine] = useState<InventoryLineWithHistory | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

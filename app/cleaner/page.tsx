@@ -224,8 +224,8 @@ export default async function CleanerPage({
               memberCleanings={[]}
               lostCleanings={[]}
               availableCleanings={[]}
-              myThumbUrls={emptyThumbUrlsMap}
-              availableThumbUrls={emptyThumbUrlsMap}
+              myThumbUrlEntries={Array.from(emptyThumbUrlsMap.entries())}
+              availableThumbUrlEntries={Array.from(emptyThumbUrlsMap.entries())}
               returnTo={buildReturnTo()}
             />
           )}
@@ -498,8 +498,8 @@ export default async function CleanerPage({
               memberCleanings={[]}
               lostCleanings={[]}
               availableCleanings={[]}
-              myThumbUrls={emptyThumbUrlsMap}
-              availableThumbUrls={emptyThumbUrlsMap}
+              myThumbUrlEntries={Array.from(emptyThumbUrlsMap.entries())}
+              availableThumbUrlEntries={Array.from(emptyThumbUrlsMap.entries())}
               returnTo={buildReturnTo()}
             />
           )}
@@ -957,8 +957,8 @@ export default async function CleanerPage({
               status: c.status,
               notes: c.notes,
             }))}
-            myThumbUrls={calendarMyThumbUrls}
-            availableThumbUrls={calendarAvailableThumbUrls}
+            myThumbUrlEntries={Array.from(calendarMyThumbUrls.entries())}
+            availableThumbUrlEntries={Array.from(calendarAvailableThumbUrls.entries())}
             returnTo={buildReturnTo()}
           />
         )}

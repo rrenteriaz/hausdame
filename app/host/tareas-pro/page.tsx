@@ -8,6 +8,7 @@ import CreateChecklistModal from "./components/CreateChecklistModal";
 import PropertyFilterRouter from "./components/PropertyFilterRouter";
 import TareasProSplitView from "./components/TareasProSplitView";
 import { isScheduleComplete } from "@/lib/tareas-pro/domain/schedule-anchor";
+import { isMissingPrismaSchemaError } from "@/lib/prisma-schema-errors";
 
 export default async function TareasProPage({
   searchParams,
@@ -28,6 +29,7 @@ export default async function TareasProPage({
     (a.shortName ?? a.name).localeCompare(b.shortName ?? b.name, "es")
   );
 
+  let tareasProSchemaUnavailable = false;
   const templates = await prisma.taskTemplate.findMany({
     where: {
       tenantId,
@@ -40,6 +42,20 @@ export default async function TareasProPage({
       _count: { select: { sections: true, jobs: true } },
       sections: { select: { _count: { select: { steps: true } } } },
     },
+  }).catch((error) => {
+    if (!isMissingPrismaSchemaError(error)) {
+      throw error;
+    }
+
+    tareasProSchemaUnavailable = true;
+    console.warn("[EMPTY_STATE_DIAG]", {
+      route: "/host/tareas-pro",
+      reason: "missing_task_template_table",
+      tenantId,
+      propertyCount: properties.length,
+    });
+
+    return [];
   });
 
   // --- Datos para el split de web ---
@@ -103,24 +119,38 @@ export default async function TareasProPage({
         showBack
         backHref="/host/menu"
         rightActions={
-          <div className="flex items-center gap-3">
-            <Link href="/host/tareas-pro/pendientes" className="text-sm text-amber-600 hover:underline">
-              Pendientes
-            </Link>
-            <Link href="/host/tareas-pro/jobs" className="text-sm text-blue-600 hover:underline">
-              Historial
-            </Link>
-          </div>
+          tareasProSchemaUnavailable ? null : (
+            <div className="flex items-center gap-3">
+              <Link href="/host/tareas-pro/pendientes" className="text-sm text-amber-600 hover:underline">
+                Pendientes
+              </Link>
+              <Link href="/host/tareas-pro/jobs" className="text-sm text-blue-600 hover:underline">
+                Historial
+              </Link>
+            </div>
+          )
         }
       >
+        {tareasProSchemaUnavailable && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Tareas todavía no está inicializado para esta base de datos. La app seguirá disponible mientras se completa la configuración.
+          </div>
+        )}
+
         {/* Botón crear — solo mobile (desktop: el botón vive en el panel derecho del split) */}
-        <div className="mb-5 lg:hidden">
-          <CreateChecklistModal properties={properties} />
-        </div>
+        {!tareasProSchemaUnavailable && (
+          <div className="mb-5 lg:hidden">
+            <CreateChecklistModal properties={properties} />
+          </div>
+        )}
 
         {/* VISTA WEB (lg+): split de dos paneles, sin filtro de propiedad */}
         <div className="hidden lg:block">
-          {propertiesForSplit.length === 0 ? (
+          {tareasProSchemaUnavailable ? (
+            <p className="text-sm text-gray-400 py-6 text-center">
+              No hay tareas disponibles por ahora.
+            </p>
+          ) : propertiesForSplit.length === 0 ? (
             <p className="text-sm text-gray-400 py-6 text-center">
               No hay propiedades activas.
             </p>
@@ -145,7 +175,11 @@ export default async function TareasProPage({
 
           {/* Lista de checklists */}
           <div className="space-y-2">
-            {mobileTemplates.length === 0 ? (
+            {tareasProSchemaUnavailable ? (
+              <p className="text-sm text-gray-400 py-6 text-center">
+                No hay tareas disponibles por ahora.
+              </p>
+            ) : mobileTemplates.length === 0 ? (
               <p className="text-sm text-gray-400 py-6 text-center">
                 {propertyFilter && propertyFilter !== "all"
                   ? "Esta propiedad aún no tiene tareas."

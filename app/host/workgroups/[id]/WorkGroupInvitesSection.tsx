@@ -76,6 +76,9 @@ export default function WorkGroupInvitesSection({
   returnTo,
 }: WorkGroupInvitesSectionProps) {
   const router = useRouter();
+  const pendingInvites = invites.filter((invite) => getEffectiveStatus(invite) === "PENDING");
+  const historicalInvites = invites.filter((invite) => getEffectiveStatus(invite) !== "PENDING");
+  const [isExpanded, setIsExpanded] = useState(pendingInvites.length > 0);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [prefillName, setPrefillName] = useState("");
@@ -85,9 +88,6 @@ export default function WorkGroupInvitesSection({
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const pendingInvites = invites.filter((invite) => getEffectiveStatus(invite) === "PENDING");
-  const historicalInvites = invites.filter((invite) => getEffectiveStatus(invite) !== "PENDING");
 
   useEffect(() => {
     return () => {
@@ -170,23 +170,58 @@ export default function WorkGroupInvitesSection({
 
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-neutral-800">Invita a un Cleaner</h2>
+      <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="min-w-0 flex-1 text-left"
+          aria-expanded={isExpanded}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-semibold text-neutral-800">Invita a un Cleaner</h2>
+            {pendingInvites.length > 0 && (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                {pendingInvites.length} pendiente{pendingInvites.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-neutral-500">
             Mantén activos solo los enlaces pendientes para conectar nuevos equipos.
           </p>
-        </div>
+        </button>
         <button
           type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="w-full rounded-lg border border-black bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 active:scale-[0.98] sm:w-auto"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="rounded-full p-2 text-neutral-500 transition hover:bg-neutral-100"
+          aria-label={isExpanded ? "Ocultar invitaciones" : "Mostrar invitaciones"}
+          aria-expanded={isExpanded}
         >
-          Crear invitación
+          <svg
+            className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.06l3.71-3.83a.75.75 0 1 1 1.08 1.04l-4.25 4.39a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06Z"
+              clipRule="evenodd"
+            />
+          </svg>
         </button>
       </div>
 
-      <div className="space-y-3">
+      {isExpanded && (
+        <>
+          <button
+            type="button"
+            onClick={() => setIsCreateOpen(true)}
+            className="w-full rounded-lg border border-black bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 active:scale-[0.98] sm:w-auto"
+          >
+            Crear invitación
+          </button>
+
+          <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-neutral-800">Pendientes</p>
           {pendingInvites.length > 0 && (
@@ -246,9 +281,9 @@ export default function WorkGroupInvitesSection({
             ))}
           </div>
         )}
-      </div>
+          </div>
 
-      {historicalInvites.length > 0 && (
+          {historicalInvites.length > 0 && (
         <div className="border-t border-neutral-100 pt-3">
           <button
             type="button"
@@ -303,6 +338,8 @@ export default function WorkGroupInvitesSection({
             </div>
           )}
         </div>
+          )}
+        </>
       )}
 
       {isCreateOpen && (

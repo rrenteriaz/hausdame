@@ -47,51 +47,29 @@ export default function ExecutorsSection({
   return (
     <>
       <section className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
+        <div className="flex items-start justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="min-w-0 flex-1 text-left"
+            aria-expanded={isExpanded}
+          >
             <h2 className="text-base font-semibold text-neutral-800">
               Equipo operativo
             </h2>
             <p className="text-sm text-neutral-500">
               Cleaners conectados a las propiedades de este grupo.
             </p>
-          </div>
-          {canEdit && (
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 sm:w-auto"
-            >
-              {activeExecutors.length > 0 ? "Editar equipo" : "Agregar Cleaner"}
-            </button>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          className="w-full rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-left transition hover:bg-neutral-100"
-          aria-expanded={isExpanded}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="grid flex-1 grid-cols-1 gap-2 text-sm sm:grid-cols-3">
-              <div>
-                <p className="text-xs text-neutral-500">Cleaners activos</p>
-                <p className="font-semibold text-neutral-900">{activeMembersCount}</p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-500">Propiedades conectadas</p>
-                <p className="font-semibold text-neutral-900">{assignedPropertiesCount}</p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-500">Auto-asignación</p>
-                <p className={`font-semibold ${autoAssignmentEnabled ? "text-emerald-700" : "text-neutral-700"}`}>
-                  {autoAssignmentEnabled ? "Habilitada" : "Requiere revisión"}
-                </p>
-              </div>
-            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="rounded-full p-2 text-neutral-500 transition hover:bg-neutral-100"
+            aria-label={isExpanded ? "Ocultar equipo operativo" : "Mostrar equipo operativo"}
+            aria-expanded={isExpanded}
+          >
             <svg
-              className={`h-5 w-5 shrink-0 text-neutral-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+              className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
               viewBox="0 0 20 20"
               fill="currentColor"
               aria-hidden="true"
@@ -102,8 +80,37 @@ export default function ExecutorsSection({
                 clipRule="evenodd"
               />
             </svg>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 border-y border-neutral-100 py-3 text-sm sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-neutral-500">Cleaners activos</p>
+            <p className="font-semibold text-neutral-900">{activeMembersCount}</p>
           </div>
-        </button>
+          <div>
+            <p className="text-xs text-neutral-500">Propiedades conectadas</p>
+            <p className="font-semibold text-neutral-900">{assignedPropertiesCount}</p>
+          </div>
+          <div>
+            <p className="text-xs text-neutral-500">Auto-asignación</p>
+            <p className={`font-semibold ${autoAssignmentEnabled ? "text-emerald-700" : "text-neutral-700"}`}>
+              {autoAssignmentEnabled ? "Habilitada" : "Requiere revisión"}
+            </p>
+          </div>
+        </div>
+
+        {isExpanded && canEdit && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 sm:w-auto"
+            >
+              {activeExecutors.length > 0 ? "Editar equipo" : "Agregar Cleaner"}
+            </button>
+          </div>
+        )}
 
         {isExpanded && activeExecutors.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-300 p-4 text-center">

@@ -254,7 +254,7 @@ export default async function PropertyDetailPage({
 
 
   // Crear map con información del leader para cada team
-  const executorTeamsMap = new Map(
+  const executorTeamsById = Object.fromEntries(
     executorTeams.map((t) => [
       t.id,
       {
@@ -274,6 +274,7 @@ export default async function PropertyDetailPage({
     }
     executorsByWorkGroup.get(executor.workGroupId)!.push(executor);
   }
+  const executorsByWorkGroupId = Object.fromEntries(executorsByWorkGroup);
 
   const activeChecklistItems = (checklistItems as Array<{ isActive: boolean; area: string }>).filter(
     (item) => item.isActive
@@ -562,8 +563,8 @@ export default async function PropertyDetailPage({
           propertyId={typedProperty.id}
           workGroups={workGroups}
           assignedWorkGroups={assignedWorkGroups}
-          executorsByWorkGroup={executorsByWorkGroup}
-          executorTeamsMap={executorTeamsMap}
+          executorsByWorkGroup={executorsByWorkGroupId}
+          executorTeamsById={executorTeamsById}
           returnTo={returnTo}
         />
       </div>
