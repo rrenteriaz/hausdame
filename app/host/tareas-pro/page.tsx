@@ -137,10 +137,13 @@ export default async function TareasProPage({
           </div>
         )}
 
-        {/* Botón crear — solo mobile (desktop: el botón vive en el panel derecho del split) */}
-        {!tareasProSchemaUnavailable && (
+        {/* Botón crear — solo mobile, solo cuando hay templates (en empty state el CTA vive dentro del empty state) */}
+        {!tareasProSchemaUnavailable && mobileTemplates.length > 0 && (
           <div className="mb-5 lg:hidden">
-            <CreateChecklistModal properties={properties} />
+            <CreateChecklistModal
+              properties={properties}
+              defaultPropertyId={propertyFilter ?? (properties.length === 1 ? (properties[0] as any).id : undefined)}
+            />
           </div>
         )}
 
@@ -167,8 +170,13 @@ export default async function TareasProPage({
 
         {/* VISTA MOBILE (< lg): lista plana con filtro de propiedad */}
         <div className="lg:hidden max-w-2xl space-y-5">
-          {/* Filtro de propiedad */}
-          {properties.length > 1 && (
+          {/* Contexto de propiedad */}
+          {properties.length === 1 ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-100 text-sm font-medium text-neutral-800">
+              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+              {(properties[0] as any).shortName ?? (properties[0] as any).name}
+            </div>
+          ) : properties.length > 1 && (
             <PropertyFilterRouter
               properties={properties}
               selectedPropertyId={propertyFilter ?? ""}
@@ -186,7 +194,10 @@ export default async function TareasProPage({
                 <p className="mb-4 text-sm font-medium text-neutral-500">
                   Aún no has creado tareas para esta propiedad
                 </p>
-                <CreateChecklistModal properties={properties} />
+                <CreateChecklistModal
+                  properties={properties}
+                  defaultPropertyId={propertyFilter ?? (properties.length === 1 ? (properties[0] as any).id : undefined)}
+                />
               </div>
             ) : (
               mobileTemplates.map((t) => {

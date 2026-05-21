@@ -359,14 +359,19 @@ export default function TareasProSplitView({
           ) : (
             /* State 2 — tasks for selected property */
             <div key="task-panel" className="hd-slide-in flex-1 min-h-0 flex flex-col">
-              {/* Header: property name + create button */}
+              {/* Header: property name + create button (solo cuando hay tareas; en empty state el CTA vive abajo) */}
               <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-3 border-b border-neutral-100 bg-white">
                 <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide truncate">
                   {selectedProperty?.name ?? ""}
                 </p>
-                <div className="shrink-0">
-                  <CreateChecklistModal properties={properties} />
-                </div>
+                {filteredTemplates.length > 0 && (
+                  <div className="shrink-0">
+                    <CreateChecklistModal
+                      properties={properties}
+                      defaultPropertyId={selectedPropertyId || undefined}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Task list */}
@@ -382,7 +387,10 @@ export default function TareasProSplitView({
                     <p className="text-sm font-medium text-neutral-500">
                       Aún no has creado tareas para esta propiedad
                     </p>
-                    <CreateChecklistModal properties={properties} />
+                    <CreateChecklistModal
+                      properties={properties}
+                      defaultPropertyId={selectedPropertyId || undefined}
+                    />
                   </div>
                 ) : (
                   filteredTemplates.map((t) => {

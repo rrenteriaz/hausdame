@@ -5,7 +5,13 @@ import { createTaskTemplate } from "../actions";
 
 type Property = { id: string; name: string; shortName: string | null };
 
-export default function CreateChecklistModal({ properties }: { properties: Property[] }) {
+export default function CreateChecklistModal({
+  properties,
+  defaultPropertyId,
+}: {
+  properties: Property[];
+  defaultPropertyId?: string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -43,6 +49,11 @@ export default function CreateChecklistModal({ properties }: { properties: Prope
                         name="propertyId"
                         value={p.id}
                         required
+                        defaultChecked={
+                          defaultPropertyId
+                            ? p.id === defaultPropertyId
+                            : properties.length === 1
+                        }
                         className="shrink-0"
                       />
                       <span className="text-sm font-medium text-neutral-900">
