@@ -116,7 +116,7 @@ export default function ApplyTemplateModal({
         onClick={handleOpen}
         className={triggerClassName ?? "rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"}
       >
-        Crear desde plantilla
+        Generar inventario desde plantilla
       </button>
 
       {/* Modal */}
@@ -131,7 +131,7 @@ export default function ApplyTemplateModal({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-              Crear inventario desde plantilla
+              Generar inventario desde plantilla
             </h3>
 
             {hasExistingInventory && (

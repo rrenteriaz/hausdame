@@ -158,7 +158,9 @@ export default async function TareasProPage({
             <TareasProSplitView
               properties={propertiesForSplit}
               templates={templatesForSplit}
-              initialPropertyId={propertyFilter ?? ""}
+              initialPropertyId={
+                propertyFilter ?? (propertiesForSplit.length === 1 ? propertiesForSplit[0].id : "")
+              }
             />
           )}
         </div>
@@ -180,11 +182,12 @@ export default async function TareasProPage({
                 No hay tareas disponibles por ahora.
               </p>
             ) : mobileTemplates.length === 0 ? (
-              <p className="text-sm text-gray-400 py-6 text-center">
-                {propertyFilter && propertyFilter !== "all"
-                  ? "Esta propiedad aún no tiene tareas."
-                  : "Aún no hay tareas. Crea la primera."}
-              </p>
+              <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
+                <p className="mb-4 text-sm font-medium text-neutral-500">
+                  Aún no has creado tareas para esta propiedad
+                </p>
+                <CreateChecklistModal properties={properties} />
+              </div>
             ) : (
               mobileTemplates.map((t) => {
                 const isLegacyPeriodic =

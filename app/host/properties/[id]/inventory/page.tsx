@@ -100,33 +100,37 @@ export default async function InventoryPage({
     }
   );
 
-  // Phase 12: Cargar zonas OPERATIONAL activas con conteo de items (para ZonesManagementSection)
+  // Phase 12: Cargar zonas OPERATIONAL activas solo cuando ya hay inventario real.
+  // El wizard de alta carga zonas bajo demanda; no enviamos áreas vacías en el empty inicial.
   let inventorySchemaUnavailable = inventoryLinesSchemaUnavailable;
-  let propertyZones = await prisma.propertyZone.findMany({
-    where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL" as const, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      sortOrder: true,
-      operationalCategory: true,
-      _count: { select: { inventoryLines: { where: { isActive: true } } } },
-    },
-    orderBy: { sortOrder: "asc" as const },
-  }).catch((error) => {
-    if (!isMissingPrismaSchemaError(error)) {
-      throw error;
-    }
+  let propertyZones =
+    inventoryLines.length > 0
+      ? await prisma.propertyZone.findMany({
+          where: { tenantId, propertyId: property.id, zoneType: "OPERATIONAL" as const, isActive: true },
+          select: {
+            id: true,
+            name: true,
+            sortOrder: true,
+            operationalCategory: true,
+            _count: { select: { inventoryLines: { where: { isActive: true } } } },
+          },
+          orderBy: { sortOrder: "asc" as const },
+        }).catch((error) => {
+          if (!isMissingPrismaSchemaError(error)) {
+            throw error;
+          }
 
-    inventorySchemaUnavailable = true;
-    console.warn("[EMPTY_STATE_DIAG]", {
-      route: "/host/properties/[id]/inventory",
-      reason: "property_zone_schema_unavailable",
-      tenantId,
-      propertyId: property.id,
-    });
+          inventorySchemaUnavailable = true;
+          console.warn("[EMPTY_STATE_DIAG]", {
+            route: "/host/properties/[id]/inventory",
+            reason: "property_zone_schema_unavailable",
+            tenantId,
+            propertyId: property.id,
+          });
 
-    return [];
-  });
+          return [];
+        })
+      : [];
 
   // Obtener historial de incidencias (stats) para las líneas mostradas
   const lineIds = inventoryLines.map(line => line.id);
@@ -155,9 +159,10 @@ export default async function InventoryPage({
     {} as Record<string, typeof enrichedLines>
   );
 
-  // Phase 13: incluir zonas vacías cuando no hay filtros activos
+  // Phase 13: incluir zonas vacías cuando ya existe inventario real y no hay filtros activos.
+  // Las PropertyZone por sí solas no inicializan inventario; el empty inicial debe ser una hoja limpia.
   const hasActiveFilter = !!(searchTerm || areaFilter || categoryFilter || priorityFilter);
-  if (!hasActiveFilter) {
+  if (!hasActiveFilter && inventoryLines.length > 0) {
     propertyZones.forEach((pz) => {
       if (!groupedByZone[pz.id]) groupedByZone[pz.id] = [];
     });
@@ -218,26 +223,16 @@ export default async function InventoryPage({
               <p className="text-base text-neutral-700 font-medium mb-4">
                 {inventorySchemaUnavailable
                   ? "No hay inventario disponible por ahora."
-                  : "Aún no has creado Items para esta propiedad. Agrega tu primer item o copia el inventario desde otra propiedad."}
+                  : "Aún no has creado inventario para esta propiedad."}
               </p>
               {!inventorySchemaUnavailable && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2">
-                  <AddInventoryItemButton propertyId={property.id} />
                   <ApplyTemplateModal
                     propertyId={property.id}
                     hasExistingInventory={false}
+                    triggerClassName="rounded-lg bg-neutral-900 px-4 py-2 text-base font-medium text-white hover:bg-neutral-800 transition active:scale-[0.99]"
                   />
-                  {availableProperties.length > 0 && (
-                    <CopyInventoryModal
-                      propertyId={property.id}
-                      propertyName={property.shortName || property.name}
-                      availableProperties={availableProperties}
-                    />
-                  )}
-                  <ZonesManagementSection
-                    propertyId={property.id}
-                    initialZones={propertyZones}
-                  />
+                  <AddInventoryItemButton propertyId={property.id} />
                 </div>
               )}
             </div>

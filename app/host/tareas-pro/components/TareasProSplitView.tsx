@@ -378,9 +378,12 @@ export default function TareasProSplitView({
                     </p>
                   </div>
                 ) : filteredTemplates.length === 0 ? (
-                  <p className="text-sm text-neutral-400 py-8 text-center">
-                    Esta propiedad aún no tiene tareas.
-                  </p>
+                  <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-4 text-center">
+                    <p className="text-sm font-medium text-neutral-500">
+                      Aún no has creado tareas para esta propiedad
+                    </p>
+                    <CreateChecklistModal properties={properties} />
+                  </div>
                 ) : (
                   filteredTemplates.map((t) => {
                     const isLegacyPeriodic =
