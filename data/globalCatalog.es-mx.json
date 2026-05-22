@@ -4,7 +4,7 @@
     "locale": "es-MX",
     "description": "Catálogo Global de Ítems Genéricos para autocomplete",
     "createdAt": "2025-01-27",
-    "totalItems": 81
+    "totalItems": 80
   },
   "items": [
     { "name": "Burro de planchar", "category": "FURNITURE_EQUIPMENT" },
@@ -49,8 +49,7 @@
     { "name": "Sábanas", "category": "LINENS" },
     { "name": "Toalla de cuerpo", "category": "LINENS" },
     { "name": "Toalla de manos", "category": "LINENS" },
-    { "name": "Toalla de pies", "category": "LINENS" },
-    { "name": "Toalla de piso", "category": "LINENS" },
+    { "name": "Toalla tapete", "category": "LINENS" },
     { "name": "Cazuela", "category": "TABLEWARE_UTENSILS" },
     { "name": "Copa", "category": "TABLEWARE_UTENSILS" },
     { "name": "Cuchara", "category": "TABLEWARE_UTENSILS" },

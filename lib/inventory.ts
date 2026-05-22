@@ -383,9 +383,12 @@ export async function searchGlobalCatalogItems(
     take: normalizedSearch.length >= 3 ? 200 : 500, // Más candidatos para filtrar después
   });
 
-  // Filtrar en Node usando normalización sin acentos
+  // Filtrar en Node usando normalización sin acentos (con manejo de plural)
   const filtered = candidates.filter((item: { nameNormalized: string }) => {
-    return item.nameNormalized.includes(normalizedSearch);
+    const qStem = normalizedSearch.endsWith("s") && normalizedSearch.length > 2
+      ? normalizedSearch.slice(0, -1)
+      : normalizedSearch;
+    return item.nameNormalized.includes(normalizedSearch) || item.nameNormalized.includes(qStem);
   });
 
   // Ordenar alfabéticamente
@@ -554,15 +557,14 @@ export async function getFrequentInventoryItems(
   defaultVariantOptions: any;
   lineCount: number; // Número de líneas activas (para ordenar)
 }>> {
-  // Obtener items con más líneas activas
+  // Obtener items que tengan al menos una línea (activa o no) — mostrar cualquier
+  // item que el tenant haya usado alguna vez, no solo los que tienen líneas activas hoy.
   const items = await prisma.inventoryItem.findMany({
     where: {
       tenantId,
       archivedAt: null,
       inventoryLines: {
-        some: {
-          isActive: true,
-        },
+        some: {},
       },
     },
     select: {

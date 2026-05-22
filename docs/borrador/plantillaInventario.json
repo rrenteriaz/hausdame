@@ -114,7 +114,7 @@
     {
       "item": {
         "category": "LINENS",
-        "name": "Toalla de piso",
+        "name": "Toalla tapete",
         "defaultBrand": null,
         "defaultModel": null,
         "defaultColor": null,
@@ -153,6 +153,22 @@
           "variantValue": null,
           "isActive": true,
           "areaNormalized": "baño 1"
+        },
+        {
+          "area": "Recámara 1",
+          "expectedQty": 1,
+          "condition": "USED_LT_1Y",
+          "priority": "MEDIUM",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": true,
+          "areaNormalized": "recámara 1"
         }
       ]
     },
@@ -231,35 +247,6 @@
         {
           "area": "Recámara 1",
           "expectedQty": 2,
-          "condition": "USED_LT_1Y",
-          "priority": "MEDIUM",
-          "brand": null,
-          "model": null,
-          "serialNumber": null,
-          "color": null,
-          "size": null,
-          "notes": null,
-          "variantKey": null,
-          "variantValue": null,
-          "isActive": true,
-          "areaNormalized": "recámara 1"
-        }
-      ]
-    },
-    {
-      "item": {
-        "category": "LINENS",
-        "name": "Toalla de pies",
-        "defaultBrand": null,
-        "defaultModel": null,
-        "defaultColor": null,
-        "defaultSize": null,
-        "isReplacable": true
-      },
-      "lines": [
-        {
-          "area": "Recámara 1",
-          "expectedQty": 1,
           "condition": "USED_LT_1Y",
           "priority": "MEDIUM",
           "brand": null,

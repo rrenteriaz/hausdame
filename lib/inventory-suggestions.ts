@@ -187,8 +187,7 @@ export const INVENTORY_SUGGESTIONS: Record<InventoryCategory, InventorySuggestio
     { name: "Toalla grande" },
     { name: "Toalla de manos" },
     { name: "Toalla de baño" },
-    { name: "Toalla de pies" },
-    { name: "Toalla de piso" },
+    { name: "Toalla tapete" },
     { name: "Almohada" },
     { 
       name: "Colcha",
