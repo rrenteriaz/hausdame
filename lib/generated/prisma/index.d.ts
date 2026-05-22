@@ -80957,8 +80957,18 @@ export namespace Prisma {
 
   export type AggregateTaskTemplate = {
     _count: TaskTemplateCountAggregateOutputType | null
+    _avg: TaskTemplateAvgAggregateOutputType | null
+    _sum: TaskTemplateSumAggregateOutputType | null
     _min: TaskTemplateMinAggregateOutputType | null
     _max: TaskTemplateMaxAggregateOutputType | null
+  }
+
+  export type TaskTemplateAvgAggregateOutputType = {
+    displayOrder: number | null
+  }
+
+  export type TaskTemplateSumAggregateOutputType = {
+    displayOrder: number | null
   }
 
   export type TaskTemplateMinAggregateOutputType = {
@@ -80968,6 +80978,7 @@ export namespace Prisma {
     name: string | null
     description: string | null
     status: $Enums.TaskTemplateStatus | null
+    displayOrder: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -80979,6 +80990,7 @@ export namespace Prisma {
     name: string | null
     description: string | null
     status: $Enums.TaskTemplateStatus | null
+    displayOrder: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -80990,11 +81002,20 @@ export namespace Prisma {
     name: number
     description: number
     status: number
+    displayOrder: number
     createdAt: number
     updatedAt: number
     _all: number
   }
 
+
+  export type TaskTemplateAvgAggregateInputType = {
+    displayOrder?: true
+  }
+
+  export type TaskTemplateSumAggregateInputType = {
+    displayOrder?: true
+  }
 
   export type TaskTemplateMinAggregateInputType = {
     id?: true
@@ -81003,6 +81024,7 @@ export namespace Prisma {
     name?: true
     description?: true
     status?: true
+    displayOrder?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -81014,6 +81036,7 @@ export namespace Prisma {
     name?: true
     description?: true
     status?: true
+    displayOrder?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -81025,6 +81048,7 @@ export namespace Prisma {
     name?: true
     description?: true
     status?: true
+    displayOrder?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -81068,6 +81092,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: TaskTemplateAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: TaskTemplateSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: TaskTemplateMinAggregateInputType
@@ -81098,6 +81134,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: TaskTemplateCountAggregateInputType | true
+    _avg?: TaskTemplateAvgAggregateInputType
+    _sum?: TaskTemplateSumAggregateInputType
     _min?: TaskTemplateMinAggregateInputType
     _max?: TaskTemplateMaxAggregateInputType
   }
@@ -81109,9 +81147,12 @@ export namespace Prisma {
     name: string
     description: string | null
     status: $Enums.TaskTemplateStatus
+    displayOrder: number
     createdAt: Date
     updatedAt: Date
     _count: TaskTemplateCountAggregateOutputType | null
+    _avg: TaskTemplateAvgAggregateOutputType | null
+    _sum: TaskTemplateSumAggregateOutputType | null
     _min: TaskTemplateMinAggregateOutputType | null
     _max: TaskTemplateMaxAggregateOutputType | null
   }
@@ -81137,6 +81178,7 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     status?: boolean
+    displayOrder?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     jobs?: boolean | TaskTemplate$jobsArgs<ExtArgs>
@@ -81155,6 +81197,7 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     status?: boolean
+    displayOrder?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     property?: boolean | PropertyDefaultArgs<ExtArgs>
@@ -81168,6 +81211,7 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     status?: boolean
+    displayOrder?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     property?: boolean | PropertyDefaultArgs<ExtArgs>
@@ -81181,11 +81225,12 @@ export namespace Prisma {
     name?: boolean
     description?: boolean
     status?: boolean
+    displayOrder?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type TaskTemplateOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "propertyId" | "name" | "description" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["taskTemplate"]>
+  export type TaskTemplateOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "propertyId" | "name" | "description" | "status" | "displayOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["taskTemplate"]>
   export type TaskTemplateInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     jobs?: boolean | TaskTemplate$jobsArgs<ExtArgs>
     recurringDues?: boolean | TaskTemplate$recurringDuesArgs<ExtArgs>
@@ -81221,6 +81266,7 @@ export namespace Prisma {
       name: string
       description: string | null
       status: $Enums.TaskTemplateStatus
+      displayOrder: number
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["taskTemplate"]>
@@ -81658,6 +81704,7 @@ export namespace Prisma {
     readonly name: FieldRef<"TaskTemplate", 'String'>
     readonly description: FieldRef<"TaskTemplate", 'String'>
     readonly status: FieldRef<"TaskTemplate", 'TaskTemplateStatus'>
+    readonly displayOrder: FieldRef<"TaskTemplate", 'Int'>
     readonly createdAt: FieldRef<"TaskTemplate", 'DateTime'>
     readonly updatedAt: FieldRef<"TaskTemplate", 'DateTime'>
   }
@@ -106051,6 +106098,7 @@ export namespace Prisma {
     name: 'name',
     description: 'description',
     status: 'status',
+    displayOrder: 'displayOrder',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -112939,6 +112987,7 @@ export namespace Prisma {
     name?: StringFilter<"TaskTemplate"> | string
     description?: StringNullableFilter<"TaskTemplate"> | string | null
     status?: EnumTaskTemplateStatusFilter<"TaskTemplate"> | $Enums.TaskTemplateStatus
+    displayOrder?: IntFilter<"TaskTemplate"> | number
     createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
     updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
     jobs?: TaskJobListRelationFilter
@@ -112956,6 +113005,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrderInput | SortOrder
     status?: SortOrder
+    displayOrder?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     jobs?: TaskJobOrderByRelationAggregateInput
@@ -112976,6 +113026,7 @@ export namespace Prisma {
     name?: StringFilter<"TaskTemplate"> | string
     description?: StringNullableFilter<"TaskTemplate"> | string | null
     status?: EnumTaskTemplateStatusFilter<"TaskTemplate"> | $Enums.TaskTemplateStatus
+    displayOrder?: IntFilter<"TaskTemplate"> | number
     createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
     updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
     jobs?: TaskJobListRelationFilter
@@ -112993,11 +113044,14 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrderInput | SortOrder
     status?: SortOrder
+    displayOrder?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: TaskTemplateCountOrderByAggregateInput
+    _avg?: TaskTemplateAvgOrderByAggregateInput
     _max?: TaskTemplateMaxOrderByAggregateInput
     _min?: TaskTemplateMinOrderByAggregateInput
+    _sum?: TaskTemplateSumOrderByAggregateInput
   }
 
   export type TaskTemplateScalarWhereWithAggregatesInput = {
@@ -113010,6 +113064,7 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"TaskTemplate"> | string
     description?: StringNullableWithAggregatesFilter<"TaskTemplate"> | string | null
     status?: EnumTaskTemplateStatusWithAggregatesFilter<"TaskTemplate"> | $Enums.TaskTemplateStatus
+    displayOrder?: IntWithAggregatesFilter<"TaskTemplate"> | number
     createdAt?: DateTimeWithAggregatesFilter<"TaskTemplate"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"TaskTemplate"> | Date | string
   }
@@ -120693,6 +120748,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobCreateNestedManyWithoutTemplateInput
@@ -120710,6 +120766,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobUncheckedCreateNestedManyWithoutTemplateInput
@@ -120723,6 +120780,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUpdateManyWithoutTemplateNestedInput
@@ -120740,6 +120798,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUncheckedUpdateManyWithoutTemplateNestedInput
@@ -120755,6 +120814,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -120764,6 +120824,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -120775,6 +120836,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -127379,8 +127441,13 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     status?: SortOrder
+    displayOrder?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type TaskTemplateAvgOrderByAggregateInput = {
+    displayOrder?: SortOrder
   }
 
   export type TaskTemplateMaxOrderByAggregateInput = {
@@ -127390,6 +127457,7 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     status?: SortOrder
+    displayOrder?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -127401,8 +127469,13 @@ export namespace Prisma {
     name?: SortOrder
     description?: SortOrder
     status?: SortOrder
+    displayOrder?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type TaskTemplateSumOrderByAggregateInput = {
+    displayOrder?: SortOrder
   }
 
   export type EnumTaskTemplateStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -144373,6 +144446,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobCreateNestedManyWithoutTemplateInput
@@ -144388,6 +144462,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobUncheckedCreateNestedManyWithoutTemplateInput
@@ -146563,6 +146638,7 @@ export namespace Prisma {
     name?: StringFilter<"TaskTemplate"> | string
     description?: StringNullableFilter<"TaskTemplate"> | string | null
     status?: EnumTaskTemplateStatusFilter<"TaskTemplate"> | $Enums.TaskTemplateStatus
+    displayOrder?: IntFilter<"TaskTemplate"> | number
     createdAt?: DateTimeFilter<"TaskTemplate"> | Date | string
     updatedAt?: DateTimeFilter<"TaskTemplate"> | Date | string
   }
@@ -152456,6 +152532,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobCreateNestedManyWithoutTemplateInput
@@ -152471,6 +152548,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobUncheckedCreateNestedManyWithoutTemplateInput
@@ -186010,6 +186088,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobCreateNestedManyWithoutTemplateInput
@@ -186026,6 +186105,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobUncheckedCreateNestedManyWithoutTemplateInput
@@ -186197,6 +186277,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUpdateManyWithoutTemplateNestedInput
@@ -186213,6 +186294,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUncheckedUpdateManyWithoutTemplateNestedInput
@@ -186402,6 +186484,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobCreateNestedManyWithoutTemplateInput
@@ -186418,6 +186501,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobUncheckedCreateNestedManyWithoutTemplateInput
@@ -186677,6 +186761,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUpdateManyWithoutTemplateNestedInput
@@ -186693,6 +186778,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUncheckedUpdateManyWithoutTemplateNestedInput
@@ -189241,6 +189327,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     recurringDues?: TaskRecurringDueCreateNestedManyWithoutTemplateInput
@@ -189257,6 +189344,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     recurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutTemplateInput
@@ -189827,6 +189915,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     recurringDues?: TaskRecurringDueUpdateManyWithoutTemplateNestedInput
@@ -189843,6 +189932,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     recurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutTemplateNestedInput
@@ -194722,6 +194812,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobCreateNestedManyWithoutTemplateInput
@@ -194738,6 +194829,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     jobs?: TaskJobUncheckedCreateNestedManyWithoutTemplateInput
@@ -195174,6 +195266,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUpdateManyWithoutTemplateNestedInput
@@ -195190,6 +195283,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUncheckedUpdateManyWithoutTemplateNestedInput
@@ -197292,6 +197386,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -199662,6 +199757,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUpdateManyWithoutTemplateNestedInput
@@ -199677,6 +199773,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUncheckedUpdateManyWithoutTemplateNestedInput
@@ -199691,6 +199788,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -202468,6 +202566,7 @@ export namespace Prisma {
     name: string
     description?: string | null
     status?: $Enums.TaskTemplateStatus
+    displayOrder?: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -203504,6 +203603,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUpdateManyWithoutTemplateNestedInput
@@ -203519,6 +203619,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     jobs?: TaskJobUncheckedUpdateManyWithoutTemplateNestedInput
@@ -203533,6 +203634,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumTaskTemplateStatusFieldUpdateOperationsInput | $Enums.TaskTemplateStatus
+    displayOrder?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

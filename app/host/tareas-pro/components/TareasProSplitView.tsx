@@ -1,10 +1,128 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { isScheduleComplete } from "@/lib/tareas-pro/domain/schedule-anchor";
+import { reorderTaskTemplates } from "../actions";
 import CreateChecklistModal from "./CreateChecklistModal";
+
+function GripIcon() {
+  return (
+    <svg
+      className="w-4 h-4 text-neutral-300 shrink-0"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden
+    >
+      <circle cx="5" cy="4" r="1.2" />
+      <circle cx="11" cy="4" r="1.2" />
+      <circle cx="5" cy="8" r="1.2" />
+      <circle cx="11" cy="8" r="1.2" />
+      <circle cx="5" cy="12" r="1.2" />
+      <circle cx="11" cy="12" r="1.2" />
+    </svg>
+  );
+}
+
+function SortableDesktopCard({ template: t }: { template: TemplateItem }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: t.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const isLegacyPeriodic =
+    t.schedule != null &&
+    ["DAILY", "WEEKLY", "MONTHLY"].includes(t.schedule.frequency);
+  const legacyIncomplete =
+    isLegacyPeriodic &&
+    !isScheduleComplete(
+      t.schedule!.frequency,
+      t.schedule!.anchorDayOfWeek,
+      t.schedule!.anchorDayOfMonth,
+    );
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-stretch border rounded-xl bg-white overflow-hidden">
+      <button
+        type="button"
+        className="flex items-center justify-center px-2 cursor-grab active:cursor-grabbing touch-none shrink-0 hover:bg-neutral-50 border-r border-neutral-100"
+        {...attributes}
+        {...listeners}
+        aria-label="Arrastrar para reordenar"
+      >
+        <GripIcon />
+      </button>
+      <Link
+        href={`/host/tareas-pro/${t.id}`}
+        className="flex flex-1 items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+      >
+        <div>
+          <p className="font-medium text-sm">{t.name}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {t.sectionCount} áreas · {t.stepCount} tareas
+          </p>
+          {isLegacyPeriodic && (
+            <p className="text-xs text-orange-600 mt-1">
+              Usa periodicidad legacy. Considera migrar a frecuencia por tarea.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0 ml-3">
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              t.status === "ACTIVE"
+                ? "bg-green-100 text-green-700"
+                : t.status === "DRAFT"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-gray-100 text-gray-500"
+            }`}
+          >
+            {t.status === "ACTIVE" ? "Activo" : t.status === "DRAFT" ? "Borrador" : "Inactivo"}
+          </span>
+          {isLegacyPeriodic && (
+            <span
+              title={legacyIncomplete ? "Configuración legacy incompleta." : "Usa el modelo legacy."}
+              className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-help ${
+                legacyIncomplete ? "bg-amber-100 text-amber-700" : "bg-orange-100 text-orange-700"
+              }`}
+            >
+              {legacyIncomplete ? "⚠ Legacy incompleto" : "Periódico legacy"}
+            </span>
+          )}
+        </div>
+      </Link>
+    </div>
+  );
+}
 
 export type PropertyWithCover = {
   id: string;
@@ -43,7 +161,7 @@ const SLIDE_STYLE = `
 
 export default function TareasProSplitView({
   properties,
-  templates,
+  templates: initialTemplates,
   initialPropertyId = "",
 }: {
   properties: PropertyWithCover[];
@@ -51,6 +169,13 @@ export default function TareasProSplitView({
   initialPropertyId?: string;
 }) {
   const router = useRouter();
+  const [allTemplates, setAllTemplates] = useState<TemplateItem[]>(initialTemplates);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   // ── Derived: sorted groups ───────────────────────────────────────────────
   const groupMap = new Map<string, PropertyWithCover[]>();
@@ -88,8 +213,26 @@ export default function TareasProSplitView({
   const displayedProperties = groupMap.get(displayedGroupName) ?? [];
 
   const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
-  const filteredTemplates = templates.filter(
+  const filteredTemplates = allTemplates.filter(
     (t) => t.propertyId === selectedPropertyId
+  );
+
+  const handleTemplateDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const propertyTemplates = allTemplates.filter((t) => t.propertyId === selectedPropertyId);
+      const others = allTemplates.filter((t) => t.propertyId !== selectedPropertyId);
+
+      const oldIndex = propertyTemplates.findIndex((t) => t.id === active.id);
+      const newIndex = propertyTemplates.findIndex((t) => t.id === over.id);
+      const reordered = arrayMove(propertyTemplates, oldIndex, newIndex);
+
+      setAllTemplates([...others, ...reordered]);
+      await reorderTaskTemplates(reordered.map((t) => t.id));
+    },
+    [allTemplates, selectedPropertyId],
   );
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -393,76 +536,20 @@ export default function TareasProSplitView({
                     />
                   </div>
                 ) : (
-                  filteredTemplates.map((t) => {
-                    const isLegacyPeriodic =
-                      t.schedule != null &&
-                      ["DAILY", "WEEKLY", "MONTHLY"].includes(
-                        t.schedule.frequency
-                      );
-                    const legacyIncomplete =
-                      isLegacyPeriodic &&
-                      !isScheduleComplete(
-                        t.schedule!.frequency,
-                        t.schedule!.anchorDayOfWeek,
-                        t.schedule!.anchorDayOfMonth
-                      );
-
-                    return (
-                      <Link
-                        key={t.id}
-                        href={`/host/tareas-pro/${t.id}`}
-                        className="flex items-center justify-between border rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{t.name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {t.sectionCount} áreas · {t.stepCount} tareas
-                          </p>
-                          {isLegacyPeriodic && (
-                            <p className="text-xs text-orange-600 mt-1">
-                              Usa periodicidad legacy. Considera migrar a
-                              frecuencia por tarea.
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0 ml-3">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              t.status === "ACTIVE"
-                                ? "bg-green-100 text-green-700"
-                                : t.status === "DRAFT"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            {t.status === "ACTIVE"
-                              ? "Activo"
-                              : t.status === "DRAFT"
-                              ? "Borrador"
-                              : "Inactivo"}
-                          </span>
-                          {isLegacyPeriodic && (
-                            <span
-                              title={
-                                legacyIncomplete
-                                  ? "Configuración legacy incompleta — falta el ancla de día."
-                                  : "Usa el modelo legacy de periodicidad a nivel de template."
-                              }
-                              className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-help ${
-                                legacyIncomplete
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "bg-orange-100 text-orange-700"
-                              }`}
-                            >
-                              {legacyIncomplete
-                                ? "⚠ Legacy incompleto"
-                                : "Periódico legacy"}
-                            </span>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleTemplateDragEnd}
+                  >
+                    <SortableContext
+                      items={filteredTemplates.map((t) => t.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {filteredTemplates.map((t) => (
+                        <SortableDesktopCard key={t.id} template={t} />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                 )}
               </div>
             </div>

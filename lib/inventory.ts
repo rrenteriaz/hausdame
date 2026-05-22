@@ -176,18 +176,14 @@ export async function listInventoryCatalogByCategory(
   defaultVariantLabel: string | null;
   defaultVariantOptions: any;
 }>> {
-  // Catálogo derivado: solo items activos (archivedAt: null) 
-  // que tengan al menos 1 InventoryLine activa (isActive: true)
+  // Catálogo derivado: todos los items no archivados del tenant para esta categoría.
+  // No se filtra por estado de líneas — un item sigue siendo válido como sugerencia
+  // aunque todas sus líneas estén inactivas en este momento.
   const items = await prisma.inventoryItem.findMany({
     where: {
       tenantId,
       category,
-      archivedAt: includeArchived ? undefined : null, // Solo activos por defecto
-      inventoryLines: {
-        some: {
-          isActive: true, // Al menos una línea activa
-        },
-      },
+      archivedAt: includeArchived ? undefined : null,
     },
     select: {
       id: true,

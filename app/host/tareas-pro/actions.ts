@@ -65,6 +65,22 @@ export async function createTaskTemplate(formData: FormData) {
   redirect(`/host/tareas-pro/${template.id}`);
 }
 
+export async function reorderTaskTemplates(orderedIds: string[]) {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      prisma.taskTemplate.updateMany({
+        where: { id, tenantId },
+        data: { displayOrder: index },
+      })
+    )
+  );
+  revalidatePath("/host/tareas-pro");
+}
+
 export async function updateTaskTemplateStatus(formData: FormData) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;

@@ -183,9 +183,12 @@ export const INVENTORY_SUGGESTIONS: Record<InventoryCategory, InventorySuggestio
     variantLabel: BED_SIZE_VARIANT.variantLabel,
     variantOptions: BED_SIZE_VARIANT.variantOptions,
     },    
+    { name: "Toalla de cuerpo" },
     { name: "Toalla grande" },
     { name: "Toalla de manos" },
     { name: "Toalla de baño" },
+    { name: "Toalla de pies" },
+    { name: "Toalla de piso" },
     { name: "Almohada" },
     { 
       name: "Colcha",

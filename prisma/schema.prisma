@@ -1524,6 +1524,7 @@ model TaskTemplate {
   name          String
   description   String?
   status        TaskTemplateStatus    @default(DRAFT)
+  displayOrder  Int                   @default(0)
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   jobs          TaskJob[]

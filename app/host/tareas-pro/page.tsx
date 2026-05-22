@@ -6,8 +6,8 @@ import HostWebContainer from "@/lib/ui/HostWebContainer";
 import Page from "@/lib/ui/Page";
 import CreateChecklistModal from "./components/CreateChecklistModal";
 import PropertyFilterRouter from "./components/PropertyFilterRouter";
+import SortableTemplateList from "./components/SortableTemplateList";
 import TareasProSplitView from "./components/TareasProSplitView";
-import { isScheduleComplete } from "@/lib/tareas-pro/domain/schedule-anchor";
 import { isMissingPrismaSchemaError } from "@/lib/prisma-schema-errors";
 
 export default async function TareasProPage({
@@ -35,7 +35,7 @@ export default async function TareasProPage({
       tenantId,
       status: { not: "DELETED" },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
     include: {
       property: { select: { name: true, shortName: true } },
       schedule: { select: { frequency: true, anchorDayOfWeek: true, anchorDayOfMonth: true } },
@@ -184,85 +184,34 @@ export default async function TareasProPage({
           )}
 
           {/* Lista de checklists */}
-          <div className="space-y-2">
-            {tareasProSchemaUnavailable ? (
-              <p className="text-sm text-gray-400 py-6 text-center">
-                No hay tareas disponibles por ahora.
+          {tareasProSchemaUnavailable ? (
+            <p className="text-sm text-gray-400 py-6 text-center">
+              No hay tareas disponibles por ahora.
+            </p>
+          ) : mobileTemplates.length === 0 ? (
+            <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
+              <p className="mb-4 text-sm font-medium text-neutral-500">
+                Aún no has creado tareas para esta propiedad
               </p>
-            ) : mobileTemplates.length === 0 ? (
-              <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center">
-                <p className="mb-4 text-sm font-medium text-neutral-500">
-                  Aún no has creado tareas para esta propiedad
-                </p>
-                <CreateChecklistModal
-                  properties={properties}
-                  defaultPropertyId={propertyFilter ?? (properties.length === 1 ? (properties[0] as any).id : undefined)}
-                />
-              </div>
-            ) : (
-              mobileTemplates.map((t) => {
-                const isLegacyPeriodic =
-                  t.schedule != null &&
-                  ["DAILY", "WEEKLY", "MONTHLY"].includes(t.schedule.frequency);
-                const legacyIncomplete =
-                  isLegacyPeriodic &&
-                  !isScheduleComplete(
-                    t.schedule!.frequency,
-                    t.schedule!.anchorDayOfWeek,
-                    t.schedule!.anchorDayOfMonth,
-                  );
-                return (
-                  <Link
-                    key={t.id}
-                    href={`/host/tareas-pro/${t.id}`}
-                    className="flex items-center justify-between border rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{t.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {t.property.shortName ?? t.property.name} ·{" "}
-                        {t._count.sections} áreas · {t.sections.reduce((sum, s) => sum + s._count.steps, 0)} tareas
-                      </p>
-                      {isLegacyPeriodic && (
-                        <p className="text-xs text-orange-600 mt-1">
-                          Usa periodicidad legacy a nivel de template. Considera migrar a frecuencia por tarea.
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0 ml-3">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          t.status === "ACTIVE"
-                            ? "bg-green-100 text-green-700"
-                            : t.status === "DRAFT"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {t.status === "ACTIVE"
-                          ? "Activo"
-                          : t.status === "DRAFT"
-                          ? "Borrador"
-                          : "Inactivo"}
-                      </span>
-                      {isLegacyPeriodic && (
-                        <span
-                          title={legacyIncomplete ? "Configuración legacy incompleta — falta el ancla de día." : "Usa el modelo legacy de periodicidad a nivel de template."}
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-help ${
-                            legacyIncomplete
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-orange-100 text-orange-700"
-                          }`}
-                        >
-                          {legacyIncomplete ? "⚠ Legacy incompleto" : "Periódico legacy"}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })
-            )}
-          </div>
+              <CreateChecklistModal
+                properties={properties}
+                defaultPropertyId={propertyFilter ?? (properties.length === 1 ? (properties[0] as any).id : undefined)}
+              />
+            </div>
+          ) : (
+            <SortableTemplateList
+              templates={mobileTemplates.map((t) => ({
+                id: t.id,
+                name: t.name,
+                status: t.status,
+                propertyId: t.propertyId,
+                property: t.property,
+                sectionCount: t._count.sections,
+                stepCount: t.sections.reduce((sum, s) => sum + s._count.steps, 0),
+                schedule: t.schedule,
+              }))}
+            />
+          )}
         </div>
       </Page>
     </HostWebContainer>
