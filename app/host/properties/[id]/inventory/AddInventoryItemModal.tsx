@@ -1073,6 +1073,70 @@ export default function AddInventoryItemModal({
       )
     : catalogItems;
 
+  // ── Cross-category search ────────────────────────────────────────────────
+  // When searchTerm is active, find matches across ALL categories so that,
+  // e.g., typing "Toalla" in a non-LINENS area still surfaces towel items.
+  type SearchResult =
+    | { source: "catalog"; id: string; name: string; category: InventoryCategory; defaultVariantKey: string | null; defaultVariantLabel?: string | null; defaultVariantOptions?: any; matchType: "exact" | "partial" }
+    | { source: "suggestion"; name: string; category: InventoryCategory; suggestion: InventorySuggestion; matchType: "exact" | "partial" };
+
+  const searchResults = useMemo<SearchResult[]>(() => {
+    const q = normalizeName(searchTerm.trim());
+    if (!q) return [];
+    // Basic singular stem: "toallas" → "toalla"
+    const qStem = q.endsWith("s") && q.length > 2 ? q.slice(0, -1) : q;
+
+    const matchType = (candidateName: string): "exact" | "partial" | null => {
+      const c = normalizeName(candidateName);
+      if (c === q || c === qStem) return "exact";
+      if (c.includes(q) || c.includes(qStem)) return "partial";
+      return null;
+    };
+
+    const results: SearchResult[] = [];
+    const seen = new Set<string>();
+
+    // A+B: catalog items from all loaded categories
+    for (const [cat, items] of Object.entries(catalogCache) as [InventoryCategory, typeof catalogCache[InventoryCategory]][]) {
+      for (const item of items ?? []) {
+        const mt = matchType(item.name);
+        if (!mt) continue;
+        const key = normalizeName(item.name);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push({ source: "catalog", ...item, category: cat, matchType: mt });
+      }
+    }
+
+    // C: static suggestions from all categories (skip names already in catalog)
+    for (const [cat, suggs] of Object.entries(INVENTORY_SUGGESTIONS) as [InventoryCategory, InventorySuggestion[]][]) {
+      for (const suggestion of suggs) {
+        const mt = matchType(suggestion.name);
+        if (!mt) continue;
+        const key = normalizeName(suggestion.name);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push({ source: "suggestion", name: suggestion.name, category: cat as InventoryCategory, suggestion, matchType: mt });
+      }
+    }
+
+    // Sort: exact first → catalog before suggestion at same tier → area-relevant categories first
+    const allowedCats = zoneName ? getAllowedCategoriesForArea(zoneName) : null;
+    return results.sort((a, b) => {
+      if (a.matchType !== b.matchType) return a.matchType === "exact" ? -1 : 1;
+      if (a.source !== b.source) return a.source === "catalog" ? -1 : 1;
+      if (allowedCats) {
+        const aArea = allowedCats.includes(a.category) ? 0 : 1;
+        const bArea = allowedCats.includes(b.category) ? 0 : 1;
+        if (aArea !== bArea) return aArea - bArea;
+      }
+      return a.name.localeCompare(b.name, "es");
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, catalogCache, zoneName]);
+
+  const isSearching = normalizeName(searchTerm.trim()).length > 0;
+
   const canProceed = () => {
     if (step === "AREA") return !!propertyZoneId; // Phase 7: zone required
     if (step === "CATEGORY") return category !== "";
@@ -1390,317 +1454,256 @@ export default function AddInventoryItemModal({
                       />
                     </div>
 
-                    {/* Ya en tu catálogo */}
-                    {catalogItems.length > 0 && (
+                    {isSearching ? (
+                      /* ── Búsqueda activa: resultados cross-categoría ── */
                       <div className="mb-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <p className="text-xs text-neutral-500">
-                              Ya en tu catálogo:
-                            </p>
-                            {/* Toggle para mostrar todo el catálogo */}
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={showAllCatalogItems}
-                                onChange={(e) => setShowAllCatalogItems(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-neutral-300 text-black focus:ring-neutral-300"
-                              />
-                              <span className="text-xs text-neutral-600">
-                                Mostrar todo el catálogo
-                              </span>
-                            </label>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setIsCatalogEditMode(!isCatalogEditMode)}
-                            className="text-neutral-500 hover:text-neutral-900 transition-colors p-1"
-                            aria-label={isCatalogEditMode ? "Salir de edición" : "Editar catálogo"}
-                          >
-                            {isCatalogEditMode ? (
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
-                            ) : (
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {filteredCatalogItems.map((item) => (
-                            <div
-                              key={item.id}
-                              className={`relative inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition ${
-                                selectedItemId === item.id && !isCatalogEditMode
-                                  ? "bg-neutral-900 text-white border-neutral-900"
-                                  : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400"
-                              }`}
-                            >
-                              {isCatalogEditMode ? (
-                                <>
-                                  <span className="text-xs">{item.name}</span>
+                        {searchResults.length > 0 ? (
+                          <>
+                            <p className="text-xs text-neutral-500 mb-2">Resultados:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {searchResults.map((result) =>
+                                result.source === "catalog" ? (
                                   <button
+                                    key={result.id}
                                     type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setItemToEdit({
-                                        id: item.id,
-                                        name: item.name,
-                                        defaultVariantKey: item.defaultVariantKey,
-                                        defaultVariantLabel: item.defaultVariantLabel || undefined,
-                                        defaultVariantOptions: item.defaultVariantOptions || undefined,
-                                      });
-                                      setIsEditCatalogItemModalOpen(true);
-                                    }}
-                                    className="text-neutral-500 hover:text-neutral-900 transition-colors p-0.5"
-                                    aria-label="Editar item"
+                                    onClick={() => handleCatalogItemClick(result)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition text-left ${
+                                      selectedItemId === result.id
+                                        ? "bg-neutral-900 text-white border-neutral-900"
+                                        : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400"
+                                    }`}
                                   >
-                                    <svg
-                                      className="w-3.5 h-3.5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                      />
-                                    </svg>
+                                    {result.name}
                                   </button>
+                                ) : (
                                   <button
+                                    key={result.name}
                                     type="button"
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      if (confirm(`¿Eliminar "${item.name}" del catálogo?`)) {
-                                        try {
-                                          console.log("[AddInventoryItemModal] Iniciando eliminación de item:", {
-                                            itemId: item.id,
-                                            itemName: item.name,
-                                            category: category,
-                                            timestamp: new Date().toISOString(),
-                                          });
-
-                                          const formData = new FormData();
-                                          formData.set("itemId", item.id);
-                                          
-                                          await deleteInventoryItemAction(formData);
-                                          
-                                          console.log("[AddInventoryItemModal] Eliminación exitosa, actualizando cache local");
-                                          
-                                          // Actualizar cache local inmediatamente removiendo el item eliminado
-                                          if (isValidCategory(category)) {
-                                            setCatalogCache((prev) => ({
-                                              ...prev,
-                                              [category]: (prev[category] || []).filter((i) => i.id !== item.id),
-                                            }));
-                                          }
-                                          
-                                          // Si el item eliminado estaba seleccionado, limpiar selección
-                                          if (selectedItemId === item.id) {
-                                            setSelectedItemId("");
-                                            setSelectedCatalogItem(null);
-                                          }
-                                          
-                                          console.log("[AddInventoryItemModal] Cache actualizado, item removido del catálogo");
-                                        } catch (error: any) {
-                                          console.error("[AddInventoryItemModal] Error al eliminar item:", {
-                                            itemId: item.id,
-                                            errorMessage: error?.message,
-                                            error: error,
-                                          });
-                                          // Mostrar error completo al usuario
-                                          alert(error?.message || "Ocurrió un error al eliminar el item. Por favor, intenta de nuevo.");
-                                        }
-                                      }
-                                    }}
-                                    className="text-neutral-500 hover:text-red-600 transition-colors p-0.5"
-                                    aria-label="Eliminar item"
+                                    onClick={() => handleSuggestionClick(result.suggestion)}
+                                    className={`px-3 py-1.5 rounded-full text-sm border transition text-left ${
+                                      customItemName === result.name
+                                        ? "bg-neutral-900 text-white border-neutral-900"
+                                        : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400"
+                                    }`}
                                   >
-                                    <svg
-                                      className="w-3.5 h-3.5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                      />
-                                    </svg>
+                                    {result.name}
                                   </button>
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCatalogItemClick(item)}
-                                  className="text-left"
-                                >
-                                  {item.name}
-                                </button>
+                                )
                               )}
                             </div>
-                          ))}
-                          {loadingCatalog && (
-                            <span className="text-xs text-neutral-500 px-3 py-1.5">
-                              Cargando...
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Sugerencias */}
-                    {filteredSuggestions.length > 0 && (
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs text-neutral-500">
-                            Sugerencias:
+                          </>
+                        ) : (
+                          <p className="text-xs text-neutral-400 mb-2">
+                            Sin coincidencias para &quot;{searchTerm}&quot; — puedes crearlo con &quot;Otro...&quot;
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => setIsCatalogEditMode(!isCatalogEditMode)}
-                            className="text-neutral-500 hover:text-neutral-900 transition-colors p-1"
-                            aria-label={isCatalogEditMode ? "Salir de edición" : "Editar sugerencias"}
-                          >
-                            {isCatalogEditMode ? (
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {/* Ya en tu catálogo */}
+                        {catalogItems.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <p className="text-xs text-neutral-500">
+                                  Ya en tu catálogo:
+                                </p>
+                                {/* Toggle para mostrar todo el catálogo */}
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={showAllCatalogItems}
+                                    onChange={(e) => setShowAllCatalogItems(e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded border-neutral-300 text-black focus:ring-neutral-300"
+                                  />
+                                  <span className="text-xs text-neutral-600">
+                                    Mostrar todo el catálogo
+                                  </span>
+                                </label>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setIsCatalogEditMode(!isCatalogEditMode)}
+                                className="text-neutral-500 hover:text-neutral-900 transition-colors p-1"
+                                aria-label={isCatalogEditMode ? "Salir de edición" : "Editar catálogo"}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
-                            ) : (
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {filteredSuggestions.map((suggestion) => (
-                            <div
-                              key={suggestion.name}
-                              className={`relative inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition ${
-                                customItemName === suggestion.name && !isCatalogEditMode
-                                  ? "bg-neutral-900 text-white border-neutral-900"
-                                  : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400"
-                              }`}
-                            >
-                              {isCatalogEditMode ? (
-                                <>
-                                  <span className="text-xs">{suggestion.name}</span>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Convertir sugerencia en item del catálogo para editar
-                                      setItemToEdit({
-                                        id: "", // No tiene ID porque es una sugerencia
-                                        name: suggestion.name,
-                                        defaultVariantKey: suggestion.variantKey || null,
-                                      });
-                                      setIsEditCatalogItemModalOpen(true);
-                                    }}
-                                    className="text-neutral-500 hover:text-neutral-900 transition-colors p-0.5"
-                                    aria-label="Editar sugerencia"
-                                  >
-                                    <svg
-                                      className="w-3.5 h-3.5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                      />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Las sugerencias son hardcodeadas, no se pueden eliminar
-                                      // Pero podemos mostrar un mensaje
-                                      alert("Las sugerencias predeterminadas no se pueden eliminar. Puedes crear un item personalizado con 'Otro...'");
-                                    }}
-                                    className="text-neutral-400 cursor-not-allowed p-0.5"
-                                    aria-label="No se puede eliminar sugerencia predeterminada"
-                                    disabled
-                                  >
-                                    <svg
-                                      className="w-3.5 h-3.5"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                      />
-                                    </svg>
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleSuggestionClick(suggestion)}
-                                  className="text-left"
+                                {isCatalogEditMode ? (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {filteredCatalogItems.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className={`relative inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition ${
+                                    selectedItemId === item.id && !isCatalogEditMode
+                                      ? "bg-neutral-900 text-white border-neutral-900"
+                                      : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400"
+                                  }`}
                                 >
-                                  {suggestion.name}
-                                </button>
+                                  {isCatalogEditMode ? (
+                                    <>
+                                      <span className="text-xs">{item.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setItemToEdit({
+                                            id: item.id,
+                                            name: item.name,
+                                            defaultVariantKey: item.defaultVariantKey,
+                                            defaultVariantLabel: item.defaultVariantLabel || undefined,
+                                            defaultVariantOptions: item.defaultVariantOptions || undefined,
+                                          });
+                                          setIsEditCatalogItemModalOpen(true);
+                                        }}
+                                        className="text-neutral-500 hover:text-neutral-900 transition-colors p-0.5"
+                                        aria-label="Editar item"
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          if (confirm(`¿Eliminar "${item.name}" del catálogo?`)) {
+                                            try {
+                                              const formData = new FormData();
+                                              formData.set("itemId", item.id);
+                                              await deleteInventoryItemAction(formData);
+                                              if (isValidCategory(category)) {
+                                                setCatalogCache((prev) => ({
+                                                  ...prev,
+                                                  [category]: (prev[category] || []).filter((i) => i.id !== item.id),
+                                                }));
+                                              }
+                                              if (selectedItemId === item.id) {
+                                                setSelectedItemId("");
+                                                setSelectedCatalogItem(null);
+                                              }
+                                            } catch (error: any) {
+                                              alert(error?.message || "Ocurrió un error al eliminar el item. Por favor, intenta de nuevo.");
+                                            }
+                                          }
+                                        }}
+                                        className="text-neutral-500 hover:text-red-600 transition-colors p-0.5"
+                                        aria-label="Eliminar item"
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCatalogItemClick(item)}
+                                      className="text-left"
+                                    >
+                                      {item.name}
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                              {loadingCatalog && (
+                                <span className="text-xs text-neutral-500 px-3 py-1.5">Cargando...</span>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      </div>
+                          </div>
+                        )}
+
+                        {/* Sugerencias */}
+                        {filteredSuggestions.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-neutral-500">Sugerencias:</p>
+                              <button
+                                type="button"
+                                onClick={() => setIsCatalogEditMode(!isCatalogEditMode)}
+                                className="text-neutral-500 hover:text-neutral-900 transition-colors p-1"
+                                aria-label={isCatalogEditMode ? "Salir de edición" : "Editar sugerencias"}
+                              >
+                                {isCatalogEditMode ? (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {filteredSuggestions.map((suggestion) => (
+                                <div
+                                  key={suggestion.name}
+                                  className={`relative inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition ${
+                                    customItemName === suggestion.name && !isCatalogEditMode
+                                      ? "bg-neutral-900 text-white border-neutral-900"
+                                      : "bg-white text-neutral-700 border-neutral-300 hover:border-neutral-400"
+                                  }`}
+                                >
+                                  {isCatalogEditMode ? (
+                                    <>
+                                      <span className="text-xs">{suggestion.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setItemToEdit({
+                                            id: "",
+                                            name: suggestion.name,
+                                            defaultVariantKey: suggestion.variantKey || null,
+                                          });
+                                          setIsEditCatalogItemModalOpen(true);
+                                        }}
+                                        className="text-neutral-500 hover:text-neutral-900 transition-colors p-0.5"
+                                        aria-label="Editar sugerencia"
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          alert("Las sugerencias predeterminadas no se pueden eliminar. Puedes crear un item personalizado con 'Otro...'");
+                                        }}
+                                        className="text-neutral-400 cursor-not-allowed p-0.5"
+                                        aria-label="No se puede eliminar sugerencia predeterminada"
+                                        disabled
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSuggestionClick(suggestion)}
+                                      className="text-left"
+                                    >
+                                      {suggestion.name}
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {/* Opción "Otro" */}
