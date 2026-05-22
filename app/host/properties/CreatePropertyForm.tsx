@@ -77,7 +77,7 @@ function FieldIcon({ children }: { children: ReactNode }) {
   );
 }
 
-export default function CreatePropertyForm() {
+export default function CreatePropertyForm({ existingGroups = [] }: { existingGroups?: string[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -485,17 +485,29 @@ export default function CreatePropertyForm() {
                       />
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {GROUP_EXAMPLES.map((example) => (
-                        <button
-                          key={example}
-                          type="button"
-                          onClick={() => setGroupName(example)}
-                          className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
-                        >
-                          {example}
-                        </button>
-                      ))}
+                    <div className="space-y-2">
+                      {existingGroups.length > 0 && (
+                        <p className="text-xs text-neutral-500">Tus grupos</p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {(existingGroups.length > 0 ? existingGroups : GROUP_EXAMPLES).map((chip) => {
+                          const isActive = groupName.trim().toLowerCase() === chip.trim().toLowerCase();
+                          return (
+                            <button
+                              key={chip}
+                              type="button"
+                              onClick={() => setGroupName(chip)}
+                              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 ${
+                                isActive
+                                  ? "border-neutral-950 bg-neutral-950 text-white"
+                                  : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                              }`}
+                            >
+                              {chip}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}

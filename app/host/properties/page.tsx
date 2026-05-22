@@ -61,6 +61,15 @@ export default async function PropertiesPage({
     properties.map((p) => ({ id: p.id, coverAssetGroupId: p.coverAssetGroupId || null }))
   );
 
+  // Grupos existentes para el selector del formulario de nueva propiedad
+  const existingGroups = Array.from(
+    new Set(
+      properties
+        .map((p) => p.groupName?.trim())
+        .filter((g): g is string => Boolean(g))
+    )
+  ).sort();
+
   // Helper para construir returnTo (para detalles de propiedad)
   // MUST: Cuando se navega desde la lista, siempre usar /host/properties como returnTo
   const buildReturnTo = () => "/host/properties";
@@ -86,7 +95,7 @@ export default async function PropertiesPage({
             storageKey={`hausdame:onboarding:v1:${user.id}:host:setup-card:dismissed`}
             context="properties"
             actions={{
-              "first-property": <CreatePropertyForm />,
+              "first-property": <CreatePropertyForm existingGroups={existingGroups} />,
             }}
           />
         )}
@@ -241,7 +250,7 @@ export default async function PropertiesPage({
         {/* Botón para agregar propiedad al final */}
         {properties.length > 0 && (
           <div className="flex justify-end">
-            <CreatePropertyForm />
+            <CreatePropertyForm existingGroups={existingGroups} />
           </div>
         )}
       </section>
