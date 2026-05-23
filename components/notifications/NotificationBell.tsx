@@ -73,17 +73,23 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
     });
   }
 
-  async function handleMarkRead(id: string) {
+  async function handleToggleRead(id: string) {
+    const target = notifications.find((n) => n.id === id);
     try {
-      await fetch("/api/notifications/read", {
+      const res = await fetch("/api/notifications/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
+      const data = (await res.json()) as { ok: boolean; readAt: string | null };
+      const newReadAt = data.readAt ? new Date(data.readAt) : null;
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, readAt: new Date() } : n))
+        prev.map((n) => (n.id === id ? { ...n, readAt: newReadAt } : n))
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      if (target) {
+        if (!target.readAt && newReadAt) setUnreadCount((prev) => Math.max(0, prev - 1));
+        else if (target.readAt && !newReadAt) setUnreadCount((prev) => prev + 1);
+      }
     } catch {
       // silencioso
     }
@@ -157,7 +163,7 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
           notifications={notifications}
           total={totalCount}
           onClose={() => setIsOpen(false)}
-          onMarkRead={handleMarkRead}
+          onToggleRead={handleToggleRead}
           onMarkAllRead={handleMarkAllRead}
           onDelete={handleDelete}
           openUp={openUp}

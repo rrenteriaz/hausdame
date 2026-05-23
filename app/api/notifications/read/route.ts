@@ -1,10 +1,8 @@
 // app/api/notifications/read/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth/session";
-import {
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-} from "@/lib/notifications/markNotificationRead";
+import { toggleNotificationRead } from "@/lib/notifications/toggleNotificationRead";
+import { markAllNotificationsAsRead } from "@/lib/notifications/markNotificationRead";
 
 export async function POST(req: NextRequest) {
   const userId = await getSessionUserId();
@@ -30,6 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "id o all requerido" }, { status: 400 });
   }
 
-  const ok = await markNotificationAsRead(id, userId);
-  return NextResponse.json({ ok });
+  const result = await toggleNotificationRead(id, userId);
+  if (!result) return NextResponse.json({ ok: false, readAt: null });
+  return NextResponse.json({ ok: true, readAt: result.readAt?.toISOString() ?? null });
 }

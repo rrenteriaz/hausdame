@@ -25,7 +25,7 @@ interface NotificationPanelProps {
   notifications: NotificationItem[];
   total: number;
   onClose: () => void;
-  onMarkRead: (id: string) => void;
+  onToggleRead: (id: string) => void;
   onMarkAllRead: () => void;
   onDelete: (id: string) => void;
   /** Si true, el panel se abre hacia arriba (para bottom nav fijo) */
@@ -36,7 +36,7 @@ export default function NotificationPanel({
   notifications,
   total,
   onClose,
-  onMarkRead,
+  onToggleRead,
   onMarkAllRead,
   onDelete,
   openUp = false,
@@ -61,7 +61,7 @@ export default function NotificationPanel({
   }, [onClose]);
 
   function handleNotificationClick(n: NotificationItem) {
-    if (!n.readAt) onMarkRead(n.id);
+    if (!n.readAt) onToggleRead(n.id);
     if (n.href) {
       router.push(n.href);
       onClose();
@@ -106,7 +106,8 @@ export default function NotificationPanel({
             {notifications.map((n) => (
               <li key={n.id} className="border-b border-neutral-100 last:border-0">
                 <SwipeableRow
-                  onSwipeRight={!n.readAt ? () => onMarkRead(n.id) : undefined}
+                  onSwipeRight={() => onToggleRead(n.id)}
+                  rightLabel={n.readAt ? "No leída" : "Leída"}
                   onSwipeLeft={() => onDelete(n.id)}
                 >
                   <div className={`relative flex items-stretch ${!n.readAt ? "bg-blue-50/40" : "bg-white"}`}>
@@ -136,18 +137,22 @@ export default function NotificationPanel({
                     </button>
                     {/* Desktop hover action buttons */}
                     <div className="absolute right-2 inset-y-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                      {!n.readAt && (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); onMarkRead(n.id); }}
-                          title="Marcar como leída"
-                          className="p-1.5 rounded-full text-neutral-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                        >
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onToggleRead(n.id); }}
+                        title={n.readAt ? "Marcar como no leída" : "Marcar como leída"}
+                        className="p-1.5 rounded-full text-neutral-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      >
+                        {n.readAt ? (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        ) : (
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                        </button>
-                      )}
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onDelete(n.id); }}
