@@ -75,6 +75,7 @@ model Tenant {
   workGroupExecutorsServices   WorkGroupExecutor[]           @relation("Tenant_WorkGroupExecutorsServices")
   notifications                Notification[]
   pushSubscriptions            PushSubscription[]
+  auditLogs                    AuditLog[]
 }
 
 /// *
@@ -122,6 +123,7 @@ model User {
   TeamMembership                              TeamMembership[]
   notifications                               Notification[]
   pushSubscriptions                           PushSubscription[]
+  auditLogsAsActor                            AuditLog[]                    @relation("AuditLogActor")
   avatarMedia                                 Asset?                        @relation("UserAvatar", fields: [avatarMediaId], references: [id])
   tenant                                      Tenant?                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
@@ -2396,6 +2398,7 @@ model Notification {
   href      String?
   data      Json?
   readAt    DateTime?
+  deletedAt DateTime?
   dedupeKey String?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -2406,6 +2409,7 @@ model Notification {
   @@unique([userId, dedupeKey])
   @@index([userId, readAt])
   @@index([userId, createdAt])
+  @@index([userId, deletedAt])
   @@index([tenantId])
 }
 
@@ -2428,4 +2432,32 @@ model PushSubscription {
 
   @@index([userId])
   @@index([userId, revokedAt])
+}
+
+// ── Auditoría global (governance foundation) ──────────────────────────────
+
+/// Registro de auditoría global — append-only, nunca actualizar ni borrar.
+/// Fundación de trazabilidad para gobierno operativo, compliance y futuro MLM.
+/// actorId y tenantId usan SetNull (no Cascade) para preservar el registro
+/// histórico incluso si el usuario o tenant son eliminados.
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  actorId    String?
+  actorRole  String?
+  action     String
+  resource   String
+  resourceId String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor  User?   @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([actorId])
+  @@index([resource, resourceId])
+  @@index([action])
+  @@index([createdAt])
 }

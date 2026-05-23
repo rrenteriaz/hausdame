@@ -62,6 +62,7 @@ export async function getNotificationsForUser(
 
   const where = {
     userId,
+    deletedAt: null,
     ...(unreadOnly ? { readAt: null } : {}),
   };
 
@@ -101,7 +102,7 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
 
   try {
     return await prisma.notification.count({
-      where: { userId, readAt: null },
+      where: { userId, readAt: null, deletedAt: null },
     });
   } catch (error) {
     if (isMissingTableError(error)) {

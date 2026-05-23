@@ -11,7 +11,7 @@ export async function markNotificationAsRead(
 ): Promise<boolean> {
   try {
     const result = await prisma.notification.updateMany({
-      where: { id: notificationId, userId, readAt: null },
+      where: { id: notificationId, userId, readAt: null, deletedAt: null },
       data: { readAt: new Date() },
     });
     return result.count > 0;
@@ -26,7 +26,7 @@ export async function markNotificationAsRead(
 export async function markAllNotificationsAsRead(userId: string): Promise<number> {
   try {
     const result = await prisma.notification.updateMany({
-      where: { userId, readAt: null },
+      where: { userId, readAt: null, deletedAt: null },
       data: { readAt: new Date() },
     });
     return result.count;

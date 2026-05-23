@@ -483,6 +483,14 @@ export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
  * endpoint es único porque el navegador ya garantiza un endpoint único por dispositivo/perfil.
  */
 export type PushSubscription = $Result.DefaultSelection<Prisma.$PushSubscriptionPayload>
+/**
+ * Model AuditLog
+ * Registro de auditoría global — append-only, nunca actualizar ni borrar.
+ * Fundación de trazabilidad para gobierno operativo, compliance y futuro MLM.
+ * actorId y tenantId usan SetNull (no Cascade) para preservar el registro
+ * histórico incluso si el usuario o tenant son eliminados.
+ */
+export type AuditLog = $Result.DefaultSelection<Prisma.$AuditLogPayload>
 
 /**
  * Enums
@@ -2207,6 +2215,16 @@ export class PrismaClient<
     * ```
     */
   get pushSubscription(): Prisma.PushSubscriptionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.auditLog`: Exposes CRUD operations for the **AuditLog** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more AuditLogs
+    * const auditLogs = await prisma.auditLog.findMany()
+    * ```
+    */
+  get auditLog(): Prisma.AuditLogDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -2715,7 +2733,8 @@ export namespace Prisma {
     PropertyAssignmentConfig: 'PropertyAssignmentConfig',
     TaskRecurringDue: 'TaskRecurringDue',
     Notification: 'Notification',
-    PushSubscription: 'PushSubscription'
+    PushSubscription: 'PushSubscription',
+    AuditLog: 'AuditLog'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -2731,7 +2750,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "tenant" | "user" | "cleanerProfile" | "cleanerVerificationDocument" | "cleanerAvailabilitySlot" | "cleanerReview" | "cleanerWorkFlag" | "property" | "propertyMemberAccess" | "propertyInvite" | "propertyAdmin" | "propertyCleaner" | "propertyHandyman" | "reservation" | "cleaning" | "lock" | "lockCode" | "metricEvent" | "team" | "teamMember" | "teamMemberScheduleDay" | "propertyTeam" | "hostWorkGroup" | "hostWorkGroupProperty" | "workGroupExecutor" | "hostWorkGroupInvite" | "cleaningAssignee" | "cleaningView" | "propertyChecklistItem" | "cleaningChecklistItem" | "asset" | "inventoryItemAsset" | "inventoryLineAsset" | "checklistItemAsset" | "inventoryItem" | "variantGroup" | "variantOption" | "inventoryItemVariantGroup" | "globalCatalogItem" | "inventoryLine" | "inventoryReview" | "inventoryCheck" | "inventoryReviewItemChange" | "inventoryReport" | "cleaningMedia" | "inventoryEvidence" | "propertyZone" | "inventoryLog" | "propertyOpening" | "propertyApplication" | "chatThread" | "chatParticipant" | "chatMessage" | "teamInvite" | "teamMembership" | "taskTemplate" | "taskTemplateSchedule" | "taskSectionTemplate" | "taskSectionReferenceAsset" | "taskStepTemplate" | "taskStepOption" | "taskStepReferenceAsset" | "taskJob" | "taskJobSection" | "taskJobSectionResponse" | "taskJobSectionEvidenceAsset" | "taskJobStep" | "taskJobStepResponse" | "taskJobStepEvidenceAsset" | "taskCarryForward" | "taskJobEventLog" | "propertyAssignmentConfig" | "taskRecurringDue" | "notification" | "pushSubscription"
+      modelProps: "tenant" | "user" | "cleanerProfile" | "cleanerVerificationDocument" | "cleanerAvailabilitySlot" | "cleanerReview" | "cleanerWorkFlag" | "property" | "propertyMemberAccess" | "propertyInvite" | "propertyAdmin" | "propertyCleaner" | "propertyHandyman" | "reservation" | "cleaning" | "lock" | "lockCode" | "metricEvent" | "team" | "teamMember" | "teamMemberScheduleDay" | "propertyTeam" | "hostWorkGroup" | "hostWorkGroupProperty" | "workGroupExecutor" | "hostWorkGroupInvite" | "cleaningAssignee" | "cleaningView" | "propertyChecklistItem" | "cleaningChecklistItem" | "asset" | "inventoryItemAsset" | "inventoryLineAsset" | "checklistItemAsset" | "inventoryItem" | "variantGroup" | "variantOption" | "inventoryItemVariantGroup" | "globalCatalogItem" | "inventoryLine" | "inventoryReview" | "inventoryCheck" | "inventoryReviewItemChange" | "inventoryReport" | "cleaningMedia" | "inventoryEvidence" | "propertyZone" | "inventoryLog" | "propertyOpening" | "propertyApplication" | "chatThread" | "chatParticipant" | "chatMessage" | "teamInvite" | "teamMembership" | "taskTemplate" | "taskTemplateSchedule" | "taskSectionTemplate" | "taskSectionReferenceAsset" | "taskStepTemplate" | "taskStepOption" | "taskStepReferenceAsset" | "taskJob" | "taskJobSection" | "taskJobSectionResponse" | "taskJobSectionEvidenceAsset" | "taskJobStep" | "taskJobStepResponse" | "taskJobStepEvidenceAsset" | "taskCarryForward" | "taskJobEventLog" | "propertyAssignmentConfig" | "taskRecurringDue" | "notification" | "pushSubscription" | "auditLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -8285,6 +8304,80 @@ export namespace Prisma {
           }
         }
       }
+      AuditLog: {
+        payload: Prisma.$AuditLogPayload<ExtArgs>
+        fields: Prisma.AuditLogFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AuditLogFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AuditLogFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>
+          }
+          findFirst: {
+            args: Prisma.AuditLogFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AuditLogFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>
+          }
+          findMany: {
+            args: Prisma.AuditLogFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+          }
+          create: {
+            args: Prisma.AuditLogCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>
+          }
+          createMany: {
+            args: Prisma.AuditLogCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AuditLogCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+          }
+          delete: {
+            args: Prisma.AuditLogDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>
+          }
+          update: {
+            args: Prisma.AuditLogUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>
+          }
+          deleteMany: {
+            args: Prisma.AuditLogDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AuditLogUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AuditLogUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+          }
+          upsert: {
+            args: Prisma.AuditLogUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuditLogPayload>
+          }
+          aggregate: {
+            args: Prisma.AuditLogAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAuditLog>
+          }
+          groupBy: {
+            args: Prisma.AuditLogGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AuditLogGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AuditLogCountArgs<ExtArgs>
+            result: $Utils.Optional<AuditLogCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -8468,6 +8561,7 @@ export namespace Prisma {
     taskRecurringDue?: TaskRecurringDueOmit
     notification?: NotificationOmit
     pushSubscription?: PushSubscriptionOmit
+    auditLog?: AuditLogOmit
   }
 
   /* Types for Logging */
@@ -8610,6 +8704,7 @@ export namespace Prisma {
     workGroupExecutorsServices: number
     notifications: number
     pushSubscriptions: number
+    auditLogs: number
   }
 
   export type TenantCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8675,6 +8770,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: boolean | TenantCountOutputTypeCountWorkGroupExecutorsServicesArgs
     notifications?: boolean | TenantCountOutputTypeCountNotificationsArgs
     pushSubscriptions?: boolean | TenantCountOutputTypeCountPushSubscriptionsArgs
+    auditLogs?: boolean | TenantCountOutputTypeCountAuditLogsArgs
   }
 
   // Custom InputTypes
@@ -9122,6 +9218,13 @@ export namespace Prisma {
     where?: PushSubscriptionWhereInput
   }
 
+  /**
+   * TenantCountOutputType without action
+   */
+  export type TenantCountOutputTypeCountAuditLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AuditLogWhereInput
+  }
+
 
   /**
    * Count Type UserCountOutputType
@@ -9160,6 +9263,7 @@ export namespace Prisma {
     TeamMembership: number
     notifications: number
     pushSubscriptions: number
+    auditLogsAsActor: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9195,6 +9299,7 @@ export namespace Prisma {
     TeamMembership?: boolean | UserCountOutputTypeCountTeamMembershipArgs
     notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
     pushSubscriptions?: boolean | UserCountOutputTypeCountPushSubscriptionsArgs
+    auditLogsAsActor?: boolean | UserCountOutputTypeCountAuditLogsAsActorArgs
   }
 
   // Custom InputTypes
@@ -9430,6 +9535,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountPushSubscriptionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PushSubscriptionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAuditLogsAsActorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AuditLogWhereInput
   }
 
 
@@ -11247,6 +11359,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: boolean | Tenant$workGroupExecutorsServicesArgs<ExtArgs>
     notifications?: boolean | Tenant$notificationsArgs<ExtArgs>
     pushSubscriptions?: boolean | Tenant$pushSubscriptionsArgs<ExtArgs>
+    auditLogs?: boolean | Tenant$auditLogsArgs<ExtArgs>
     _count?: boolean | TenantCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["tenant"]>
 
@@ -11338,6 +11451,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: boolean | Tenant$workGroupExecutorsServicesArgs<ExtArgs>
     notifications?: boolean | Tenant$notificationsArgs<ExtArgs>
     pushSubscriptions?: boolean | Tenant$pushSubscriptionsArgs<ExtArgs>
+    auditLogs?: boolean | Tenant$auditLogsArgs<ExtArgs>
     _count?: boolean | TenantCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type TenantIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -11408,6 +11522,7 @@ export namespace Prisma {
       workGroupExecutorsServices: Prisma.$WorkGroupExecutorPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       pushSubscriptions: Prisma.$PushSubscriptionPayload<ExtArgs>[]
+      auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -11871,6 +11986,7 @@ export namespace Prisma {
     workGroupExecutorsServices<T extends Tenant$workGroupExecutorsServicesArgs<ExtArgs> = {}>(args?: Subset<T, Tenant$workGroupExecutorsServicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkGroupExecutorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends Tenant$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, Tenant$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     pushSubscriptions<T extends Tenant$pushSubscriptionsArgs<ExtArgs> = {}>(args?: Subset<T, Tenant$pushSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    auditLogs<T extends Tenant$auditLogsArgs<ExtArgs> = {}>(args?: Subset<T, Tenant$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -13781,6 +13897,30 @@ export namespace Prisma {
   }
 
   /**
+   * Tenant.auditLogs
+   */
+  export type Tenant$auditLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    where?: AuditLogWhereInput
+    orderBy?: AuditLogOrderByWithRelationInput | AuditLogOrderByWithRelationInput[]
+    cursor?: AuditLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+  }
+
+  /**
    * Tenant without action
    */
   export type TenantDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -14028,6 +14168,7 @@ export namespace Prisma {
     TeamMembership?: boolean | User$TeamMembershipArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     pushSubscriptions?: boolean | User$pushSubscriptionsArgs<ExtArgs>
+    auditLogsAsActor?: boolean | User$auditLogsAsActorArgs<ExtArgs>
     avatarMedia?: boolean | User$avatarMediaArgs<ExtArgs>
     tenant?: boolean | User$tenantArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -14108,6 +14249,7 @@ export namespace Prisma {
     TeamMembership?: boolean | User$TeamMembershipArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     pushSubscriptions?: boolean | User$pushSubscriptionsArgs<ExtArgs>
+    auditLogsAsActor?: boolean | User$auditLogsAsActorArgs<ExtArgs>
     avatarMedia?: boolean | User$avatarMediaArgs<ExtArgs>
     tenant?: boolean | User$tenantArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -14157,6 +14299,7 @@ export namespace Prisma {
       TeamMembership: Prisma.$TeamMembershipPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       pushSubscriptions: Prisma.$PushSubscriptionPayload<ExtArgs>[]
+      auditLogsAsActor: Prisma.$AuditLogPayload<ExtArgs>[]
       avatarMedia: Prisma.$AssetPayload<ExtArgs> | null
       tenant: Prisma.$TenantPayload<ExtArgs> | null
     }
@@ -14597,6 +14740,7 @@ export namespace Prisma {
     TeamMembership<T extends User$TeamMembershipArgs<ExtArgs> = {}>(args?: Subset<T, User$TeamMembershipArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamMembershipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     pushSubscriptions<T extends User$pushSubscriptionsArgs<ExtArgs> = {}>(args?: Subset<T, User$pushSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    auditLogsAsActor<T extends User$auditLogsAsActorArgs<ExtArgs> = {}>(args?: Subset<T, User$auditLogsAsActorArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     avatarMedia<T extends User$avatarMediaArgs<ExtArgs> = {}>(args?: Subset<T, User$avatarMediaArgs<ExtArgs>>): Prisma__AssetClient<$Result.GetResult<Prisma.$AssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     tenant<T extends User$tenantArgs<ExtArgs> = {}>(args?: Subset<T, User$tenantArgs<ExtArgs>>): Prisma__TenantClient<$Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
@@ -15817,6 +15961,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PushSubscriptionScalarFieldEnum | PushSubscriptionScalarFieldEnum[]
+  }
+
+  /**
+   * User.auditLogsAsActor
+   */
+  export type User$auditLogsAsActorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    where?: AuditLogWhereInput
+    orderBy?: AuditLogOrderByWithRelationInput | AuditLogOrderByWithRelationInput[]
+    cursor?: AuditLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
   }
 
   /**
@@ -102879,6 +103047,7 @@ export namespace Prisma {
     body: string | null
     href: string | null
     readAt: Date | null
+    deletedAt: Date | null
     dedupeKey: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -102893,6 +103062,7 @@ export namespace Prisma {
     body: string | null
     href: string | null
     readAt: Date | null
+    deletedAt: Date | null
     dedupeKey: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -102908,6 +103078,7 @@ export namespace Prisma {
     href: number
     data: number
     readAt: number
+    deletedAt: number
     dedupeKey: number
     createdAt: number
     updatedAt: number
@@ -102924,6 +103095,7 @@ export namespace Prisma {
     body?: true
     href?: true
     readAt?: true
+    deletedAt?: true
     dedupeKey?: true
     createdAt?: true
     updatedAt?: true
@@ -102938,6 +103110,7 @@ export namespace Prisma {
     body?: true
     href?: true
     readAt?: true
+    deletedAt?: true
     dedupeKey?: true
     createdAt?: true
     updatedAt?: true
@@ -102953,6 +103126,7 @@ export namespace Prisma {
     href?: true
     data?: true
     readAt?: true
+    deletedAt?: true
     dedupeKey?: true
     createdAt?: true
     updatedAt?: true
@@ -103041,6 +103215,7 @@ export namespace Prisma {
     href: string | null
     data: JsonValue | null
     readAt: Date | null
+    deletedAt: Date | null
     dedupeKey: string | null
     createdAt: Date
     updatedAt: Date
@@ -103073,6 +103248,7 @@ export namespace Prisma {
     href?: boolean
     data?: boolean
     readAt?: boolean
+    deletedAt?: boolean
     dedupeKey?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -103090,6 +103266,7 @@ export namespace Prisma {
     href?: boolean
     data?: boolean
     readAt?: boolean
+    deletedAt?: boolean
     dedupeKey?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -103107,6 +103284,7 @@ export namespace Prisma {
     href?: boolean
     data?: boolean
     readAt?: boolean
+    deletedAt?: boolean
     dedupeKey?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -103124,12 +103302,13 @@ export namespace Prisma {
     href?: boolean
     data?: boolean
     readAt?: boolean
+    deletedAt?: boolean
     dedupeKey?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type NotificationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "userId" | "type" | "title" | "body" | "href" | "data" | "readAt" | "dedupeKey" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
+  export type NotificationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "userId" | "type" | "title" | "body" | "href" | "data" | "readAt" | "deletedAt" | "dedupeKey" | "createdAt" | "updatedAt", ExtArgs["result"]["notification"]>
   export type NotificationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     tenant?: boolean | TenantDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -103159,6 +103338,7 @@ export namespace Prisma {
       href: string | null
       data: Prisma.JsonValue | null
       readAt: Date | null
+      deletedAt: Date | null
       dedupeKey: string | null
       createdAt: Date
       updatedAt: Date
@@ -103596,6 +103776,7 @@ export namespace Prisma {
     readonly href: FieldRef<"Notification", 'String'>
     readonly data: FieldRef<"Notification", 'Json'>
     readonly readAt: FieldRef<"Notification", 'DateTime'>
+    readonly deletedAt: FieldRef<"Notification", 'DateTime'>
     readonly dedupeKey: FieldRef<"Notification", 'String'>
     readonly createdAt: FieldRef<"Notification", 'DateTime'>
     readonly updatedAt: FieldRef<"Notification", 'DateTime'>
@@ -105164,6 +105345,1171 @@ export namespace Prisma {
 
 
   /**
+   * Model AuditLog
+   */
+
+  export type AggregateAuditLog = {
+    _count: AuditLogCountAggregateOutputType | null
+    _min: AuditLogMinAggregateOutputType | null
+    _max: AuditLogMaxAggregateOutputType | null
+  }
+
+  export type AuditLogMinAggregateOutputType = {
+    id: string | null
+    tenantId: string | null
+    actorId: string | null
+    actorRole: string | null
+    action: string | null
+    resource: string | null
+    resourceId: string | null
+    ip: string | null
+    createdAt: Date | null
+  }
+
+  export type AuditLogMaxAggregateOutputType = {
+    id: string | null
+    tenantId: string | null
+    actorId: string | null
+    actorRole: string | null
+    action: string | null
+    resource: string | null
+    resourceId: string | null
+    ip: string | null
+    createdAt: Date | null
+  }
+
+  export type AuditLogCountAggregateOutputType = {
+    id: number
+    tenantId: number
+    actorId: number
+    actorRole: number
+    action: number
+    resource: number
+    resourceId: number
+    metadata: number
+    ip: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type AuditLogMinAggregateInputType = {
+    id?: true
+    tenantId?: true
+    actorId?: true
+    actorRole?: true
+    action?: true
+    resource?: true
+    resourceId?: true
+    ip?: true
+    createdAt?: true
+  }
+
+  export type AuditLogMaxAggregateInputType = {
+    id?: true
+    tenantId?: true
+    actorId?: true
+    actorRole?: true
+    action?: true
+    resource?: true
+    resourceId?: true
+    ip?: true
+    createdAt?: true
+  }
+
+  export type AuditLogCountAggregateInputType = {
+    id?: true
+    tenantId?: true
+    actorId?: true
+    actorRole?: true
+    action?: true
+    resource?: true
+    resourceId?: true
+    metadata?: true
+    ip?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type AuditLogAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AuditLog to aggregate.
+     */
+    where?: AuditLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuditLogs to fetch.
+     */
+    orderBy?: AuditLogOrderByWithRelationInput | AuditLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AuditLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuditLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuditLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned AuditLogs
+    **/
+    _count?: true | AuditLogCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AuditLogMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AuditLogMaxAggregateInputType
+  }
+
+  export type GetAuditLogAggregateType<T extends AuditLogAggregateArgs> = {
+        [P in keyof T & keyof AggregateAuditLog]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAuditLog[P]>
+      : GetScalarType<T[P], AggregateAuditLog[P]>
+  }
+
+
+
+
+  export type AuditLogGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AuditLogWhereInput
+    orderBy?: AuditLogOrderByWithAggregationInput | AuditLogOrderByWithAggregationInput[]
+    by: AuditLogScalarFieldEnum[] | AuditLogScalarFieldEnum
+    having?: AuditLogScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AuditLogCountAggregateInputType | true
+    _min?: AuditLogMinAggregateInputType
+    _max?: AuditLogMaxAggregateInputType
+  }
+
+  export type AuditLogGroupByOutputType = {
+    id: string
+    tenantId: string | null
+    actorId: string | null
+    actorRole: string | null
+    action: string
+    resource: string
+    resourceId: string | null
+    metadata: JsonValue | null
+    ip: string | null
+    createdAt: Date
+    _count: AuditLogCountAggregateOutputType | null
+    _min: AuditLogMinAggregateOutputType | null
+    _max: AuditLogMaxAggregateOutputType | null
+  }
+
+  type GetAuditLogGroupByPayload<T extends AuditLogGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AuditLogGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AuditLogGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AuditLogGroupByOutputType[P]>
+            : GetScalarType<T[P], AuditLogGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AuditLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    tenantId?: boolean
+    actorId?: boolean
+    actorRole?: boolean
+    action?: boolean
+    resource?: boolean
+    resourceId?: boolean
+    metadata?: boolean
+    ip?: boolean
+    createdAt?: boolean
+    actor?: boolean | AuditLog$actorArgs<ExtArgs>
+    tenant?: boolean | AuditLog$tenantArgs<ExtArgs>
+  }, ExtArgs["result"]["auditLog"]>
+
+  export type AuditLogSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    tenantId?: boolean
+    actorId?: boolean
+    actorRole?: boolean
+    action?: boolean
+    resource?: boolean
+    resourceId?: boolean
+    metadata?: boolean
+    ip?: boolean
+    createdAt?: boolean
+    actor?: boolean | AuditLog$actorArgs<ExtArgs>
+    tenant?: boolean | AuditLog$tenantArgs<ExtArgs>
+  }, ExtArgs["result"]["auditLog"]>
+
+  export type AuditLogSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    tenantId?: boolean
+    actorId?: boolean
+    actorRole?: boolean
+    action?: boolean
+    resource?: boolean
+    resourceId?: boolean
+    metadata?: boolean
+    ip?: boolean
+    createdAt?: boolean
+    actor?: boolean | AuditLog$actorArgs<ExtArgs>
+    tenant?: boolean | AuditLog$tenantArgs<ExtArgs>
+  }, ExtArgs["result"]["auditLog"]>
+
+  export type AuditLogSelectScalar = {
+    id?: boolean
+    tenantId?: boolean
+    actorId?: boolean
+    actorRole?: boolean
+    action?: boolean
+    resource?: boolean
+    resourceId?: boolean
+    metadata?: boolean
+    ip?: boolean
+    createdAt?: boolean
+  }
+
+  export type AuditLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "tenantId" | "actorId" | "actorRole" | "action" | "resource" | "resourceId" | "metadata" | "ip" | "createdAt", ExtArgs["result"]["auditLog"]>
+  export type AuditLogInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    actor?: boolean | AuditLog$actorArgs<ExtArgs>
+    tenant?: boolean | AuditLog$tenantArgs<ExtArgs>
+  }
+  export type AuditLogIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    actor?: boolean | AuditLog$actorArgs<ExtArgs>
+    tenant?: boolean | AuditLog$tenantArgs<ExtArgs>
+  }
+  export type AuditLogIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    actor?: boolean | AuditLog$actorArgs<ExtArgs>
+    tenant?: boolean | AuditLog$tenantArgs<ExtArgs>
+  }
+
+  export type $AuditLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "AuditLog"
+    objects: {
+      actor: Prisma.$UserPayload<ExtArgs> | null
+      tenant: Prisma.$TenantPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      tenantId: string | null
+      actorId: string | null
+      actorRole: string | null
+      action: string
+      resource: string
+      resourceId: string | null
+      metadata: Prisma.JsonValue | null
+      ip: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["auditLog"]>
+    composites: {}
+  }
+
+  type AuditLogGetPayload<S extends boolean | null | undefined | AuditLogDefaultArgs> = $Result.GetResult<Prisma.$AuditLogPayload, S>
+
+  type AuditLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AuditLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: AuditLogCountAggregateInputType | true
+    }
+
+  export interface AuditLogDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['AuditLog'], meta: { name: 'AuditLog' } }
+    /**
+     * Find zero or one AuditLog that matches the filter.
+     * @param {AuditLogFindUniqueArgs} args - Arguments to find a AuditLog
+     * @example
+     * // Get one AuditLog
+     * const auditLog = await prisma.auditLog.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AuditLogFindUniqueArgs>(args: SelectSubset<T, AuditLogFindUniqueArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one AuditLog that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AuditLogFindUniqueOrThrowArgs} args - Arguments to find a AuditLog
+     * @example
+     * // Get one AuditLog
+     * const auditLog = await prisma.auditLog.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AuditLogFindUniqueOrThrowArgs>(args: SelectSubset<T, AuditLogFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AuditLog that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogFindFirstArgs} args - Arguments to find a AuditLog
+     * @example
+     * // Get one AuditLog
+     * const auditLog = await prisma.auditLog.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AuditLogFindFirstArgs>(args?: SelectSubset<T, AuditLogFindFirstArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AuditLog that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogFindFirstOrThrowArgs} args - Arguments to find a AuditLog
+     * @example
+     * // Get one AuditLog
+     * const auditLog = await prisma.auditLog.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AuditLogFindFirstOrThrowArgs>(args?: SelectSubset<T, AuditLogFindFirstOrThrowArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more AuditLogs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all AuditLogs
+     * const auditLogs = await prisma.auditLog.findMany()
+     * 
+     * // Get first 10 AuditLogs
+     * const auditLogs = await prisma.auditLog.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const auditLogWithIdOnly = await prisma.auditLog.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AuditLogFindManyArgs>(args?: SelectSubset<T, AuditLogFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a AuditLog.
+     * @param {AuditLogCreateArgs} args - Arguments to create a AuditLog.
+     * @example
+     * // Create one AuditLog
+     * const AuditLog = await prisma.auditLog.create({
+     *   data: {
+     *     // ... data to create a AuditLog
+     *   }
+     * })
+     * 
+     */
+    create<T extends AuditLogCreateArgs>(args: SelectSubset<T, AuditLogCreateArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many AuditLogs.
+     * @param {AuditLogCreateManyArgs} args - Arguments to create many AuditLogs.
+     * @example
+     * // Create many AuditLogs
+     * const auditLog = await prisma.auditLog.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AuditLogCreateManyArgs>(args?: SelectSubset<T, AuditLogCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many AuditLogs and returns the data saved in the database.
+     * @param {AuditLogCreateManyAndReturnArgs} args - Arguments to create many AuditLogs.
+     * @example
+     * // Create many AuditLogs
+     * const auditLog = await prisma.auditLog.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many AuditLogs and only return the `id`
+     * const auditLogWithIdOnly = await prisma.auditLog.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AuditLogCreateManyAndReturnArgs>(args?: SelectSubset<T, AuditLogCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a AuditLog.
+     * @param {AuditLogDeleteArgs} args - Arguments to delete one AuditLog.
+     * @example
+     * // Delete one AuditLog
+     * const AuditLog = await prisma.auditLog.delete({
+     *   where: {
+     *     // ... filter to delete one AuditLog
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AuditLogDeleteArgs>(args: SelectSubset<T, AuditLogDeleteArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one AuditLog.
+     * @param {AuditLogUpdateArgs} args - Arguments to update one AuditLog.
+     * @example
+     * // Update one AuditLog
+     * const auditLog = await prisma.auditLog.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AuditLogUpdateArgs>(args: SelectSubset<T, AuditLogUpdateArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more AuditLogs.
+     * @param {AuditLogDeleteManyArgs} args - Arguments to filter AuditLogs to delete.
+     * @example
+     * // Delete a few AuditLogs
+     * const { count } = await prisma.auditLog.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AuditLogDeleteManyArgs>(args?: SelectSubset<T, AuditLogDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AuditLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many AuditLogs
+     * const auditLog = await prisma.auditLog.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AuditLogUpdateManyArgs>(args: SelectSubset<T, AuditLogUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AuditLogs and returns the data updated in the database.
+     * @param {AuditLogUpdateManyAndReturnArgs} args - Arguments to update many AuditLogs.
+     * @example
+     * // Update many AuditLogs
+     * const auditLog = await prisma.auditLog.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more AuditLogs and only return the `id`
+     * const auditLogWithIdOnly = await prisma.auditLog.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AuditLogUpdateManyAndReturnArgs>(args: SelectSubset<T, AuditLogUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one AuditLog.
+     * @param {AuditLogUpsertArgs} args - Arguments to update or create a AuditLog.
+     * @example
+     * // Update or create a AuditLog
+     * const auditLog = await prisma.auditLog.upsert({
+     *   create: {
+     *     // ... data to create a AuditLog
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the AuditLog we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AuditLogUpsertArgs>(args: SelectSubset<T, AuditLogUpsertArgs<ExtArgs>>): Prisma__AuditLogClient<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of AuditLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogCountArgs} args - Arguments to filter AuditLogs to count.
+     * @example
+     * // Count the number of AuditLogs
+     * const count = await prisma.auditLog.count({
+     *   where: {
+     *     // ... the filter for the AuditLogs we want to count
+     *   }
+     * })
+    **/
+    count<T extends AuditLogCountArgs>(
+      args?: Subset<T, AuditLogCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AuditLogCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a AuditLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AuditLogAggregateArgs>(args: Subset<T, AuditLogAggregateArgs>): Prisma.PrismaPromise<GetAuditLogAggregateType<T>>
+
+    /**
+     * Group by AuditLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuditLogGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AuditLogGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AuditLogGroupByArgs['orderBy'] }
+        : { orderBy?: AuditLogGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AuditLogGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAuditLogGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the AuditLog model
+   */
+  readonly fields: AuditLogFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for AuditLog.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AuditLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    actor<T extends AuditLog$actorArgs<ExtArgs> = {}>(args?: Subset<T, AuditLog$actorArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    tenant<T extends AuditLog$tenantArgs<ExtArgs> = {}>(args?: Subset<T, AuditLog$tenantArgs<ExtArgs>>): Prisma__TenantClient<$Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the AuditLog model
+   */
+  interface AuditLogFieldRefs {
+    readonly id: FieldRef<"AuditLog", 'String'>
+    readonly tenantId: FieldRef<"AuditLog", 'String'>
+    readonly actorId: FieldRef<"AuditLog", 'String'>
+    readonly actorRole: FieldRef<"AuditLog", 'String'>
+    readonly action: FieldRef<"AuditLog", 'String'>
+    readonly resource: FieldRef<"AuditLog", 'String'>
+    readonly resourceId: FieldRef<"AuditLog", 'String'>
+    readonly metadata: FieldRef<"AuditLog", 'Json'>
+    readonly ip: FieldRef<"AuditLog", 'String'>
+    readonly createdAt: FieldRef<"AuditLog", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * AuditLog findUnique
+   */
+  export type AuditLogFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * Filter, which AuditLog to fetch.
+     */
+    where: AuditLogWhereUniqueInput
+  }
+
+  /**
+   * AuditLog findUniqueOrThrow
+   */
+  export type AuditLogFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * Filter, which AuditLog to fetch.
+     */
+    where: AuditLogWhereUniqueInput
+  }
+
+  /**
+   * AuditLog findFirst
+   */
+  export type AuditLogFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * Filter, which AuditLog to fetch.
+     */
+    where?: AuditLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuditLogs to fetch.
+     */
+    orderBy?: AuditLogOrderByWithRelationInput | AuditLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AuditLogs.
+     */
+    cursor?: AuditLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuditLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuditLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AuditLogs.
+     */
+    distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+  }
+
+  /**
+   * AuditLog findFirstOrThrow
+   */
+  export type AuditLogFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * Filter, which AuditLog to fetch.
+     */
+    where?: AuditLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuditLogs to fetch.
+     */
+    orderBy?: AuditLogOrderByWithRelationInput | AuditLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AuditLogs.
+     */
+    cursor?: AuditLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuditLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuditLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AuditLogs.
+     */
+    distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+  }
+
+  /**
+   * AuditLog findMany
+   */
+  export type AuditLogFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * Filter, which AuditLogs to fetch.
+     */
+    where?: AuditLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuditLogs to fetch.
+     */
+    orderBy?: AuditLogOrderByWithRelationInput | AuditLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing AuditLogs.
+     */
+    cursor?: AuditLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuditLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuditLogs.
+     */
+    skip?: number
+    distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+  }
+
+  /**
+   * AuditLog create
+   */
+  export type AuditLogCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * The data needed to create a AuditLog.
+     */
+    data: XOR<AuditLogCreateInput, AuditLogUncheckedCreateInput>
+  }
+
+  /**
+   * AuditLog createMany
+   */
+  export type AuditLogCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many AuditLogs.
+     */
+    data: AuditLogCreateManyInput | AuditLogCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * AuditLog createManyAndReturn
+   */
+  export type AuditLogCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * The data used to create many AuditLogs.
+     */
+    data: AuditLogCreateManyInput | AuditLogCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AuditLog update
+   */
+  export type AuditLogUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * The data needed to update a AuditLog.
+     */
+    data: XOR<AuditLogUpdateInput, AuditLogUncheckedUpdateInput>
+    /**
+     * Choose, which AuditLog to update.
+     */
+    where: AuditLogWhereUniqueInput
+  }
+
+  /**
+   * AuditLog updateMany
+   */
+  export type AuditLogUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update AuditLogs.
+     */
+    data: XOR<AuditLogUpdateManyMutationInput, AuditLogUncheckedUpdateManyInput>
+    /**
+     * Filter which AuditLogs to update
+     */
+    where?: AuditLogWhereInput
+    /**
+     * Limit how many AuditLogs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * AuditLog updateManyAndReturn
+   */
+  export type AuditLogUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * The data used to update AuditLogs.
+     */
+    data: XOR<AuditLogUpdateManyMutationInput, AuditLogUncheckedUpdateManyInput>
+    /**
+     * Filter which AuditLogs to update
+     */
+    where?: AuditLogWhereInput
+    /**
+     * Limit how many AuditLogs to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AuditLog upsert
+   */
+  export type AuditLogUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * The filter to search for the AuditLog to update in case it exists.
+     */
+    where: AuditLogWhereUniqueInput
+    /**
+     * In case the AuditLog found by the `where` argument doesn't exist, create a new AuditLog with this data.
+     */
+    create: XOR<AuditLogCreateInput, AuditLogUncheckedCreateInput>
+    /**
+     * In case the AuditLog was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AuditLogUpdateInput, AuditLogUncheckedUpdateInput>
+  }
+
+  /**
+   * AuditLog delete
+   */
+  export type AuditLogDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+    /**
+     * Filter which AuditLog to delete.
+     */
+    where: AuditLogWhereUniqueInput
+  }
+
+  /**
+   * AuditLog deleteMany
+   */
+  export type AuditLogDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AuditLogs to delete
+     */
+    where?: AuditLogWhereInput
+    /**
+     * Limit how many AuditLogs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * AuditLog.actor
+   */
+  export type AuditLog$actorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * AuditLog.tenant
+   */
+  export type AuditLog$tenantArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tenant
+     */
+    select?: TenantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Tenant
+     */
+    omit?: TenantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TenantInclude<ExtArgs> | null
+    where?: TenantWhereInput
+  }
+
+  /**
+   * AuditLog without action
+   */
+  export type AuditLogDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuditLog
+     */
+    select?: AuditLogSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuditLog
+     */
+    omit?: AuditLogOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuditLogInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -106410,6 +107756,7 @@ export namespace Prisma {
     href: 'href',
     data: 'data',
     readAt: 'readAt',
+    deletedAt: 'deletedAt',
     dedupeKey: 'dedupeKey',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -106432,6 +107779,22 @@ export namespace Prisma {
   };
 
   export type PushSubscriptionScalarFieldEnum = (typeof PushSubscriptionScalarFieldEnum)[keyof typeof PushSubscriptionScalarFieldEnum]
+
+
+  export const AuditLogScalarFieldEnum: {
+    id: 'id',
+    tenantId: 'tenantId',
+    actorId: 'actorId',
+    actorRole: 'actorRole',
+    action: 'action',
+    resource: 'resource',
+    resourceId: 'resourceId',
+    metadata: 'metadata',
+    ip: 'ip',
+    createdAt: 'createdAt'
+  };
+
+  export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -107506,6 +108869,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorListRelationFilter
     notifications?: NotificationListRelationFilter
     pushSubscriptions?: PushSubscriptionListRelationFilter
+    auditLogs?: AuditLogListRelationFilter
   }
 
   export type TenantOrderByWithRelationInput = {
@@ -107576,6 +108940,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
     pushSubscriptions?: PushSubscriptionOrderByRelationAggregateInput
+    auditLogs?: AuditLogOrderByRelationAggregateInput
   }
 
   export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -107649,6 +109014,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorListRelationFilter
     notifications?: NotificationListRelationFilter
     pushSubscriptions?: PushSubscriptionListRelationFilter
+    auditLogs?: AuditLogListRelationFilter
   }, "id" | "slug">
 
   export type TenantOrderByWithAggregationInput = {
@@ -107719,6 +109085,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipListRelationFilter
     notifications?: NotificationListRelationFilter
     pushSubscriptions?: PushSubscriptionListRelationFilter
+    auditLogsAsActor?: AuditLogListRelationFilter
     avatarMedia?: XOR<AssetNullableScalarRelationFilter, AssetWhereInput> | null
     tenant?: XOR<TenantNullableScalarRelationFilter, TenantWhereInput> | null
   }
@@ -107766,6 +109133,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
     pushSubscriptions?: PushSubscriptionOrderByRelationAggregateInput
+    auditLogsAsActor?: AuditLogOrderByRelationAggregateInput
     avatarMedia?: AssetOrderByWithRelationInput
     tenant?: TenantOrderByWithRelationInput
   }
@@ -107816,6 +109184,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipListRelationFilter
     notifications?: NotificationListRelationFilter
     pushSubscriptions?: PushSubscriptionListRelationFilter
+    auditLogsAsActor?: AuditLogListRelationFilter
     avatarMedia?: XOR<AssetNullableScalarRelationFilter, AssetWhereInput> | null
     tenant?: XOR<TenantNullableScalarRelationFilter, TenantWhereInput> | null
   }, "id" | "email" | "avatarMediaId">
@@ -114715,6 +116084,7 @@ export namespace Prisma {
     href?: StringNullableFilter<"Notification"> | string | null
     data?: JsonNullableFilter<"Notification">
     readAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    deletedAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
     dedupeKey?: StringNullableFilter<"Notification"> | string | null
     createdAt?: DateTimeFilter<"Notification"> | Date | string
     updatedAt?: DateTimeFilter<"Notification"> | Date | string
@@ -114732,6 +116102,7 @@ export namespace Prisma {
     href?: SortOrderInput | SortOrder
     data?: SortOrderInput | SortOrder
     readAt?: SortOrderInput | SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     dedupeKey?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -114753,6 +116124,7 @@ export namespace Prisma {
     href?: StringNullableFilter<"Notification"> | string | null
     data?: JsonNullableFilter<"Notification">
     readAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    deletedAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
     dedupeKey?: StringNullableFilter<"Notification"> | string | null
     createdAt?: DateTimeFilter<"Notification"> | Date | string
     updatedAt?: DateTimeFilter<"Notification"> | Date | string
@@ -114770,6 +116142,7 @@ export namespace Prisma {
     href?: SortOrderInput | SortOrder
     data?: SortOrderInput | SortOrder
     readAt?: SortOrderInput | SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     dedupeKey?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -114791,6 +116164,7 @@ export namespace Prisma {
     href?: StringNullableWithAggregatesFilter<"Notification"> | string | null
     data?: JsonNullableWithAggregatesFilter<"Notification">
     readAt?: DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null
+    deletedAt?: DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null
     dedupeKey?: StringNullableWithAggregatesFilter<"Notification"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
@@ -114879,6 +116253,89 @@ export namespace Prisma {
     revokedAt?: DateTimeNullableWithAggregatesFilter<"PushSubscription"> | Date | string | null
   }
 
+  export type AuditLogWhereInput = {
+    AND?: AuditLogWhereInput | AuditLogWhereInput[]
+    OR?: AuditLogWhereInput[]
+    NOT?: AuditLogWhereInput | AuditLogWhereInput[]
+    id?: StringFilter<"AuditLog"> | string
+    tenantId?: StringNullableFilter<"AuditLog"> | string | null
+    actorId?: StringNullableFilter<"AuditLog"> | string | null
+    actorRole?: StringNullableFilter<"AuditLog"> | string | null
+    action?: StringFilter<"AuditLog"> | string
+    resource?: StringFilter<"AuditLog"> | string
+    resourceId?: StringNullableFilter<"AuditLog"> | string | null
+    metadata?: JsonNullableFilter<"AuditLog">
+    ip?: StringNullableFilter<"AuditLog"> | string | null
+    createdAt?: DateTimeFilter<"AuditLog"> | Date | string
+    actor?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    tenant?: XOR<TenantNullableScalarRelationFilter, TenantWhereInput> | null
+  }
+
+  export type AuditLogOrderByWithRelationInput = {
+    id?: SortOrder
+    tenantId?: SortOrderInput | SortOrder
+    actorId?: SortOrderInput | SortOrder
+    actorRole?: SortOrderInput | SortOrder
+    action?: SortOrder
+    resource?: SortOrder
+    resourceId?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
+    ip?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    actor?: UserOrderByWithRelationInput
+    tenant?: TenantOrderByWithRelationInput
+  }
+
+  export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: AuditLogWhereInput | AuditLogWhereInput[]
+    OR?: AuditLogWhereInput[]
+    NOT?: AuditLogWhereInput | AuditLogWhereInput[]
+    tenantId?: StringNullableFilter<"AuditLog"> | string | null
+    actorId?: StringNullableFilter<"AuditLog"> | string | null
+    actorRole?: StringNullableFilter<"AuditLog"> | string | null
+    action?: StringFilter<"AuditLog"> | string
+    resource?: StringFilter<"AuditLog"> | string
+    resourceId?: StringNullableFilter<"AuditLog"> | string | null
+    metadata?: JsonNullableFilter<"AuditLog">
+    ip?: StringNullableFilter<"AuditLog"> | string | null
+    createdAt?: DateTimeFilter<"AuditLog"> | Date | string
+    actor?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    tenant?: XOR<TenantNullableScalarRelationFilter, TenantWhereInput> | null
+  }, "id">
+
+  export type AuditLogOrderByWithAggregationInput = {
+    id?: SortOrder
+    tenantId?: SortOrderInput | SortOrder
+    actorId?: SortOrderInput | SortOrder
+    actorRole?: SortOrderInput | SortOrder
+    action?: SortOrder
+    resource?: SortOrder
+    resourceId?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
+    ip?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: AuditLogCountOrderByAggregateInput
+    _max?: AuditLogMaxOrderByAggregateInput
+    _min?: AuditLogMinOrderByAggregateInput
+  }
+
+  export type AuditLogScalarWhereWithAggregatesInput = {
+    AND?: AuditLogScalarWhereWithAggregatesInput | AuditLogScalarWhereWithAggregatesInput[]
+    OR?: AuditLogScalarWhereWithAggregatesInput[]
+    NOT?: AuditLogScalarWhereWithAggregatesInput | AuditLogScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"AuditLog"> | string
+    tenantId?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    actorId?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    actorRole?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    action?: StringWithAggregatesFilter<"AuditLog"> | string
+    resource?: StringWithAggregatesFilter<"AuditLog"> | string
+    resourceId?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    metadata?: JsonNullableWithAggregatesFilter<"AuditLog">
+    ip?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"AuditLog"> | Date | string
+  }
+
   export type TenantCreateInput = {
     id?: string
     name: string
@@ -114947,6 +116404,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateInput = {
@@ -115017,6 +116475,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUpdateInput = {
@@ -115087,6 +116546,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateInput = {
@@ -115157,6 +116617,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantCreateManyInput = {
@@ -115224,6 +116685,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -115271,6 +116733,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserUpdateInput = {
@@ -115314,6 +116777,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -115361,6 +116825,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -122558,6 +124023,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -122575,6 +124041,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -122588,6 +124055,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -122605,6 +124073,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -122620,6 +124089,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -122633,6 +124103,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -122648,6 +124119,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -122740,6 +124212,95 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     revokedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type AuditLogCreateInput = {
+    id?: string
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+    actor?: UserCreateNestedOneWithoutAuditLogsAsActorInput
+    tenant?: TenantCreateNestedOneWithoutAuditLogsInput
+  }
+
+  export type AuditLogUncheckedCreateInput = {
+    id?: string
+    tenantId?: string | null
+    actorId?: string | null
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+  }
+
+  export type AuditLogUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    actor?: UserUpdateOneWithoutAuditLogsAsActorNestedInput
+    tenant?: TenantUpdateOneWithoutAuditLogsNestedInput
+  }
+
+  export type AuditLogUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AuditLogCreateManyInput = {
+    id?: string
+    tenantId?: string | null
+    actorId?: string | null
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+  }
+
+  export type AuditLogUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AuditLogUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -123134,6 +124695,12 @@ export namespace Prisma {
     none?: PushSubscriptionWhereInput
   }
 
+  export type AuditLogListRelationFilter = {
+    every?: AuditLogWhereInput
+    some?: AuditLogWhereInput
+    none?: AuditLogWhereInput
+  }
+
   export type AssetOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -123375,6 +124942,10 @@ export namespace Prisma {
   }
 
   export type PushSubscriptionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type AuditLogOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -128660,6 +130231,7 @@ export namespace Prisma {
     href?: SortOrder
     data?: SortOrder
     readAt?: SortOrder
+    deletedAt?: SortOrder
     dedupeKey?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -128674,6 +130246,7 @@ export namespace Prisma {
     body?: SortOrder
     href?: SortOrder
     readAt?: SortOrder
+    deletedAt?: SortOrder
     dedupeKey?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -128688,6 +130261,7 @@ export namespace Prisma {
     body?: SortOrder
     href?: SortOrder
     readAt?: SortOrder
+    deletedAt?: SortOrder
     dedupeKey?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -128740,6 +130314,43 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     revokedAt?: SortOrder
+  }
+
+  export type AuditLogCountOrderByAggregateInput = {
+    id?: SortOrder
+    tenantId?: SortOrder
+    actorId?: SortOrder
+    actorRole?: SortOrder
+    action?: SortOrder
+    resource?: SortOrder
+    resourceId?: SortOrder
+    metadata?: SortOrder
+    ip?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type AuditLogMaxOrderByAggregateInput = {
+    id?: SortOrder
+    tenantId?: SortOrder
+    actorId?: SortOrder
+    actorRole?: SortOrder
+    action?: SortOrder
+    resource?: SortOrder
+    resourceId?: SortOrder
+    ip?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type AuditLogMinOrderByAggregateInput = {
+    id?: SortOrder
+    tenantId?: SortOrder
+    actorId?: SortOrder
+    actorRole?: SortOrder
+    action?: SortOrder
+    resource?: SortOrder
+    resourceId?: SortOrder
+    ip?: SortOrder
+    createdAt?: SortOrder
   }
 
   export type AssetCreateNestedManyWithoutTenantInput = {
@@ -129176,6 +130787,13 @@ export namespace Prisma {
     connect?: PushSubscriptionWhereUniqueInput | PushSubscriptionWhereUniqueInput[]
   }
 
+  export type AuditLogCreateNestedManyWithoutTenantInput = {
+    create?: XOR<AuditLogCreateWithoutTenantInput, AuditLogUncheckedCreateWithoutTenantInput> | AuditLogCreateWithoutTenantInput[] | AuditLogUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutTenantInput | AuditLogCreateOrConnectWithoutTenantInput[]
+    createMany?: AuditLogCreateManyTenantInputEnvelope
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+  }
+
   export type AssetUncheckedCreateNestedManyWithoutTenantInput = {
     create?: XOR<AssetCreateWithoutTenantInput, AssetUncheckedCreateWithoutTenantInput> | AssetCreateWithoutTenantInput[] | AssetUncheckedCreateWithoutTenantInput[]
     connectOrCreate?: AssetCreateOrConnectWithoutTenantInput | AssetCreateOrConnectWithoutTenantInput[]
@@ -129608,6 +131226,13 @@ export namespace Prisma {
     connectOrCreate?: PushSubscriptionCreateOrConnectWithoutTenantInput | PushSubscriptionCreateOrConnectWithoutTenantInput[]
     createMany?: PushSubscriptionCreateManyTenantInputEnvelope
     connect?: PushSubscriptionWhereUniqueInput | PushSubscriptionWhereUniqueInput[]
+  }
+
+  export type AuditLogUncheckedCreateNestedManyWithoutTenantInput = {
+    create?: XOR<AuditLogCreateWithoutTenantInput, AuditLogUncheckedCreateWithoutTenantInput> | AuditLogCreateWithoutTenantInput[] | AuditLogUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutTenantInput | AuditLogCreateOrConnectWithoutTenantInput[]
+    createMany?: AuditLogCreateManyTenantInputEnvelope
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -130486,6 +132111,20 @@ export namespace Prisma {
     deleteMany?: PushSubscriptionScalarWhereInput | PushSubscriptionScalarWhereInput[]
   }
 
+  export type AuditLogUpdateManyWithoutTenantNestedInput = {
+    create?: XOR<AuditLogCreateWithoutTenantInput, AuditLogUncheckedCreateWithoutTenantInput> | AuditLogCreateWithoutTenantInput[] | AuditLogUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutTenantInput | AuditLogCreateOrConnectWithoutTenantInput[]
+    upsert?: AuditLogUpsertWithWhereUniqueWithoutTenantInput | AuditLogUpsertWithWhereUniqueWithoutTenantInput[]
+    createMany?: AuditLogCreateManyTenantInputEnvelope
+    set?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    disconnect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    delete?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    update?: AuditLogUpdateWithWhereUniqueWithoutTenantInput | AuditLogUpdateWithWhereUniqueWithoutTenantInput[]
+    updateMany?: AuditLogUpdateManyWithWhereWithoutTenantInput | AuditLogUpdateManyWithWhereWithoutTenantInput[]
+    deleteMany?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
+  }
+
   export type AssetUncheckedUpdateManyWithoutTenantNestedInput = {
     create?: XOR<AssetCreateWithoutTenantInput, AssetUncheckedCreateWithoutTenantInput> | AssetCreateWithoutTenantInput[] | AssetUncheckedCreateWithoutTenantInput[]
     connectOrCreate?: AssetCreateOrConnectWithoutTenantInput | AssetCreateOrConnectWithoutTenantInput[]
@@ -131354,6 +132993,20 @@ export namespace Prisma {
     deleteMany?: PushSubscriptionScalarWhereInput | PushSubscriptionScalarWhereInput[]
   }
 
+  export type AuditLogUncheckedUpdateManyWithoutTenantNestedInput = {
+    create?: XOR<AuditLogCreateWithoutTenantInput, AuditLogUncheckedCreateWithoutTenantInput> | AuditLogCreateWithoutTenantInput[] | AuditLogUncheckedCreateWithoutTenantInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutTenantInput | AuditLogCreateOrConnectWithoutTenantInput[]
+    upsert?: AuditLogUpsertWithWhereUniqueWithoutTenantInput | AuditLogUpsertWithWhereUniqueWithoutTenantInput[]
+    createMany?: AuditLogCreateManyTenantInputEnvelope
+    set?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    disconnect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    delete?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    update?: AuditLogUpdateWithWhereUniqueWithoutTenantInput | AuditLogUpdateWithWhereUniqueWithoutTenantInput[]
+    updateMany?: AuditLogUpdateManyWithWhereWithoutTenantInput | AuditLogUpdateManyWithWhereWithoutTenantInput[]
+    deleteMany?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
+  }
+
   export type AssetCreateNestedManyWithoutCreatedByUserInput = {
     create?: XOR<AssetCreateWithoutCreatedByUserInput, AssetUncheckedCreateWithoutCreatedByUserInput> | AssetCreateWithoutCreatedByUserInput[] | AssetUncheckedCreateWithoutCreatedByUserInput[]
     connectOrCreate?: AssetCreateOrConnectWithoutCreatedByUserInput | AssetCreateOrConnectWithoutCreatedByUserInput[]
@@ -131582,6 +133235,13 @@ export namespace Prisma {
     connectOrCreate?: PushSubscriptionCreateOrConnectWithoutUserInput | PushSubscriptionCreateOrConnectWithoutUserInput[]
     createMany?: PushSubscriptionCreateManyUserInputEnvelope
     connect?: PushSubscriptionWhereUniqueInput | PushSubscriptionWhereUniqueInput[]
+  }
+
+  export type AuditLogCreateNestedManyWithoutActorInput = {
+    create?: XOR<AuditLogCreateWithoutActorInput, AuditLogUncheckedCreateWithoutActorInput> | AuditLogCreateWithoutActorInput[] | AuditLogUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutActorInput | AuditLogCreateOrConnectWithoutActorInput[]
+    createMany?: AuditLogCreateManyActorInputEnvelope
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
   }
 
   export type AssetCreateNestedOneWithoutUserAvatarInput = {
@@ -131824,6 +133484,13 @@ export namespace Prisma {
     connectOrCreate?: PushSubscriptionCreateOrConnectWithoutUserInput | PushSubscriptionCreateOrConnectWithoutUserInput[]
     createMany?: PushSubscriptionCreateManyUserInputEnvelope
     connect?: PushSubscriptionWhereUniqueInput | PushSubscriptionWhereUniqueInput[]
+  }
+
+  export type AuditLogUncheckedCreateNestedManyWithoutActorInput = {
+    create?: XOR<AuditLogCreateWithoutActorInput, AuditLogUncheckedCreateWithoutActorInput> | AuditLogCreateWithoutActorInput[] | AuditLogUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutActorInput | AuditLogCreateOrConnectWithoutActorInput[]
+    createMany?: AuditLogCreateManyActorInputEnvelope
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
@@ -132290,6 +133957,20 @@ export namespace Prisma {
     update?: PushSubscriptionUpdateWithWhereUniqueWithoutUserInput | PushSubscriptionUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: PushSubscriptionUpdateManyWithWhereWithoutUserInput | PushSubscriptionUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: PushSubscriptionScalarWhereInput | PushSubscriptionScalarWhereInput[]
+  }
+
+  export type AuditLogUpdateManyWithoutActorNestedInput = {
+    create?: XOR<AuditLogCreateWithoutActorInput, AuditLogUncheckedCreateWithoutActorInput> | AuditLogCreateWithoutActorInput[] | AuditLogUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutActorInput | AuditLogCreateOrConnectWithoutActorInput[]
+    upsert?: AuditLogUpsertWithWhereUniqueWithoutActorInput | AuditLogUpsertWithWhereUniqueWithoutActorInput[]
+    createMany?: AuditLogCreateManyActorInputEnvelope
+    set?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    disconnect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    delete?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    update?: AuditLogUpdateWithWhereUniqueWithoutActorInput | AuditLogUpdateWithWhereUniqueWithoutActorInput[]
+    updateMany?: AuditLogUpdateManyWithWhereWithoutActorInput | AuditLogUpdateManyWithWhereWithoutActorInput[]
+    deleteMany?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
   }
 
   export type AssetUpdateOneWithoutUserAvatarNestedInput = {
@@ -132768,6 +134449,20 @@ export namespace Prisma {
     update?: PushSubscriptionUpdateWithWhereUniqueWithoutUserInput | PushSubscriptionUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: PushSubscriptionUpdateManyWithWhereWithoutUserInput | PushSubscriptionUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: PushSubscriptionScalarWhereInput | PushSubscriptionScalarWhereInput[]
+  }
+
+  export type AuditLogUncheckedUpdateManyWithoutActorNestedInput = {
+    create?: XOR<AuditLogCreateWithoutActorInput, AuditLogUncheckedCreateWithoutActorInput> | AuditLogCreateWithoutActorInput[] | AuditLogUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: AuditLogCreateOrConnectWithoutActorInput | AuditLogCreateOrConnectWithoutActorInput[]
+    upsert?: AuditLogUpsertWithWhereUniqueWithoutActorInput | AuditLogUpsertWithWhereUniqueWithoutActorInput[]
+    createMany?: AuditLogCreateManyActorInputEnvelope
+    set?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    disconnect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    delete?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    connect?: AuditLogWhereUniqueInput | AuditLogWhereUniqueInput[]
+    update?: AuditLogUpdateWithWhereUniqueWithoutActorInput | AuditLogUpdateWithWhereUniqueWithoutActorInput[]
+    updateMany?: AuditLogUpdateManyWithWhereWithoutActorInput | AuditLogUpdateManyWithWhereWithoutActorInput[]
+    deleteMany?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
   }
 
   export type CleanerAvailabilitySlotCreateNestedManyWithoutCleanerProfileInput = {
@@ -140997,6 +142692,38 @@ export namespace Prisma {
     update?: XOR<XOR<TenantUpdateToOneWithWhereWithoutPushSubscriptionsInput, TenantUpdateWithoutPushSubscriptionsInput>, TenantUncheckedUpdateWithoutPushSubscriptionsInput>
   }
 
+  export type UserCreateNestedOneWithoutAuditLogsAsActorInput = {
+    create?: XOR<UserCreateWithoutAuditLogsAsActorInput, UserUncheckedCreateWithoutAuditLogsAsActorInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAuditLogsAsActorInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type TenantCreateNestedOneWithoutAuditLogsInput = {
+    create?: XOR<TenantCreateWithoutAuditLogsInput, TenantUncheckedCreateWithoutAuditLogsInput>
+    connectOrCreate?: TenantCreateOrConnectWithoutAuditLogsInput
+    connect?: TenantWhereUniqueInput
+  }
+
+  export type UserUpdateOneWithoutAuditLogsAsActorNestedInput = {
+    create?: XOR<UserCreateWithoutAuditLogsAsActorInput, UserUncheckedCreateWithoutAuditLogsAsActorInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAuditLogsAsActorInput
+    upsert?: UserUpsertWithoutAuditLogsAsActorInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAuditLogsAsActorInput, UserUpdateWithoutAuditLogsAsActorInput>, UserUncheckedUpdateWithoutAuditLogsAsActorInput>
+  }
+
+  export type TenantUpdateOneWithoutAuditLogsNestedInput = {
+    create?: XOR<TenantCreateWithoutAuditLogsInput, TenantUncheckedCreateWithoutAuditLogsInput>
+    connectOrCreate?: TenantCreateOrConnectWithoutAuditLogsInput
+    upsert?: TenantUpsertWithoutAuditLogsInput
+    disconnect?: TenantWhereInput | boolean
+    delete?: TenantWhereInput | boolean
+    connect?: TenantWhereUniqueInput
+    update?: XOR<XOR<TenantUpdateToOneWithWhereWithoutAuditLogsInput, TenantUpdateWithoutAuditLogsInput>, TenantUncheckedUpdateWithoutAuditLogsInput>
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -144684,6 +146411,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
   }
 
@@ -144729,6 +146457,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutTenantInput = {
@@ -144839,6 +146568,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -144854,6 +146584,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -144900,6 +146631,40 @@ export namespace Prisma {
 
   export type PushSubscriptionCreateManyTenantInputEnvelope = {
     data: PushSubscriptionCreateManyTenantInput | PushSubscriptionCreateManyTenantInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AuditLogCreateWithoutTenantInput = {
+    id?: string
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+    actor?: UserCreateNestedOneWithoutAuditLogsAsActorInput
+  }
+
+  export type AuditLogUncheckedCreateWithoutTenantInput = {
+    id?: string
+    actorId?: string | null
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+  }
+
+  export type AuditLogCreateOrConnectWithoutTenantInput = {
+    where: AuditLogWhereUniqueInput
+    create: XOR<AuditLogCreateWithoutTenantInput, AuditLogUncheckedCreateWithoutTenantInput>
+  }
+
+  export type AuditLogCreateManyTenantInputEnvelope = {
+    data: AuditLogCreateManyTenantInput | AuditLogCreateManyTenantInput[]
     skipDuplicates?: boolean
   }
 
@@ -146904,6 +148669,7 @@ export namespace Prisma {
     href?: StringNullableFilter<"Notification"> | string | null
     data?: JsonNullableFilter<"Notification">
     readAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    deletedAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
     dedupeKey?: StringNullableFilter<"Notification"> | string | null
     createdAt?: DateTimeFilter<"Notification"> | Date | string
     updatedAt?: DateTimeFilter<"Notification"> | Date | string
@@ -146939,6 +148705,38 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"PushSubscription"> | Date | string
     updatedAt?: DateTimeFilter<"PushSubscription"> | Date | string
     revokedAt?: DateTimeNullableFilter<"PushSubscription"> | Date | string | null
+  }
+
+  export type AuditLogUpsertWithWhereUniqueWithoutTenantInput = {
+    where: AuditLogWhereUniqueInput
+    update: XOR<AuditLogUpdateWithoutTenantInput, AuditLogUncheckedUpdateWithoutTenantInput>
+    create: XOR<AuditLogCreateWithoutTenantInput, AuditLogUncheckedCreateWithoutTenantInput>
+  }
+
+  export type AuditLogUpdateWithWhereUniqueWithoutTenantInput = {
+    where: AuditLogWhereUniqueInput
+    data: XOR<AuditLogUpdateWithoutTenantInput, AuditLogUncheckedUpdateWithoutTenantInput>
+  }
+
+  export type AuditLogUpdateManyWithWhereWithoutTenantInput = {
+    where: AuditLogScalarWhereInput
+    data: XOR<AuditLogUpdateManyMutationInput, AuditLogUncheckedUpdateManyWithoutTenantInput>
+  }
+
+  export type AuditLogScalarWhereInput = {
+    AND?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
+    OR?: AuditLogScalarWhereInput[]
+    NOT?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
+    id?: StringFilter<"AuditLog"> | string
+    tenantId?: StringNullableFilter<"AuditLog"> | string | null
+    actorId?: StringNullableFilter<"AuditLog"> | string | null
+    actorRole?: StringNullableFilter<"AuditLog"> | string | null
+    action?: StringFilter<"AuditLog"> | string
+    resource?: StringFilter<"AuditLog"> | string
+    resourceId?: StringNullableFilter<"AuditLog"> | string | null
+    metadata?: JsonNullableFilter<"AuditLog">
+    ip?: StringNullableFilter<"AuditLog"> | string | null
+    createdAt?: DateTimeFilter<"AuditLog"> | Date | string
   }
 
   export type AssetCreateWithoutCreatedByUserInput = {
@@ -148276,6 +150074,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -148291,6 +150090,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -148337,6 +150137,40 @@ export namespace Prisma {
 
   export type PushSubscriptionCreateManyUserInputEnvelope = {
     data: PushSubscriptionCreateManyUserInput | PushSubscriptionCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AuditLogCreateWithoutActorInput = {
+    id?: string
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+    tenant?: TenantCreateNestedOneWithoutAuditLogsInput
+  }
+
+  export type AuditLogUncheckedCreateWithoutActorInput = {
+    id?: string
+    tenantId?: string | null
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
+  }
+
+  export type AuditLogCreateOrConnectWithoutActorInput = {
+    where: AuditLogWhereUniqueInput
+    create: XOR<AuditLogCreateWithoutActorInput, AuditLogUncheckedCreateWithoutActorInput>
+  }
+
+  export type AuditLogCreateManyActorInputEnvelope = {
+    data: AuditLogCreateManyActorInput | AuditLogCreateManyActorInput[]
     skipDuplicates?: boolean
   }
 
@@ -148480,6 +150314,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutUsersInput = {
@@ -148549,6 +150384,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutUsersInput = {
@@ -149219,6 +151055,22 @@ export namespace Prisma {
     data: XOR<PushSubscriptionUpdateManyMutationInput, PushSubscriptionUncheckedUpdateManyWithoutUserInput>
   }
 
+  export type AuditLogUpsertWithWhereUniqueWithoutActorInput = {
+    where: AuditLogWhereUniqueInput
+    update: XOR<AuditLogUpdateWithoutActorInput, AuditLogUncheckedUpdateWithoutActorInput>
+    create: XOR<AuditLogCreateWithoutActorInput, AuditLogUncheckedCreateWithoutActorInput>
+  }
+
+  export type AuditLogUpdateWithWhereUniqueWithoutActorInput = {
+    where: AuditLogWhereUniqueInput
+    data: XOR<AuditLogUpdateWithoutActorInput, AuditLogUncheckedUpdateWithoutActorInput>
+  }
+
+  export type AuditLogUpdateManyWithWhereWithoutActorInput = {
+    where: AuditLogScalarWhereInput
+    data: XOR<AuditLogUpdateManyMutationInput, AuditLogUncheckedUpdateManyWithoutActorInput>
+  }
+
   export type AssetUpsertWithoutUserAvatarInput = {
     update: XOR<AssetUpdateWithoutUserAvatarInput, AssetUncheckedUpdateWithoutUserAvatarInput>
     create: XOR<AssetCreateWithoutUserAvatarInput, AssetUncheckedCreateWithoutUserAvatarInput>
@@ -149376,6 +151228,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutUsersInput = {
@@ -149445,6 +151298,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type CleanerAvailabilitySlotCreateWithoutCleanerProfileInput = {
@@ -149517,6 +151371,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -149563,6 +151418,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCleanerProfileInput = {
@@ -149711,6 +151567,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -149757,6 +151614,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type CleanerVerificationDocumentUpsertWithWhereUniqueWithoutCleanerProfileInput = {
@@ -149972,6 +151830,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -150018,6 +151877,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCleanerVerificationDocumentsInput = {
@@ -150216,6 +152076,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -150262,6 +152123,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type CleanerProfileCreateWithoutAvailabilitySlotsInput = {
@@ -150420,6 +152282,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -150466,6 +152329,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCleanerReviewsReceivedInput = {
@@ -150711,6 +152575,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -150757,6 +152622,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCleanerReviewsGivenInput = {
@@ -150815,6 +152681,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -150861,6 +152728,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type CleaningUpsertWithoutCleanerReviewsInput = {
@@ -151124,6 +152992,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -151170,6 +153039,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type CleanerProfileCreateWithoutWorkFlagsInput = {
@@ -151840,6 +153710,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertiesInput = {
@@ -151909,6 +153780,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertiesInput = {
@@ -151956,6 +153828,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -152002,6 +153875,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutOwnedPropertiesInput = {
@@ -152898,6 +154772,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertiesInput = {
@@ -152967,6 +154842,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserUpsertWithoutOwnedPropertiesInput = {
@@ -153020,6 +154896,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -153066,6 +154943,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyAdminUpsertWithWhereUniqueWithoutPropertyInput = {
@@ -153524,6 +155402,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -153570,6 +155449,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutPropertyMemberAccessesInput = {
@@ -153786,6 +155666,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -153832,6 +155713,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserCreateWithoutPropertyInvitesClaimedInput = {
@@ -153874,6 +155756,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -153920,6 +155803,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutPropertyInvitesClaimedInput = {
@@ -153967,6 +155851,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -154013,6 +155898,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutPropertyInvitesCreatedInput = {
@@ -154202,6 +156088,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyInvitesInput = {
@@ -154271,6 +156158,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyInvitesInput = {
@@ -154329,6 +156217,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -154375,6 +156264,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserUpsertWithoutPropertyInvitesCreatedInput = {
@@ -154428,6 +156318,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -154474,6 +156365,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyUpsertWithoutPropertyInvitesInput = {
@@ -154675,6 +156567,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyInvitesInput = {
@@ -154744,6 +156637,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type PropertyCreateWithoutAdminsInput = {
@@ -154928,6 +156822,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyAdminsInput = {
@@ -154997,6 +156892,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyAdminsInput = {
@@ -155044,6 +156940,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -155090,6 +156987,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutAdminPropertiesInput = {
@@ -155296,6 +157194,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyAdminsInput = {
@@ -155365,6 +157264,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserUpsertWithoutAdminPropertiesInput = {
@@ -155418,6 +157318,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -155464,6 +157365,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyCreateWithoutCleanersInput = {
@@ -155648,6 +157550,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyCleanersInput = {
@@ -155717,6 +157620,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyCleanersInput = {
@@ -155764,6 +157668,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -155810,6 +157715,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCleanerPropertiesInput = {
@@ -156016,6 +157922,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyCleanersInput = {
@@ -156085,6 +157992,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserUpsertWithoutCleanerPropertiesInput = {
@@ -156138,6 +158046,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -156184,6 +158093,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyCreateWithoutHandymenInput = {
@@ -156368,6 +158278,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyHandymenInput = {
@@ -156437,6 +158348,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyHandymenInput = {
@@ -156484,6 +158396,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -156530,6 +158443,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutHandymanPropertiesInput = {
@@ -156736,6 +158650,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyHandymenInput = {
@@ -156805,6 +158720,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserUpsertWithoutHandymanPropertiesInput = {
@@ -156858,6 +158774,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -156904,6 +158821,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type CleaningCreateWithoutReservationInput = {
@@ -157216,6 +159134,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutReservationsInput = {
@@ -157285,6 +159204,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutReservationsInput = {
@@ -157523,6 +159443,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutReservationsInput = {
@@ -157592,6 +159513,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChatThreadCreateWithoutCleaningInput = {
@@ -157818,6 +159740,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -157864,6 +159787,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCleaningAssignmentsInput = {
@@ -158161,6 +160085,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutCleaningsInput = {
@@ -158230,6 +160155,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutCleaningsInput = {
@@ -158823,6 +160749,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -158869,6 +160796,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyUpsertWithoutCleaningsInput = {
@@ -159190,6 +161118,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutCleaningsInput = {
@@ -159259,6 +161188,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type CleaningAssigneeUpsertWithWhereUniqueWithoutCleaningInput = {
@@ -159616,6 +161546,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutLocksInput = {
@@ -159685,6 +161616,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutLocksInput = {
@@ -159931,6 +161863,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutLocksInput = {
@@ -160000,6 +161933,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type LockCodeUpsertWithWhereUniqueWithoutLockInput = {
@@ -160183,6 +162117,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutLockCodesInput = {
@@ -160252,6 +162187,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutLockCodesInput = {
@@ -160447,6 +162383,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutLockCodesInput = {
@@ -160516,6 +162453,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantCreateWithoutMetricEventsInput = {
@@ -160585,6 +162523,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutMetricEventsInput = {
@@ -160654,6 +162593,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutMetricEventsInput = {
@@ -160739,6 +162679,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutMetricEventsInput = {
@@ -160808,6 +162749,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChatParticipantCreateWithoutTeamInput = {
@@ -161040,6 +162982,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -161086,6 +163029,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutInactivatedTeamsInput = {
@@ -161160,6 +163104,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTeamsInput = {
@@ -161229,6 +163174,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTeamsInput = {
@@ -161531,6 +163477,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -161577,6 +163524,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TenantUpsertWithoutTeamsInput = {
@@ -161657,6 +163605,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTeamsInput = {
@@ -161726,6 +163675,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TeamInviteUpsertWithWhereUniqueWithoutTeamInput = {
@@ -162148,6 +164098,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTeamMembersInput = {
@@ -162217,6 +164168,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTeamMembersInput = {
@@ -162264,6 +164216,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -162310,6 +164263,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutTeamMembersInput = {
@@ -162542,6 +164496,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTeamMembersInput = {
@@ -162611,6 +164566,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserUpsertWithoutTeamMembersInput = {
@@ -162664,6 +164620,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -162710,6 +164667,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TeamMemberScheduleDayUpsertWithWhereUniqueWithoutMemberInput = {
@@ -162838,6 +164796,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTeamMemberScheduleDaysInput = {
@@ -162907,6 +164866,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTeamMemberScheduleDaysInput = {
@@ -163041,6 +165001,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTeamMemberScheduleDaysInput = {
@@ -163110,6 +165071,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type PropertyCreateWithoutTeamsInput = {
@@ -163339,6 +165301,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyTeamsInput = {
@@ -163408,6 +165371,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyTeamsInput = {
@@ -163665,6 +165629,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyTeamsInput = {
@@ -163734,6 +165699,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantCreateWithoutHostWorkGroupsInput = {
@@ -163803,6 +165769,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutHostWorkGroupsInput = {
@@ -163872,6 +165839,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutHostWorkGroupsInput = {
@@ -164049,6 +166017,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutHostWorkGroupsInput = {
@@ -164118,6 +166087,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type HostWorkGroupInviteUpsertWithWhereUniqueWithoutWorkGroupInput = {
@@ -164350,6 +166320,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutHostWorkGroupPropertiesInput = {
@@ -164419,6 +166390,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutHostWorkGroupPropertiesInput = {
@@ -164652,6 +166624,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutHostWorkGroupPropertiesInput = {
@@ -164721,6 +166694,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type HostWorkGroupUpsertWithoutPropertiesInput = {
@@ -164823,6 +166797,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutWorkGroupExecutorsHostInput = {
@@ -164892,6 +166867,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutWorkGroupExecutorsHostInput = {
@@ -164966,6 +166942,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorCreateNestedManyWithoutHostTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutWorkGroupExecutorsServicesInput = {
@@ -165035,6 +167012,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUncheckedCreateNestedManyWithoutHostTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutWorkGroupExecutorsServicesInput = {
@@ -165192,6 +167170,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutWorkGroupExecutorsHostInput = {
@@ -165261,6 +167240,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUpsertWithoutWorkGroupExecutorsServicesInput = {
@@ -165341,6 +167321,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUpdateManyWithoutHostTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutWorkGroupExecutorsServicesInput = {
@@ -165410,6 +167391,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUncheckedUpdateManyWithoutHostTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TeamUpsertWithoutWorkGroupExecutorsInput = {
@@ -165536,6 +167518,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -165582,6 +167565,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutHostWorkGroupInvitesClaimedInput = {
@@ -165629,6 +167613,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -165675,6 +167660,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutHostWorkGroupInvitesCreatedInput = {
@@ -165749,6 +167735,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutHostWorkGroupInvitesInput = {
@@ -165818,6 +167805,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutHostWorkGroupInvitesInput = {
@@ -165903,6 +167891,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -165949,6 +167938,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserUpsertWithoutHostWorkGroupInvitesCreatedInput = {
@@ -166002,6 +167992,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -166048,6 +168039,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TenantUpsertWithoutHostWorkGroupInvitesInput = {
@@ -166128,6 +168120,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutHostWorkGroupInvitesInput = {
@@ -166197,6 +168190,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type HostWorkGroupUpsertWithoutInvitesInput = {
@@ -166425,6 +168419,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutCleaningAssigneesInput = {
@@ -166494,6 +168489,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutCleaningAssigneesInput = {
@@ -166717,6 +168713,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutCleaningAssigneesInput = {
@@ -166786,6 +168783,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type CleaningCreateWithoutViewsInput = {
@@ -166981,6 +168979,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutCleaningViewsInput = {
@@ -167050,6 +169049,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutCleaningViewsInput = {
@@ -167273,6 +169273,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutCleaningViewsInput = {
@@ -167342,6 +169343,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChecklistItemAssetCreateWithoutChecklistItemInput = {
@@ -167598,6 +169600,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyChecklistItemsInput = {
@@ -167667,6 +169670,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyChecklistItemsInput = {
@@ -167905,6 +169909,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyChecklistItemsInput = {
@@ -167974,6 +169979,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type CleaningCreateWithoutCleaningChecklistItemsInput = {
@@ -168161,6 +170167,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutCleaningChecklistItemsInput = {
@@ -168230,6 +170237,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutCleaningChecklistItemsInput = {
@@ -168445,6 +170453,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutCleaningChecklistItemsInput = {
@@ -168514,6 +170523,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserCreateWithoutCreatedAssetsInput = {
@@ -168556,6 +170566,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -168602,6 +170613,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCreatedAssetsInput = {
@@ -168676,6 +170688,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutAssetsInput = {
@@ -168745,6 +170758,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutAssetsInput = {
@@ -169230,6 +171244,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
 
@@ -169275,6 +171290,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutAvatarMediaInput = {
@@ -169333,6 +171349,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -169379,6 +171396,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TenantUpsertWithoutAssetsInput = {
@@ -169459,6 +171477,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutAssetsInput = {
@@ -169528,6 +171547,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChatMessageUpsertWithWhereUniqueWithoutAssetInput = {
@@ -169879,6 +171899,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
 
@@ -169924,6 +171945,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type AssetCreateWithoutInventoryItemAssetsInput = {
@@ -170117,6 +172139,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryItemAssetsInput = {
@@ -170186,6 +172209,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryItemAssetsInput = {
@@ -170407,6 +172431,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryItemAssetsInput = {
@@ -170476,6 +172501,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutInventoryLineAssetsInput = {
@@ -170683,6 +172709,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryLineAssetsInput = {
@@ -170752,6 +172779,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryLineAssetsInput = {
@@ -170987,6 +173015,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryLineAssetsInput = {
@@ -171056,6 +173085,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutChecklistItemAssetsInput = {
@@ -171233,6 +173263,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutChecklistItemAssetsInput = {
@@ -171302,6 +173333,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutChecklistItemAssetsInput = {
@@ -171507,6 +173539,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutChecklistItemAssetsInput = {
@@ -171576,6 +173609,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantCreateWithoutInventoryItemsInput = {
@@ -171645,6 +173679,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryItemsInput = {
@@ -171714,6 +173749,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryItemsInput = {
@@ -172017,6 +174053,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryItemsInput = {
@@ -172086,6 +174123,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryItemAssetUpsertWithWhereUniqueWithoutItemInput = {
@@ -172282,6 +174320,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutVariantGroupsInput = {
@@ -172351,6 +174390,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutVariantGroupsInput = {
@@ -172482,6 +174522,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutVariantGroupsInput = {
@@ -172551,6 +174592,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type VariantOptionUpsertWithWhereUniqueWithoutGroupInput = {
@@ -173107,6 +175149,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryLinesInput = {
@@ -173176,6 +175219,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryLinesInput = {
@@ -173654,6 +175698,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryLinesInput = {
@@ -173723,6 +175768,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryLineAssetUpsertWithWhereUniqueWithoutLineInput = {
@@ -174075,6 +176121,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -174121,6 +176168,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutInventoryReviewsAsReviewerInput = {
@@ -174195,6 +176243,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryReviewsInput = {
@@ -174264,6 +176313,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryReviewsInput = {
@@ -174590,6 +176640,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -174636,6 +176687,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TenantUpsertWithoutInventoryReviewsInput = {
@@ -174716,6 +176768,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryReviewsInput = {
@@ -174785,6 +176838,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryReviewItemChangeUpsertWithWhereUniqueWithoutReviewInput = {
@@ -174926,6 +176980,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -174972,6 +177027,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutInventoryChecksCreatedInput = {
@@ -175226,6 +177282,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryChecksInput = {
@@ -175295,6 +177352,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryChecksInput = {
@@ -175442,6 +177500,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -175488,6 +177547,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type InventoryLineUpsertWithoutInventoryChecksInput = {
@@ -175760,6 +177820,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryChecksInput = {
@@ -175829,6 +177890,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryEvidenceCreateWithoutChangeInput = {
@@ -176079,6 +178141,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryReviewItemChangesInput = {
@@ -176148,6 +178211,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryReviewItemChangesInput = {
@@ -176422,6 +178486,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryReviewItemChangesInput = {
@@ -176491,6 +178556,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryEvidenceCreateWithoutReportInput = {
@@ -176642,6 +178708,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -176688,6 +178755,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutInventoryReportsAsCreatorInput = {
@@ -176851,6 +178919,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -176897,6 +178966,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutInventoryReportsAsResolverInput = {
@@ -177010,6 +179080,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryReportsInput = {
@@ -177079,6 +179150,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryReportsInput = {
@@ -177242,6 +179314,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -177288,6 +179361,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type InventoryLineUpsertWithoutInventoryReportsInput = {
@@ -177469,6 +179543,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -177515,6 +179590,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type InventoryReviewUpsertWithoutReportsInput = {
@@ -177640,6 +179716,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryReportsInput = {
@@ -177709,6 +179786,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutCleaningMediaInput = {
@@ -177934,6 +180012,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutCleaningMediaInput = {
@@ -178003,6 +180082,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutCleaningMediaInput = {
@@ -178256,6 +180336,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutCleaningMediaInput = {
@@ -178325,6 +180406,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutInventoryEvidenceInput = {
@@ -178547,6 +180629,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryEvidenceInput = {
@@ -178616,6 +180699,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryEvidenceInput = {
@@ -178872,6 +180956,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryEvidenceInput = {
@@ -178941,6 +181026,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryLineCreateWithoutPropertyZoneInput = {
@@ -179235,6 +181321,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyZonesInput = {
@@ -179304,6 +181391,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyZonesInput = {
@@ -179542,6 +181630,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyZonesInput = {
@@ -179611,6 +181700,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type InventoryLineCreateWithoutInventoryLogsInput = {
@@ -179897,6 +181987,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutInventoryLogsInput = {
@@ -179966,6 +182057,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutInventoryLogsInput = {
@@ -180286,6 +182378,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutInventoryLogsInput = {
@@ -180355,6 +182448,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type PropertyApplicationCreateWithoutOpeningInput = {
@@ -180429,6 +182523,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -180475,6 +182570,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOpeningsInput = {
@@ -180664,6 +182760,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyOpeningsInput = {
@@ -180733,6 +182830,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyOpeningsInput = {
@@ -180807,6 +182905,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -180853,6 +182952,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyUpsertWithoutPropertyOpeningsInput = {
@@ -181054,6 +183154,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyOpeningsInput = {
@@ -181123,6 +183224,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChatThreadCreateWithoutApplicationInput = {
@@ -181202,6 +183304,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -181248,6 +183351,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutApplicationsInput = {
@@ -181468,6 +183572,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPropertyApplicationsInput = {
@@ -181537,6 +183642,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPropertyApplicationsInput = {
@@ -181638,6 +183744,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -181684,6 +183791,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type PropertyOpeningUpsertWithoutApplicationsInput = {
@@ -181922,6 +184030,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPropertyApplicationsInput = {
@@ -181991,6 +184100,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChatMessageCreateWithoutThreadInput = {
@@ -182404,6 +184514,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutChatThreadsInput = {
@@ -182473,6 +184584,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutChatThreadsInput = {
@@ -182884,6 +184996,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutChatThreadsInput = {
@@ -182953,6 +185066,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserCreateWithoutChatParticipantsAddedByInput = {
@@ -182995,6 +185109,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -183041,6 +185156,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutChatParticipantsAddedByInput = {
@@ -183201,6 +185317,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -183247,6 +185364,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutChatParticipantsInput = {
@@ -183305,6 +185423,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -183351,6 +185470,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TeamUpsertWithoutChatParticipantsInput = {
@@ -183535,6 +185655,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -183581,6 +185702,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type AssetCreateWithoutChatMessagesInput = {
@@ -183696,6 +185818,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -183742,6 +185865,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutChatMessagesInput = {
@@ -183816,6 +185940,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutChatMessagesInput = {
@@ -183885,6 +186010,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutChatMessagesInput = {
@@ -184059,6 +186185,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -184105,6 +186232,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TenantUpsertWithoutChatMessagesInput = {
@@ -184185,6 +186313,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutChatMessagesInput = {
@@ -184254,6 +186383,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type ChatThreadUpsertWithoutMessagesInput = {
@@ -184339,6 +186469,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -184385,6 +186516,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutTeamInvite_TeamInvite_claimedByUserIdToUserInput = {
@@ -184432,6 +186564,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -184478,6 +186611,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutTeamInvite_TeamInvite_createdByUserIdToUserInput = {
@@ -184581,6 +186715,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -184627,6 +186762,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserUpsertWithoutTeamInvite_TeamInvite_createdByUserIdToUserInput = {
@@ -184680,6 +186816,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -184726,6 +186863,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TeamUpsertWithoutTeamInviteInput = {
@@ -185048,6 +187186,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -185094,6 +187233,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutTeamMembershipInput = {
@@ -185267,6 +187407,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -185313,6 +187454,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TaskJobCreateWithoutTemplateInput = {
@@ -185629,6 +187771,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskTemplatesInput = {
@@ -185698,6 +187841,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskTemplatesInput = {
@@ -185979,6 +188123,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskTemplatesInput = {
@@ -186048,6 +188193,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskTemplateScheduleUpsertWithoutTemplateInput = {
@@ -186185,6 +188331,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskTemplateSchedulesInput = {
@@ -186254,6 +188401,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskTemplateSchedulesInput = {
@@ -186380,6 +188528,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskTemplateSchedulesInput = {
@@ -186449,6 +188598,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskSectionReferenceAssetCreateWithoutSectionInput = {
@@ -186581,6 +188731,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskSectionTemplatesInput = {
@@ -186650,6 +188801,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskSectionTemplatesInput = {
@@ -186864,6 +189016,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskSectionTemplatesInput = {
@@ -186933,6 +189086,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskStepTemplateUpsertWithWhereUniqueWithoutSectionInput = {
@@ -187124,6 +189278,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskSectionReferenceAssetsInput = {
@@ -187193,6 +189348,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskSectionReferenceAssetsInput = {
@@ -187396,6 +189552,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskSectionReferenceAssetsInput = {
@@ -187465,6 +189622,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskStepOptionCreateWithoutStepInput = {
@@ -187663,6 +189821,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskStepTemplatesInput = {
@@ -187732,6 +189891,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskStepTemplatesInput = {
@@ -187904,6 +190064,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskStepTemplatesInput = {
@@ -187973,6 +190134,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskStepTemplateCreateWithoutOptionsInput = {
@@ -188109,6 +190271,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskStepOptionsInput = {
@@ -188178,6 +190341,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskStepOptionsInput = {
@@ -188336,6 +190500,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskStepOptionsInput = {
@@ -188405,6 +190570,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutTaskStepReferenceAssetsInput = {
@@ -188614,6 +190780,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskStepReferenceAssetsInput = {
@@ -188683,6 +190850,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskStepReferenceAssetsInput = {
@@ -188920,6 +191088,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskStepReferenceAssetsInput = {
@@ -188989,6 +191158,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskCarryForwardCreateWithoutSourceJobInput = {
@@ -189071,6 +191241,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -189117,6 +191288,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutAssignedTaskJobsInput = {
@@ -189424,6 +191596,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobsInput = {
@@ -189493,6 +191666,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobsInput = {
@@ -189641,6 +191815,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -189687,6 +191862,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type CleaningUpsertWithoutTaskJobsInput = {
@@ -190018,6 +192194,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobsInput = {
@@ -190087,6 +192264,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskJobEventLogUpsertWithWhereUniqueWithoutJobInput = {
@@ -190268,6 +192446,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobSectionsInput = {
@@ -190337,6 +192516,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobSectionsInput = {
@@ -190627,6 +192807,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobSectionsInput = {
@@ -190696,6 +192877,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskJobSectionEvidenceAssetUpsertWithWhereUniqueWithoutSectionInput = {
@@ -190865,6 +193047,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobSectionResponsesInput = {
@@ -190934,6 +193117,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobSectionResponsesInput = {
@@ -191066,6 +193250,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobSectionResponsesInput = {
@@ -191135,6 +193320,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutTaskJobSectionEvidenceAssetsInput = {
@@ -191318,6 +193504,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobSectionEvidenceAssetsInput = {
@@ -191387,6 +193574,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobSectionEvidenceAssetsInput = {
@@ -191598,6 +193786,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobSectionEvidenceAssetsInput = {
@@ -191667,6 +193856,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskJobSectionCreateWithoutStepsInput = {
@@ -191777,6 +193967,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobStepsInput = {
@@ -191846,6 +194037,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobStepsInput = {
@@ -192045,6 +194237,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobStepsInput = {
@@ -192114,6 +194307,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskJobStepEvidenceAssetUpsertWithWhereUniqueWithoutStepInput = {
@@ -192295,6 +194489,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobStepResponsesInput = {
@@ -192364,6 +194559,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobStepResponsesInput = {
@@ -192510,6 +194706,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobStepResponsesInput = {
@@ -192579,6 +194776,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateWithoutTaskJobStepEvidenceAssetsInput = {
@@ -192776,6 +194974,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobStepEvidenceAssetsInput = {
@@ -192845,6 +195044,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobStepEvidenceAssetsInput = {
@@ -193070,6 +195270,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobStepEvidenceAssetsInput = {
@@ -193139,6 +195340,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type PropertyCreateWithoutTaskCarryForwardsInput = {
@@ -193368,6 +195570,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskCarryForwardsInput = {
@@ -193437,6 +195640,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskCarryForwardsInput = {
@@ -193740,6 +195944,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskCarryForwardsInput = {
@@ -193809,6 +196014,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type TaskJobSectionUpsertWithWhereUniqueWithoutCarryForwardInput = {
@@ -193867,6 +196073,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -193913,6 +196120,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutTaskJobEventLogsInput = {
@@ -194032,6 +196240,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskJobEventLogsInput = {
@@ -194101,6 +196310,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskJobEventLogsInput = {
@@ -194159,6 +196369,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -194205,6 +196416,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TaskJobUpsertWithoutEventLogsInput = {
@@ -194336,6 +196548,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskJobEventLogsInput = {
@@ -194405,6 +196618,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type PropertyCreateWithoutAssignmentConfigsInput = {
@@ -195024,6 +197238,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutTaskRecurringDuesInput = {
@@ -195093,6 +197308,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutTaskRecurringDuesInput = {
@@ -195490,6 +197706,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutTaskRecurringDuesInput = {
@@ -195559,6 +197776,7 @@ export namespace Prisma {
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type CleaningUpsertWithoutTaskRecurringDuesInput = {
@@ -195790,6 +198008,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorCreateNestedManyWithoutHostTenantInput
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutNotificationsInput = {
@@ -195859,6 +198078,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUncheckedCreateNestedManyWithoutHostTenantInput
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutNotificationsInput = {
@@ -195906,6 +198126,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberCreateNestedManyWithoutUserInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -195952,6 +198173,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUncheckedCreateNestedManyWithoutUserInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -196037,6 +198259,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUpdateManyWithoutHostTenantNestedInput
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutNotificationsInput = {
@@ -196106,6 +198329,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUncheckedUpdateManyWithoutHostTenantNestedInput
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type UserUpsertWithoutNotificationsInput = {
@@ -196159,6 +198383,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUpdateManyWithoutUserNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -196205,6 +198430,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUncheckedUpdateManyWithoutUserNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserCreateWithoutPushSubscriptionsInput = {
@@ -196247,6 +198473,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberCreateNestedManyWithoutUserInput
     TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogCreateNestedManyWithoutActorInput
     avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
     tenant?: TenantCreateNestedOneWithoutUsersInput
   }
@@ -196293,6 +198520,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUncheckedCreateNestedManyWithoutUserInput
     TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    auditLogsAsActor?: AuditLogUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserCreateOrConnectWithoutPushSubscriptionsInput = {
@@ -196367,6 +198595,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorCreateNestedManyWithoutHostTenantInput
     workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogCreateNestedManyWithoutTenantInput
   }
 
   export type TenantUncheckedCreateWithoutPushSubscriptionsInput = {
@@ -196436,6 +198665,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUncheckedCreateNestedManyWithoutHostTenantInput
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutTenantInput
   }
 
   export type TenantCreateOrConnectWithoutPushSubscriptionsInput = {
@@ -196494,6 +198724,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUpdateManyWithoutUserNestedInput
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
     tenant?: TenantUpdateOneWithoutUsersNestedInput
   }
@@ -196540,6 +198771,7 @@ export namespace Prisma {
     teamMembers?: TeamMemberUncheckedUpdateManyWithoutUserNestedInput
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type TenantUpsertWithoutPushSubscriptionsInput = {
@@ -196620,6 +198852,7 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUpdateManyWithoutHostTenantNestedInput
     workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutTenantNestedInput
   }
 
   export type TenantUncheckedUpdateWithoutPushSubscriptionsInput = {
@@ -196689,6 +198922,499 @@ export namespace Prisma {
     workGroupExecutorsHost?: WorkGroupExecutorUncheckedUpdateManyWithoutHostTenantNestedInput
     workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  }
+
+  export type UserCreateWithoutAuditLogsAsActorInput = {
+    id?: string
+    email: string
+    name?: string | null
+    hashedPassword?: string | null
+    role?: $Enums.UserRole
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    createdAssets?: AssetCreateNestedManyWithoutCreatedByUserInput
+    chatMessages?: ChatMessageCreateNestedManyWithoutSenderUserInput
+    chatParticipantsAddedBy?: ChatParticipantCreateNestedManyWithoutAddedByInput
+    chatParticipants?: ChatParticipantCreateNestedManyWithoutUserInput
+    cleanerProfile?: CleanerProfileCreateNestedOneWithoutUserInput
+    cleanerReviewsReceived?: CleanerReviewCreateNestedManyWithoutCleanerUserInput
+    cleanerReviewsGiven?: CleanerReviewCreateNestedManyWithoutReviewerUserInput
+    cleanerVerificationDocuments?: CleanerVerificationDocumentCreateNestedManyWithoutReviewedByInput
+    cleaningAssignments?: CleaningCreateNestedManyWithoutAssignedToInput
+    hostWorkGroupInvitesClaimed?: HostWorkGroupInviteCreateNestedManyWithoutClaimedByUserInput
+    hostWorkGroupInvitesCreated?: HostWorkGroupInviteCreateNestedManyWithoutCreatedByUserInput
+    inventoryChecksCreated?: InventoryCheckCreateNestedManyWithoutCreatedByInput
+    inventoryReportsAsCreator?: InventoryReportCreateNestedManyWithoutCreatedByInput
+    inventoryReportsAsResolver?: InventoryReportCreateNestedManyWithoutResolvedByInput
+    inventoryReviewsAsReviewer?: InventoryReviewCreateNestedManyWithoutReviewedByInput
+    ownedProperties?: PropertyCreateNestedManyWithoutUserInput
+    adminProperties?: PropertyAdminCreateNestedManyWithoutUserInput
+    applications?: PropertyApplicationCreateNestedManyWithoutApplicantUserInput
+    cleanerProperties?: PropertyCleanerCreateNestedManyWithoutUserInput
+    handymanProperties?: PropertyHandymanCreateNestedManyWithoutUserInput
+    propertyInvitesClaimed?: PropertyInviteCreateNestedManyWithoutClaimedByUserInput
+    propertyInvitesCreated?: PropertyInviteCreateNestedManyWithoutCreatedByUserInput
+    propertyMemberAccesses?: PropertyMemberAccessCreateNestedManyWithoutUserInput
+    createdOpenings?: PropertyOpeningCreateNestedManyWithoutCreatedByUserInput
+    assignedTaskJobs?: TaskJobCreateNestedManyWithoutAssignedUserInput
+    taskJobEventLogs?: TaskJobEventLogCreateNestedManyWithoutActorInput
+    inactivatedTeams?: TeamCreateNestedManyWithoutInactivatedByUserInput
+    TeamInvite_TeamInvite_claimedByUserIdToUser?: TeamInviteCreateNestedManyWithoutUser_TeamInvite_claimedByUserIdToUserInput
+    TeamInvite_TeamInvite_createdByUserIdToUser?: TeamInviteCreateNestedManyWithoutUser_TeamInvite_createdByUserIdToUserInput
+    teamMembers?: TeamMemberCreateNestedManyWithoutUserInput
+    TeamMembership?: TeamMembershipCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutUserInput
+    avatarMedia?: AssetCreateNestedOneWithoutUserAvatarInput
+    tenant?: TenantCreateNestedOneWithoutUsersInput
+  }
+
+  export type UserUncheckedCreateWithoutAuditLogsAsActorInput = {
+    id?: string
+    tenantId?: string | null
+    email: string
+    name?: string | null
+    hashedPassword?: string | null
+    role?: $Enums.UserRole
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    avatarMediaId?: string | null
+    createdAssets?: AssetUncheckedCreateNestedManyWithoutCreatedByUserInput
+    chatMessages?: ChatMessageUncheckedCreateNestedManyWithoutSenderUserInput
+    chatParticipantsAddedBy?: ChatParticipantUncheckedCreateNestedManyWithoutAddedByInput
+    chatParticipants?: ChatParticipantUncheckedCreateNestedManyWithoutUserInput
+    cleanerProfile?: CleanerProfileUncheckedCreateNestedOneWithoutUserInput
+    cleanerReviewsReceived?: CleanerReviewUncheckedCreateNestedManyWithoutCleanerUserInput
+    cleanerReviewsGiven?: CleanerReviewUncheckedCreateNestedManyWithoutReviewerUserInput
+    cleanerVerificationDocuments?: CleanerVerificationDocumentUncheckedCreateNestedManyWithoutReviewedByInput
+    cleaningAssignments?: CleaningUncheckedCreateNestedManyWithoutAssignedToInput
+    hostWorkGroupInvitesClaimed?: HostWorkGroupInviteUncheckedCreateNestedManyWithoutClaimedByUserInput
+    hostWorkGroupInvitesCreated?: HostWorkGroupInviteUncheckedCreateNestedManyWithoutCreatedByUserInput
+    inventoryChecksCreated?: InventoryCheckUncheckedCreateNestedManyWithoutCreatedByInput
+    inventoryReportsAsCreator?: InventoryReportUncheckedCreateNestedManyWithoutCreatedByInput
+    inventoryReportsAsResolver?: InventoryReportUncheckedCreateNestedManyWithoutResolvedByInput
+    inventoryReviewsAsReviewer?: InventoryReviewUncheckedCreateNestedManyWithoutReviewedByInput
+    ownedProperties?: PropertyUncheckedCreateNestedManyWithoutUserInput
+    adminProperties?: PropertyAdminUncheckedCreateNestedManyWithoutUserInput
+    applications?: PropertyApplicationUncheckedCreateNestedManyWithoutApplicantUserInput
+    cleanerProperties?: PropertyCleanerUncheckedCreateNestedManyWithoutUserInput
+    handymanProperties?: PropertyHandymanUncheckedCreateNestedManyWithoutUserInput
+    propertyInvitesClaimed?: PropertyInviteUncheckedCreateNestedManyWithoutClaimedByUserInput
+    propertyInvitesCreated?: PropertyInviteUncheckedCreateNestedManyWithoutCreatedByUserInput
+    propertyMemberAccesses?: PropertyMemberAccessUncheckedCreateNestedManyWithoutUserInput
+    createdOpenings?: PropertyOpeningUncheckedCreateNestedManyWithoutCreatedByUserInput
+    assignedTaskJobs?: TaskJobUncheckedCreateNestedManyWithoutAssignedUserInput
+    taskJobEventLogs?: TaskJobEventLogUncheckedCreateNestedManyWithoutActorInput
+    inactivatedTeams?: TeamUncheckedCreateNestedManyWithoutInactivatedByUserInput
+    TeamInvite_TeamInvite_claimedByUserIdToUser?: TeamInviteUncheckedCreateNestedManyWithoutUser_TeamInvite_claimedByUserIdToUserInput
+    TeamInvite_TeamInvite_createdByUserIdToUser?: TeamInviteUncheckedCreateNestedManyWithoutUser_TeamInvite_createdByUserIdToUserInput
+    teamMembers?: TeamMemberUncheckedCreateNestedManyWithoutUserInput
+    TeamMembership?: TeamMembershipUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutAuditLogsAsActorInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAuditLogsAsActorInput, UserUncheckedCreateWithoutAuditLogsAsActorInput>
+  }
+
+  export type TenantCreateWithoutAuditLogsInput = {
+    id?: string
+    name: string
+    slug: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    assets?: AssetCreateNestedManyWithoutTenantInput
+    chatMessages?: ChatMessageCreateNestedManyWithoutTenantInput
+    chatThreads?: ChatThreadCreateNestedManyWithoutTenantInput
+    checklistItemAssets?: ChecklistItemAssetCreateNestedManyWithoutTenantInput
+    cleanings?: CleaningCreateNestedManyWithoutTenantInput
+    cleaningAssignees?: CleaningAssigneeCreateNestedManyWithoutTenantInput
+    cleaningChecklistItems?: CleaningChecklistItemCreateNestedManyWithoutTenantInput
+    cleaningMedia?: CleaningMediaCreateNestedManyWithoutTenantInput
+    cleaningViews?: CleaningViewCreateNestedManyWithoutTenantInput
+    hostWorkGroups?: HostWorkGroupCreateNestedManyWithoutTenantInput
+    hostWorkGroupInvites?: HostWorkGroupInviteCreateNestedManyWithoutTenantInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyCreateNestedManyWithoutTenantInput
+    inventoryChecks?: InventoryCheckCreateNestedManyWithoutTenantInput
+    inventoryEvidence?: InventoryEvidenceCreateNestedManyWithoutTenantInput
+    inventoryItems?: InventoryItemCreateNestedManyWithoutTenantInput
+    inventoryItemAssets?: InventoryItemAssetCreateNestedManyWithoutTenantInput
+    inventoryLines?: InventoryLineCreateNestedManyWithoutTenantInput
+    inventoryLineAssets?: InventoryLineAssetCreateNestedManyWithoutTenantInput
+    inventoryLogs?: InventoryLogCreateNestedManyWithoutTenantInput
+    inventoryReports?: InventoryReportCreateNestedManyWithoutTenantInput
+    inventoryReviews?: InventoryReviewCreateNestedManyWithoutTenantInput
+    inventoryReviewItemChanges?: InventoryReviewItemChangeCreateNestedManyWithoutTenantInput
+    locks?: LockCreateNestedManyWithoutTenantInput
+    lockCodes?: LockCodeCreateNestedManyWithoutTenantInput
+    metricEvents?: MetricEventCreateNestedManyWithoutTenantInput
+    properties?: PropertyCreateNestedManyWithoutTenantInput
+    propertyAdmins?: PropertyAdminCreateNestedManyWithoutTenantInput
+    propertyApplications?: PropertyApplicationCreateNestedManyWithoutTenantInput
+    propertyChecklistItems?: PropertyChecklistItemCreateNestedManyWithoutTenantInput
+    propertyCleaners?: PropertyCleanerCreateNestedManyWithoutTenantInput
+    propertyHandymen?: PropertyHandymanCreateNestedManyWithoutTenantInput
+    propertyInvites?: PropertyInviteCreateNestedManyWithoutTenantInput
+    propertyOpenings?: PropertyOpeningCreateNestedManyWithoutTenantInput
+    propertyTeams?: PropertyTeamCreateNestedManyWithoutTenantInput
+    propertyZones?: PropertyZoneCreateNestedManyWithoutTenantInput
+    reservations?: ReservationCreateNestedManyWithoutTenantInput
+    taskCarryForwards?: TaskCarryForwardCreateNestedManyWithoutTenantInput
+    taskJobs?: TaskJobCreateNestedManyWithoutTenantInput
+    taskRecurringDues?: TaskRecurringDueCreateNestedManyWithoutTenantInput
+    taskJobEventLogs?: TaskJobEventLogCreateNestedManyWithoutTenantInput
+    taskJobSections?: TaskJobSectionCreateNestedManyWithoutTenantInput
+    taskJobSectionEvidenceAssets?: TaskJobSectionEvidenceAssetCreateNestedManyWithoutTenantInput
+    taskJobSectionResponses?: TaskJobSectionResponseCreateNestedManyWithoutTenantInput
+    taskJobSteps?: TaskJobStepCreateNestedManyWithoutTenantInput
+    taskJobStepEvidenceAssets?: TaskJobStepEvidenceAssetCreateNestedManyWithoutTenantInput
+    taskJobStepResponses?: TaskJobStepResponseCreateNestedManyWithoutTenantInput
+    taskSectionReferenceAssets?: TaskSectionReferenceAssetCreateNestedManyWithoutTenantInput
+    taskSectionTemplates?: TaskSectionTemplateCreateNestedManyWithoutTenantInput
+    taskStepOptions?: TaskStepOptionCreateNestedManyWithoutTenantInput
+    taskStepReferenceAssets?: TaskStepReferenceAssetCreateNestedManyWithoutTenantInput
+    taskStepTemplates?: TaskStepTemplateCreateNestedManyWithoutTenantInput
+    taskTemplates?: TaskTemplateCreateNestedManyWithoutTenantInput
+    taskTemplateSchedules?: TaskTemplateScheduleCreateNestedManyWithoutTenantInput
+    teams?: TeamCreateNestedManyWithoutTenantInput
+    teamMembers?: TeamMemberCreateNestedManyWithoutTenantInput
+    teamMemberScheduleDays?: TeamMemberScheduleDayCreateNestedManyWithoutTenantInput
+    users?: UserCreateNestedManyWithoutTenantInput
+    variantGroups?: VariantGroupCreateNestedManyWithoutTenantInput
+    workGroupExecutorsHost?: WorkGroupExecutorCreateNestedManyWithoutHostTenantInput
+    workGroupExecutorsServices?: WorkGroupExecutorCreateNestedManyWithoutServicesTenantInput
+    notifications?: NotificationCreateNestedManyWithoutTenantInput
+    pushSubscriptions?: PushSubscriptionCreateNestedManyWithoutTenantInput
+  }
+
+  export type TenantUncheckedCreateWithoutAuditLogsInput = {
+    id?: string
+    name: string
+    slug: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    assets?: AssetUncheckedCreateNestedManyWithoutTenantInput
+    chatMessages?: ChatMessageUncheckedCreateNestedManyWithoutTenantInput
+    chatThreads?: ChatThreadUncheckedCreateNestedManyWithoutTenantInput
+    checklistItemAssets?: ChecklistItemAssetUncheckedCreateNestedManyWithoutTenantInput
+    cleanings?: CleaningUncheckedCreateNestedManyWithoutTenantInput
+    cleaningAssignees?: CleaningAssigneeUncheckedCreateNestedManyWithoutTenantInput
+    cleaningChecklistItems?: CleaningChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+    cleaningMedia?: CleaningMediaUncheckedCreateNestedManyWithoutTenantInput
+    cleaningViews?: CleaningViewUncheckedCreateNestedManyWithoutTenantInput
+    hostWorkGroups?: HostWorkGroupUncheckedCreateNestedManyWithoutTenantInput
+    hostWorkGroupInvites?: HostWorkGroupInviteUncheckedCreateNestedManyWithoutTenantInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyUncheckedCreateNestedManyWithoutTenantInput
+    inventoryChecks?: InventoryCheckUncheckedCreateNestedManyWithoutTenantInput
+    inventoryEvidence?: InventoryEvidenceUncheckedCreateNestedManyWithoutTenantInput
+    inventoryItems?: InventoryItemUncheckedCreateNestedManyWithoutTenantInput
+    inventoryItemAssets?: InventoryItemAssetUncheckedCreateNestedManyWithoutTenantInput
+    inventoryLines?: InventoryLineUncheckedCreateNestedManyWithoutTenantInput
+    inventoryLineAssets?: InventoryLineAssetUncheckedCreateNestedManyWithoutTenantInput
+    inventoryLogs?: InventoryLogUncheckedCreateNestedManyWithoutTenantInput
+    inventoryReports?: InventoryReportUncheckedCreateNestedManyWithoutTenantInput
+    inventoryReviews?: InventoryReviewUncheckedCreateNestedManyWithoutTenantInput
+    inventoryReviewItemChanges?: InventoryReviewItemChangeUncheckedCreateNestedManyWithoutTenantInput
+    locks?: LockUncheckedCreateNestedManyWithoutTenantInput
+    lockCodes?: LockCodeUncheckedCreateNestedManyWithoutTenantInput
+    metricEvents?: MetricEventUncheckedCreateNestedManyWithoutTenantInput
+    properties?: PropertyUncheckedCreateNestedManyWithoutTenantInput
+    propertyAdmins?: PropertyAdminUncheckedCreateNestedManyWithoutTenantInput
+    propertyApplications?: PropertyApplicationUncheckedCreateNestedManyWithoutTenantInput
+    propertyChecklistItems?: PropertyChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+    propertyCleaners?: PropertyCleanerUncheckedCreateNestedManyWithoutTenantInput
+    propertyHandymen?: PropertyHandymanUncheckedCreateNestedManyWithoutTenantInput
+    propertyInvites?: PropertyInviteUncheckedCreateNestedManyWithoutTenantInput
+    propertyOpenings?: PropertyOpeningUncheckedCreateNestedManyWithoutTenantInput
+    propertyTeams?: PropertyTeamUncheckedCreateNestedManyWithoutTenantInput
+    propertyZones?: PropertyZoneUncheckedCreateNestedManyWithoutTenantInput
+    reservations?: ReservationUncheckedCreateNestedManyWithoutTenantInput
+    taskCarryForwards?: TaskCarryForwardUncheckedCreateNestedManyWithoutTenantInput
+    taskJobs?: TaskJobUncheckedCreateNestedManyWithoutTenantInput
+    taskRecurringDues?: TaskRecurringDueUncheckedCreateNestedManyWithoutTenantInput
+    taskJobEventLogs?: TaskJobEventLogUncheckedCreateNestedManyWithoutTenantInput
+    taskJobSections?: TaskJobSectionUncheckedCreateNestedManyWithoutTenantInput
+    taskJobSectionEvidenceAssets?: TaskJobSectionEvidenceAssetUncheckedCreateNestedManyWithoutTenantInput
+    taskJobSectionResponses?: TaskJobSectionResponseUncheckedCreateNestedManyWithoutTenantInput
+    taskJobSteps?: TaskJobStepUncheckedCreateNestedManyWithoutTenantInput
+    taskJobStepEvidenceAssets?: TaskJobStepEvidenceAssetUncheckedCreateNestedManyWithoutTenantInput
+    taskJobStepResponses?: TaskJobStepResponseUncheckedCreateNestedManyWithoutTenantInput
+    taskSectionReferenceAssets?: TaskSectionReferenceAssetUncheckedCreateNestedManyWithoutTenantInput
+    taskSectionTemplates?: TaskSectionTemplateUncheckedCreateNestedManyWithoutTenantInput
+    taskStepOptions?: TaskStepOptionUncheckedCreateNestedManyWithoutTenantInput
+    taskStepReferenceAssets?: TaskStepReferenceAssetUncheckedCreateNestedManyWithoutTenantInput
+    taskStepTemplates?: TaskStepTemplateUncheckedCreateNestedManyWithoutTenantInput
+    taskTemplates?: TaskTemplateUncheckedCreateNestedManyWithoutTenantInput
+    taskTemplateSchedules?: TaskTemplateScheduleUncheckedCreateNestedManyWithoutTenantInput
+    teams?: TeamUncheckedCreateNestedManyWithoutTenantInput
+    teamMembers?: TeamMemberUncheckedCreateNestedManyWithoutTenantInput
+    teamMemberScheduleDays?: TeamMemberScheduleDayUncheckedCreateNestedManyWithoutTenantInput
+    users?: UserUncheckedCreateNestedManyWithoutTenantInput
+    variantGroups?: VariantGroupUncheckedCreateNestedManyWithoutTenantInput
+    workGroupExecutorsHost?: WorkGroupExecutorUncheckedCreateNestedManyWithoutHostTenantInput
+    workGroupExecutorsServices?: WorkGroupExecutorUncheckedCreateNestedManyWithoutServicesTenantInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutTenantInput
+    pushSubscriptions?: PushSubscriptionUncheckedCreateNestedManyWithoutTenantInput
+  }
+
+  export type TenantCreateOrConnectWithoutAuditLogsInput = {
+    where: TenantWhereUniqueInput
+    create: XOR<TenantCreateWithoutAuditLogsInput, TenantUncheckedCreateWithoutAuditLogsInput>
+  }
+
+  export type UserUpsertWithoutAuditLogsAsActorInput = {
+    update: XOR<UserUpdateWithoutAuditLogsAsActorInput, UserUncheckedUpdateWithoutAuditLogsAsActorInput>
+    create: XOR<UserCreateWithoutAuditLogsAsActorInput, UserUncheckedCreateWithoutAuditLogsAsActorInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAuditLogsAsActorInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAuditLogsAsActorInput, UserUncheckedUpdateWithoutAuditLogsAsActorInput>
+  }
+
+  export type UserUpdateWithoutAuditLogsAsActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    hashedPassword?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAssets?: AssetUpdateManyWithoutCreatedByUserNestedInput
+    chatMessages?: ChatMessageUpdateManyWithoutSenderUserNestedInput
+    chatParticipantsAddedBy?: ChatParticipantUpdateManyWithoutAddedByNestedInput
+    chatParticipants?: ChatParticipantUpdateManyWithoutUserNestedInput
+    cleanerProfile?: CleanerProfileUpdateOneWithoutUserNestedInput
+    cleanerReviewsReceived?: CleanerReviewUpdateManyWithoutCleanerUserNestedInput
+    cleanerReviewsGiven?: CleanerReviewUpdateManyWithoutReviewerUserNestedInput
+    cleanerVerificationDocuments?: CleanerVerificationDocumentUpdateManyWithoutReviewedByNestedInput
+    cleaningAssignments?: CleaningUpdateManyWithoutAssignedToNestedInput
+    hostWorkGroupInvitesClaimed?: HostWorkGroupInviteUpdateManyWithoutClaimedByUserNestedInput
+    hostWorkGroupInvitesCreated?: HostWorkGroupInviteUpdateManyWithoutCreatedByUserNestedInput
+    inventoryChecksCreated?: InventoryCheckUpdateManyWithoutCreatedByNestedInput
+    inventoryReportsAsCreator?: InventoryReportUpdateManyWithoutCreatedByNestedInput
+    inventoryReportsAsResolver?: InventoryReportUpdateManyWithoutResolvedByNestedInput
+    inventoryReviewsAsReviewer?: InventoryReviewUpdateManyWithoutReviewedByNestedInput
+    ownedProperties?: PropertyUpdateManyWithoutUserNestedInput
+    adminProperties?: PropertyAdminUpdateManyWithoutUserNestedInput
+    applications?: PropertyApplicationUpdateManyWithoutApplicantUserNestedInput
+    cleanerProperties?: PropertyCleanerUpdateManyWithoutUserNestedInput
+    handymanProperties?: PropertyHandymanUpdateManyWithoutUserNestedInput
+    propertyInvitesClaimed?: PropertyInviteUpdateManyWithoutClaimedByUserNestedInput
+    propertyInvitesCreated?: PropertyInviteUpdateManyWithoutCreatedByUserNestedInput
+    propertyMemberAccesses?: PropertyMemberAccessUpdateManyWithoutUserNestedInput
+    createdOpenings?: PropertyOpeningUpdateManyWithoutCreatedByUserNestedInput
+    assignedTaskJobs?: TaskJobUpdateManyWithoutAssignedUserNestedInput
+    taskJobEventLogs?: TaskJobEventLogUpdateManyWithoutActorNestedInput
+    inactivatedTeams?: TeamUpdateManyWithoutInactivatedByUserNestedInput
+    TeamInvite_TeamInvite_claimedByUserIdToUser?: TeamInviteUpdateManyWithoutUser_TeamInvite_claimedByUserIdToUserNestedInput
+    TeamInvite_TeamInvite_createdByUserIdToUser?: TeamInviteUpdateManyWithoutUser_TeamInvite_createdByUserIdToUserNestedInput
+    teamMembers?: TeamMemberUpdateManyWithoutUserNestedInput
+    TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
+    tenant?: TenantUpdateOneWithoutUsersNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAuditLogsAsActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    hashedPassword?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    avatarMediaId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAssets?: AssetUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    chatMessages?: ChatMessageUncheckedUpdateManyWithoutSenderUserNestedInput
+    chatParticipantsAddedBy?: ChatParticipantUncheckedUpdateManyWithoutAddedByNestedInput
+    chatParticipants?: ChatParticipantUncheckedUpdateManyWithoutUserNestedInput
+    cleanerProfile?: CleanerProfileUncheckedUpdateOneWithoutUserNestedInput
+    cleanerReviewsReceived?: CleanerReviewUncheckedUpdateManyWithoutCleanerUserNestedInput
+    cleanerReviewsGiven?: CleanerReviewUncheckedUpdateManyWithoutReviewerUserNestedInput
+    cleanerVerificationDocuments?: CleanerVerificationDocumentUncheckedUpdateManyWithoutReviewedByNestedInput
+    cleaningAssignments?: CleaningUncheckedUpdateManyWithoutAssignedToNestedInput
+    hostWorkGroupInvitesClaimed?: HostWorkGroupInviteUncheckedUpdateManyWithoutClaimedByUserNestedInput
+    hostWorkGroupInvitesCreated?: HostWorkGroupInviteUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    inventoryChecksCreated?: InventoryCheckUncheckedUpdateManyWithoutCreatedByNestedInput
+    inventoryReportsAsCreator?: InventoryReportUncheckedUpdateManyWithoutCreatedByNestedInput
+    inventoryReportsAsResolver?: InventoryReportUncheckedUpdateManyWithoutResolvedByNestedInput
+    inventoryReviewsAsReviewer?: InventoryReviewUncheckedUpdateManyWithoutReviewedByNestedInput
+    ownedProperties?: PropertyUncheckedUpdateManyWithoutUserNestedInput
+    adminProperties?: PropertyAdminUncheckedUpdateManyWithoutUserNestedInput
+    applications?: PropertyApplicationUncheckedUpdateManyWithoutApplicantUserNestedInput
+    cleanerProperties?: PropertyCleanerUncheckedUpdateManyWithoutUserNestedInput
+    handymanProperties?: PropertyHandymanUncheckedUpdateManyWithoutUserNestedInput
+    propertyInvitesClaimed?: PropertyInviteUncheckedUpdateManyWithoutClaimedByUserNestedInput
+    propertyInvitesCreated?: PropertyInviteUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    propertyMemberAccesses?: PropertyMemberAccessUncheckedUpdateManyWithoutUserNestedInput
+    createdOpenings?: PropertyOpeningUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    assignedTaskJobs?: TaskJobUncheckedUpdateManyWithoutAssignedUserNestedInput
+    taskJobEventLogs?: TaskJobEventLogUncheckedUpdateManyWithoutActorNestedInput
+    inactivatedTeams?: TeamUncheckedUpdateManyWithoutInactivatedByUserNestedInput
+    TeamInvite_TeamInvite_claimedByUserIdToUser?: TeamInviteUncheckedUpdateManyWithoutUser_TeamInvite_claimedByUserIdToUserNestedInput
+    TeamInvite_TeamInvite_createdByUserIdToUser?: TeamInviteUncheckedUpdateManyWithoutUser_TeamInvite_createdByUserIdToUserNestedInput
+    teamMembers?: TeamMemberUncheckedUpdateManyWithoutUserNestedInput
+    TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type TenantUpsertWithoutAuditLogsInput = {
+    update: XOR<TenantUpdateWithoutAuditLogsInput, TenantUncheckedUpdateWithoutAuditLogsInput>
+    create: XOR<TenantCreateWithoutAuditLogsInput, TenantUncheckedCreateWithoutAuditLogsInput>
+    where?: TenantWhereInput
+  }
+
+  export type TenantUpdateToOneWithWhereWithoutAuditLogsInput = {
+    where?: TenantWhereInput
+    data: XOR<TenantUpdateWithoutAuditLogsInput, TenantUncheckedUpdateWithoutAuditLogsInput>
+  }
+
+  export type TenantUpdateWithoutAuditLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    assets?: AssetUpdateManyWithoutTenantNestedInput
+    chatMessages?: ChatMessageUpdateManyWithoutTenantNestedInput
+    chatThreads?: ChatThreadUpdateManyWithoutTenantNestedInput
+    checklistItemAssets?: ChecklistItemAssetUpdateManyWithoutTenantNestedInput
+    cleanings?: CleaningUpdateManyWithoutTenantNestedInput
+    cleaningAssignees?: CleaningAssigneeUpdateManyWithoutTenantNestedInput
+    cleaningChecklistItems?: CleaningChecklistItemUpdateManyWithoutTenantNestedInput
+    cleaningMedia?: CleaningMediaUpdateManyWithoutTenantNestedInput
+    cleaningViews?: CleaningViewUpdateManyWithoutTenantNestedInput
+    hostWorkGroups?: HostWorkGroupUpdateManyWithoutTenantNestedInput
+    hostWorkGroupInvites?: HostWorkGroupInviteUpdateManyWithoutTenantNestedInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyUpdateManyWithoutTenantNestedInput
+    inventoryChecks?: InventoryCheckUpdateManyWithoutTenantNestedInput
+    inventoryEvidence?: InventoryEvidenceUpdateManyWithoutTenantNestedInput
+    inventoryItems?: InventoryItemUpdateManyWithoutTenantNestedInput
+    inventoryItemAssets?: InventoryItemAssetUpdateManyWithoutTenantNestedInput
+    inventoryLines?: InventoryLineUpdateManyWithoutTenantNestedInput
+    inventoryLineAssets?: InventoryLineAssetUpdateManyWithoutTenantNestedInput
+    inventoryLogs?: InventoryLogUpdateManyWithoutTenantNestedInput
+    inventoryReports?: InventoryReportUpdateManyWithoutTenantNestedInput
+    inventoryReviews?: InventoryReviewUpdateManyWithoutTenantNestedInput
+    inventoryReviewItemChanges?: InventoryReviewItemChangeUpdateManyWithoutTenantNestedInput
+    locks?: LockUpdateManyWithoutTenantNestedInput
+    lockCodes?: LockCodeUpdateManyWithoutTenantNestedInput
+    metricEvents?: MetricEventUpdateManyWithoutTenantNestedInput
+    properties?: PropertyUpdateManyWithoutTenantNestedInput
+    propertyAdmins?: PropertyAdminUpdateManyWithoutTenantNestedInput
+    propertyApplications?: PropertyApplicationUpdateManyWithoutTenantNestedInput
+    propertyChecklistItems?: PropertyChecklistItemUpdateManyWithoutTenantNestedInput
+    propertyCleaners?: PropertyCleanerUpdateManyWithoutTenantNestedInput
+    propertyHandymen?: PropertyHandymanUpdateManyWithoutTenantNestedInput
+    propertyInvites?: PropertyInviteUpdateManyWithoutTenantNestedInput
+    propertyOpenings?: PropertyOpeningUpdateManyWithoutTenantNestedInput
+    propertyTeams?: PropertyTeamUpdateManyWithoutTenantNestedInput
+    propertyZones?: PropertyZoneUpdateManyWithoutTenantNestedInput
+    reservations?: ReservationUpdateManyWithoutTenantNestedInput
+    taskCarryForwards?: TaskCarryForwardUpdateManyWithoutTenantNestedInput
+    taskJobs?: TaskJobUpdateManyWithoutTenantNestedInput
+    taskRecurringDues?: TaskRecurringDueUpdateManyWithoutTenantNestedInput
+    taskJobEventLogs?: TaskJobEventLogUpdateManyWithoutTenantNestedInput
+    taskJobSections?: TaskJobSectionUpdateManyWithoutTenantNestedInput
+    taskJobSectionEvidenceAssets?: TaskJobSectionEvidenceAssetUpdateManyWithoutTenantNestedInput
+    taskJobSectionResponses?: TaskJobSectionResponseUpdateManyWithoutTenantNestedInput
+    taskJobSteps?: TaskJobStepUpdateManyWithoutTenantNestedInput
+    taskJobStepEvidenceAssets?: TaskJobStepEvidenceAssetUpdateManyWithoutTenantNestedInput
+    taskJobStepResponses?: TaskJobStepResponseUpdateManyWithoutTenantNestedInput
+    taskSectionReferenceAssets?: TaskSectionReferenceAssetUpdateManyWithoutTenantNestedInput
+    taskSectionTemplates?: TaskSectionTemplateUpdateManyWithoutTenantNestedInput
+    taskStepOptions?: TaskStepOptionUpdateManyWithoutTenantNestedInput
+    taskStepReferenceAssets?: TaskStepReferenceAssetUpdateManyWithoutTenantNestedInput
+    taskStepTemplates?: TaskStepTemplateUpdateManyWithoutTenantNestedInput
+    taskTemplates?: TaskTemplateUpdateManyWithoutTenantNestedInput
+    taskTemplateSchedules?: TaskTemplateScheduleUpdateManyWithoutTenantNestedInput
+    teams?: TeamUpdateManyWithoutTenantNestedInput
+    teamMembers?: TeamMemberUpdateManyWithoutTenantNestedInput
+    teamMemberScheduleDays?: TeamMemberScheduleDayUpdateManyWithoutTenantNestedInput
+    users?: UserUpdateManyWithoutTenantNestedInput
+    variantGroups?: VariantGroupUpdateManyWithoutTenantNestedInput
+    workGroupExecutorsHost?: WorkGroupExecutorUpdateManyWithoutHostTenantNestedInput
+    workGroupExecutorsServices?: WorkGroupExecutorUpdateManyWithoutServicesTenantNestedInput
+    notifications?: NotificationUpdateManyWithoutTenantNestedInput
+    pushSubscriptions?: PushSubscriptionUpdateManyWithoutTenantNestedInput
+  }
+
+  export type TenantUncheckedUpdateWithoutAuditLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    slug?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    assets?: AssetUncheckedUpdateManyWithoutTenantNestedInput
+    chatMessages?: ChatMessageUncheckedUpdateManyWithoutTenantNestedInput
+    chatThreads?: ChatThreadUncheckedUpdateManyWithoutTenantNestedInput
+    checklistItemAssets?: ChecklistItemAssetUncheckedUpdateManyWithoutTenantNestedInput
+    cleanings?: CleaningUncheckedUpdateManyWithoutTenantNestedInput
+    cleaningAssignees?: CleaningAssigneeUncheckedUpdateManyWithoutTenantNestedInput
+    cleaningChecklistItems?: CleaningChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+    cleaningMedia?: CleaningMediaUncheckedUpdateManyWithoutTenantNestedInput
+    cleaningViews?: CleaningViewUncheckedUpdateManyWithoutTenantNestedInput
+    hostWorkGroups?: HostWorkGroupUncheckedUpdateManyWithoutTenantNestedInput
+    hostWorkGroupInvites?: HostWorkGroupInviteUncheckedUpdateManyWithoutTenantNestedInput
+    hostWorkGroupProperties?: HostWorkGroupPropertyUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryChecks?: InventoryCheckUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryEvidence?: InventoryEvidenceUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryItems?: InventoryItemUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryItemAssets?: InventoryItemAssetUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryLines?: InventoryLineUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryLineAssets?: InventoryLineAssetUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryLogs?: InventoryLogUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryReports?: InventoryReportUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryReviews?: InventoryReviewUncheckedUpdateManyWithoutTenantNestedInput
+    inventoryReviewItemChanges?: InventoryReviewItemChangeUncheckedUpdateManyWithoutTenantNestedInput
+    locks?: LockUncheckedUpdateManyWithoutTenantNestedInput
+    lockCodes?: LockCodeUncheckedUpdateManyWithoutTenantNestedInput
+    metricEvents?: MetricEventUncheckedUpdateManyWithoutTenantNestedInput
+    properties?: PropertyUncheckedUpdateManyWithoutTenantNestedInput
+    propertyAdmins?: PropertyAdminUncheckedUpdateManyWithoutTenantNestedInput
+    propertyApplications?: PropertyApplicationUncheckedUpdateManyWithoutTenantNestedInput
+    propertyChecklistItems?: PropertyChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+    propertyCleaners?: PropertyCleanerUncheckedUpdateManyWithoutTenantNestedInput
+    propertyHandymen?: PropertyHandymanUncheckedUpdateManyWithoutTenantNestedInput
+    propertyInvites?: PropertyInviteUncheckedUpdateManyWithoutTenantNestedInput
+    propertyOpenings?: PropertyOpeningUncheckedUpdateManyWithoutTenantNestedInput
+    propertyTeams?: PropertyTeamUncheckedUpdateManyWithoutTenantNestedInput
+    propertyZones?: PropertyZoneUncheckedUpdateManyWithoutTenantNestedInput
+    reservations?: ReservationUncheckedUpdateManyWithoutTenantNestedInput
+    taskCarryForwards?: TaskCarryForwardUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobs?: TaskJobUncheckedUpdateManyWithoutTenantNestedInput
+    taskRecurringDues?: TaskRecurringDueUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobEventLogs?: TaskJobEventLogUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobSections?: TaskJobSectionUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobSectionEvidenceAssets?: TaskJobSectionEvidenceAssetUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobSectionResponses?: TaskJobSectionResponseUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobSteps?: TaskJobStepUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobStepEvidenceAssets?: TaskJobStepEvidenceAssetUncheckedUpdateManyWithoutTenantNestedInput
+    taskJobStepResponses?: TaskJobStepResponseUncheckedUpdateManyWithoutTenantNestedInput
+    taskSectionReferenceAssets?: TaskSectionReferenceAssetUncheckedUpdateManyWithoutTenantNestedInput
+    taskSectionTemplates?: TaskSectionTemplateUncheckedUpdateManyWithoutTenantNestedInput
+    taskStepOptions?: TaskStepOptionUncheckedUpdateManyWithoutTenantNestedInput
+    taskStepReferenceAssets?: TaskStepReferenceAssetUncheckedUpdateManyWithoutTenantNestedInput
+    taskStepTemplates?: TaskStepTemplateUncheckedUpdateManyWithoutTenantNestedInput
+    taskTemplates?: TaskTemplateUncheckedUpdateManyWithoutTenantNestedInput
+    taskTemplateSchedules?: TaskTemplateScheduleUncheckedUpdateManyWithoutTenantNestedInput
+    teams?: TeamUncheckedUpdateManyWithoutTenantNestedInput
+    teamMembers?: TeamMemberUncheckedUpdateManyWithoutTenantNestedInput
+    teamMemberScheduleDays?: TeamMemberScheduleDayUncheckedUpdateManyWithoutTenantNestedInput
+    users?: UserUncheckedUpdateManyWithoutTenantNestedInput
+    variantGroups?: VariantGroupUncheckedUpdateManyWithoutTenantNestedInput
+    workGroupExecutorsHost?: WorkGroupExecutorUncheckedUpdateManyWithoutHostTenantNestedInput
+    workGroupExecutorsServices?: WorkGroupExecutorUncheckedUpdateManyWithoutServicesTenantNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutTenantNestedInput
+    pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   }
 
   export type AssetCreateManyTenantInput = {
@@ -197486,6 +200212,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -197501,6 +200228,18 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     revokedAt?: Date | string | null
+  }
+
+  export type AuditLogCreateManyTenantInput = {
+    id?: string
+    actorId?: string | null
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
   }
 
   export type AssetUpdateWithoutTenantInput = {
@@ -200003,6 +202742,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUpdateManyWithoutActorNestedInput
     avatarMedia?: AssetUpdateOneWithoutUserAvatarNestedInput
   }
 
@@ -200048,6 +202788,7 @@ export namespace Prisma {
     TeamMembership?: TeamMembershipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     pushSubscriptions?: PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+    auditLogsAsActor?: AuditLogUncheckedUpdateManyWithoutActorNestedInput
   }
 
   export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -200157,6 +202898,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -200172,6 +202914,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -200186,6 +202929,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -200225,6 +202969,42 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     revokedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type AuditLogUpdateWithoutTenantInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    actor?: UserUpdateOneWithoutAuditLogsAsActorNestedInput
+  }
+
+  export type AuditLogUncheckedUpdateWithoutTenantInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AuditLogUncheckedUpdateManyWithoutTenantInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AssetCreateManyCreatedByUserInput = {
@@ -200646,6 +203426,7 @@ export namespace Prisma {
     href?: string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: Date | string | null
+    deletedAt?: Date | string | null
     dedupeKey?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -200661,6 +203442,18 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     revokedAt?: Date | string | null
+  }
+
+  export type AuditLogCreateManyActorInput = {
+    id?: string
+    tenantId?: string | null
+    actorRole?: string | null
+    action: string
+    resource: string
+    resourceId?: string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: string | null
+    createdAt?: Date | string
   }
 
   export type AssetUpdateWithoutCreatedByUserInput = {
@@ -202053,6 +204846,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -202068,6 +204862,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -202082,6 +204877,7 @@ export namespace Prisma {
     href?: NullableStringFieldUpdateOperationsInput | string | null
     data?: NullableJsonNullValueInput | InputJsonValue
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     dedupeKey?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -202121,6 +204917,42 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     revokedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type AuditLogUpdateWithoutActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tenant?: TenantUpdateOneWithoutAuditLogsNestedInput
+  }
+
+  export type AuditLogUncheckedUpdateWithoutActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AuditLogUncheckedUpdateManyWithoutActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    tenantId?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: StringFieldUpdateOperationsInput | string
+    resource?: StringFieldUpdateOperationsInput | string
+    resourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    ip?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CleanerAvailabilitySlotCreateManyCleanerProfileInput = {

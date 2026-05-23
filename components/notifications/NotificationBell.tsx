@@ -15,6 +15,7 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -31,10 +32,11 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const res = await fetch("/api/notifications?limit=30", { cache: "no-store" });
+      const res = await fetch("/api/notifications?limit=5", { cache: "no-store" });
       if (!res.ok) return;
       const data = (await res.json()) as { notifications: NotificationItem[]; total: number };
       setNotifications(data.notifications);
+      setTotalCount(data.total);
       setUnreadCount(data.notifications.filter((n) => !n.readAt).length);
       setLoaded(true);
     } catch {
@@ -82,6 +84,22 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
         prev.map((n) => (n.id === id ? { ...n, readAt: new Date() } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch {
+      // silencioso
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const target = notifications.find((n) => n.id === id);
+    try {
+      await fetch("/api/notifications/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setTotalCount((prev) => Math.max(0, prev - 1));
+      if (target && !target.readAt) setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {
       // silencioso
     }
@@ -137,9 +155,11 @@ export default function NotificationBell({ openUp = false }: { openUp?: boolean 
       {isOpen && (
         <NotificationPanel
           notifications={notifications}
+          total={totalCount}
           onClose={() => setIsOpen(false)}
           onMarkRead={handleMarkRead}
           onMarkAllRead={handleMarkAllRead}
+          onDelete={handleDelete}
           openUp={openUp}
         />
       )}
