@@ -62,13 +62,18 @@ export default async function PropertiesPage({
   );
 
   // Grupos existentes para el selector del formulario de nueva propiedad
+  const rawGroupNames = properties.map((p) => p.groupName?.trim() ?? null);
   const existingGroups = Array.from(
     new Set(
-      properties
-        .map((p) => p.groupName?.trim())
-        .filter((g): g is string => Boolean(g))
+      rawGroupNames.filter((g): g is string => Boolean(g))
     )
   ).sort();
+
+  console.log("[PROPERTY_GROUPS_DIAG] route=/host/properties", {
+    propertiesCount: properties.length,
+    rawGroupNames,
+    existingGroups,
+  });
 
   // Helper para construir returnTo (para detalles de propiedad)
   // MUST: Cuando se navega desde la lista, siempre usar /host/properties como returnTo

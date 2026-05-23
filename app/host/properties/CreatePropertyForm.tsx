@@ -91,6 +91,7 @@ export default function CreatePropertyForm({ existingGroups = [] }: { existingGr
   const [checkOutTime, setCheckOutTime] = useState("");
   const [icalUrl, setIcalUrl] = useState("");
   const [groupName, setGroupName] = useState("");
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const currentStep = STEPS[stepIndex];
@@ -119,6 +120,7 @@ export default function CreatePropertyForm({ existingGroups = [] }: { existingGr
     setCheckOutTime("");
     setIcalUrl("");
     setGroupName("");
+    setIsCreatingNew(false);
   }, []);
 
   const handleOpen = () => setIsOpen(true);
@@ -471,44 +473,83 @@ export default function CreatePropertyForm({ existingGroups = [] }: { existingGr
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-neutral-800">
-                        Grupo
-                        <span className="text-neutral-500"> *</span>
-                      </label>
-                      <input
-                        name="groupName"
-                        value={groupName}
-                        onChange={(e) => setGroupName(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-500 focus:ring-2 focus:ring-black/5"
-                        placeholder="Ej. Centro"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      {existingGroups.length > 0 && (
-                        <p className="text-xs text-neutral-500">Tus grupos</p>
-                      )}
-                      <div className="flex flex-wrap gap-2">
-                        {(existingGroups.length > 0 ? existingGroups : GROUP_EXAMPLES).map((chip) => {
-                          const isActive = groupName.trim().toLowerCase() === chip.trim().toLowerCase();
-                          return (
-                            <button
-                              key={chip}
-                              type="button"
-                              onClick={() => setGroupName(chip)}
-                              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 ${
-                                isActive
-                                  ? "border-neutral-950 bg-neutral-950 text-white"
-                                  : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-                              }`}
-                            >
-                              {chip}
-                            </button>
-                          );
-                        })}
+                    {existingGroups.length > 0 && !isCreatingNew ? (
+                      /* ── Modo selección: hay grupos existentes ── */
+                      <div className="space-y-3">
+                        <p className="text-xs font-medium text-neutral-500">Tus grupos</p>
+                        <div className="flex flex-wrap gap-2">
+                          {existingGroups.map((chip) => {
+                            const isActive = groupName.trim().toLowerCase() === chip.trim().toLowerCase();
+                            return (
+                              <button
+                                key={chip}
+                                type="button"
+                                onClick={() => setGroupName(chip)}
+                                className={`rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 ${
+                                  isActive
+                                    ? "border-neutral-950 bg-neutral-950 text-white"
+                                    : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                                }`}
+                              >
+                                {chip}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setIsCreatingNew(true); setGroupName(""); }}
+                          className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800 transition"
+                        >
+                          <span className="text-base leading-none">+</span>
+                          Crear grupo nuevo
+                        </button>
                       </div>
-                    </div>
+                    ) : (
+                      /* ── Modo escritura: sin grupos o creando nuevo ── */
+                      <div className="space-y-3">
+                        {existingGroups.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => { setIsCreatingNew(false); setGroupName(""); }}
+                            className="flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-800 transition"
+                          >
+                            ← Elegir grupo existente
+                          </button>
+                        )}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-medium text-neutral-800">
+                            Nombre del grupo
+                            <span className="text-neutral-500"> *</span>
+                          </label>
+                          <input
+                            name="groupName"
+                            value={groupName}
+                            onChange={(e) => setGroupName(e.target.value)}
+                            autoFocus={isCreatingNew}
+                            className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-500 focus:ring-2 focus:ring-black/5"
+                            placeholder="Ej. Centro, Playa, Torre A…"
+                          />
+                        </div>
+                        {existingGroups.length === 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs text-neutral-400">Ejemplos:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {GROUP_EXAMPLES.map((example) => (
+                                <button
+                                  key={example}
+                                  type="button"
+                                  onClick={() => setGroupName(example)}
+                                  className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:bg-neutral-50"
+                                >
+                                  {example}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

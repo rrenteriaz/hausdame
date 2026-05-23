@@ -41,6 +41,10 @@ export default async function HoyPage({
   ]);
 
   if (properties.length === 0) {
+    console.log("[PROPERTY_GROUPS_DIAG] route=/host/hoy (empty state)", {
+      propertiesCount: 0,
+      existingGroups: [],
+    });
     return (
       <Page
         title="Actividad"
