@@ -370,6 +370,19 @@ export default function EditPropertyModal({ property, returnTo }: EditPropertyMo
     setIsOpen(true);
   };
 
+  // Abre el modal cuando el card de setup despacha el evento (Continuar configuración).
+  // detail.propertyId discrimina si hay múltiples instancias montadas simultáneamente.
+  useEffect(() => {
+    function onOpenFromSetupCard(e: Event) {
+      const { propertyId: targetId } = (e as CustomEvent<{ propertyId: string }>).detail ?? {};
+      if (targetId && targetId !== property.id) return;
+      handleOpen();
+    }
+    window.addEventListener("hausdame:open-property-edit", onOpenFromSetupCard);
+    return () => window.removeEventListener("hausdame:open-property-edit", onOpenFromSetupCard);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property.id]);
+
   // Prefill coordenadas manuales cuando se abre la sección colapsable
   const handleManualCoordsToggle = (isOpen: boolean) => {
     if (isOpen) {

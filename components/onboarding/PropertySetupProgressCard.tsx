@@ -143,12 +143,22 @@ export default function PropertySetupProgressCard({
 
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto lg:shrink-0">
           {currentItem && (
-            <Link
-              href={getItemHref(currentItem, propertyId, returnTo)}
-              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 lg:w-auto"
-            >
-              Continuar configuración
-            </Link>
+            editKeys.has(currentItem.key) ? (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("hausdame:open-property-edit", { detail: { propertyId } }))}
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 lg:w-auto"
+              >
+                Continuar configuración
+              </button>
+            ) : (
+              <Link
+                href={getItemHref(currentItem, propertyId, returnTo)}
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 lg:w-auto"
+              >
+                Continuar configuración
+              </Link>
+            )
           )}
           <button
             type="button"
