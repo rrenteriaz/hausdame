@@ -362,34 +362,49 @@ async function executeSyncCore(
         reservationEnd.setHours(0, 0, 0, 0);
 
         if (reservationStart > today) {
-          await (prisma as any).cleaning.update({
-            where: { id: cleaning.id },
-            data: { status: "CANCELLED" },
-          });
-
-          // Notificar al cleaner asignado si la limpieza tenía asignación y no estaba ya cancelada
-          if (cleaning.assignedMembershipId && cleaning.status !== "CANCELLED") {
-            const membership = await prisma.teamMembership.findUnique({
-              where: { id: cleaning.assignedMembershipId },
-              select: { userId: true },
+          // Reserva desaparece antes del check-in.
+          // isScheduleOverridden: el host ya intervino manualmente en la fecha → no cancelar.
+          // IN_PROGRESS: el cleaner ya inició → no cancelar.
+          // PENDING sin override: cancelar aunque tenga asignación automática.
+          if (cleaning.isScheduleOverridden || cleaning.status === "IN_PROGRESS") {
+            await (prisma as any).cleaning.update({
+              where: { id: cleaning.id },
+              data: {
+                needsAttention: true,
+                attentionReason: "ORPHANED_BY_SYNC",
+              },
             });
-            if (membership?.userId) {
-              await createNotification({
-                tenantId,
-                userId: membership.userId,
-                type: "SYSTEM",
-                title: "Limpieza cancelada",
-                body: `La limpieza programada en ${cleaning.propertyShortName ?? cleaning.propertyName ?? property.shortName ?? property.name} fue cancelada.`,
-                href: "/cleaner",
-                dedupeKey: `cleaning:${cleaning.id}:cancelled`,
-                sendPush: true,
+          } else {
+            await (prisma as any).cleaning.update({
+              where: { id: cleaning.id },
+              data: { status: "CANCELLED" },
+            });
+
+            // Notificar al cleaner asignado si la limpieza tenía asignación y no estaba ya cancelada
+            if (cleaning.assignedMembershipId && cleaning.status !== "CANCELLED") {
+              const membership = await prisma.teamMembership.findUnique({
+                where: { id: cleaning.assignedMembershipId },
+                select: { userId: true },
               });
+              if (membership?.userId) {
+                await createNotification({
+                  tenantId,
+                  userId: membership.userId,
+                  type: "SYSTEM",
+                  title: "Limpieza cancelada",
+                  body: `La limpieza programada en ${cleaning.propertyShortName ?? cleaning.propertyName ?? property.shortName ?? property.name} fue cancelada.`,
+                  href: "/cleaner",
+                  dedupeKey: `cleaning:${cleaning.id}:cancelled`,
+                  sendPush: true,
+                });
+              }
             }
           }
         } else if (
           reservationStart <= today &&
           today < reservationEnd
         ) {
+          // Estancia en curso — reprogramar a mañana sin cancelar.
           const tomorrow = new Date(today);
           tomorrow.setDate(tomorrow.getDate() + 1);
           const newScheduledAt = calculateCleaningDate(

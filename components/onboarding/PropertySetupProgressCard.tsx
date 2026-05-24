@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import type {
   PropertySetupItem,
   PropertySetupItemKey,
@@ -26,14 +26,6 @@ const editKeys = new Set<PropertySetupItemKey>([
   "wifi",
   "ical-health",
 ]);
-
-function getSnapshot(storageKey: string) {
-  try {
-    return window.localStorage.getItem(storageKey) === "1";
-  } catch {
-    return false;
-  }
-}
 
 function getItemHref(item: PropertySetupItem, propertyId: string, returnTo: string) {
   if (item.key === "workgroup" || item.key === "executor") {
@@ -85,21 +77,11 @@ function SetupItemRow({ item }: { item: PropertySetupItem }) {
 export default function PropertySetupProgressCard({
   progress,
   propertyId,
-  storageKey,
+  storageKey: _storageKey,
   returnTo,
 }: PropertySetupProgressCardProps) {
-  const dismissed = useSyncExternalStore(
-    (onStoreChange) => {
-      window.addEventListener("storage", onStoreChange);
-      window.addEventListener("hausdame:onboarding-storage", onStoreChange);
-      return () => {
-        window.removeEventListener("storage", onStoreChange);
-        window.removeEventListener("hausdame:onboarding-storage", onStoreChange);
-      };
-    },
-    () => getSnapshot(storageKey),
-    () => false
-  );
+  // Dismissed solo durante la vida de esta vista — no persiste en DB, localStorage ni cookies.
+  const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   if (dismissed || (progress.isOperational && !progress.hasWarnings)) {
@@ -115,15 +97,6 @@ export default function PropertySetupProgressCard({
   const recommendedItems = progress.items.filter(
     (item) => item.category === "recommended"
   );
-
-  function dismissCard() {
-    try {
-      window.localStorage.setItem(storageKey, "1");
-      window.dispatchEvent(new Event("hausdame:onboarding-storage"));
-    } catch {
-      // localStorage can be unavailable in private or restricted contexts.
-    }
-  }
 
   return (
     <section
@@ -174,24 +147,16 @@ export default function PropertySetupProgressCard({
               href={getItemHref(currentItem, propertyId, returnTo)}
               className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 lg:w-auto"
             >
-              {currentItem.ctaLabel}
+              Continuar configuración
             </Link>
           )}
           <button
             type="button"
-            onClick={() => setExpanded((value) => !value)}
-            className="min-h-[44px] rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
-            aria-expanded={expanded}
-          >
-            {expanded ? "Colapsar" : "Ver pasos"}
-          </button>
-          <button
-            type="button"
-            onClick={dismissCard}
+            onClick={() => setDismissed(true)}
             className="min-h-[44px] rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
             aria-label="Ocultar ayuda de configuración de esta propiedad"
           >
-            Ocultar
+            Ocultar por ahora
           </button>
         </div>
       </div>
