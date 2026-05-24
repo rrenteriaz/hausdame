@@ -252,28 +252,36 @@ export default function EditPropertyModal({ property, returnTo }: EditPropertyMo
       return;
     }
 
-    let urlToParse = googleMapsUrl.trim();
+    const urlToParse = googleMapsUrl.trim();
     let coords: { lat: number; lng: number } | null = null;
 
-    // Links cortos: resolver server-side (CORS + redirects + extracción de coords del HTML)
-    if (urlToParse.includes("maps.app.goo.gl") || urlToParse.includes("goo.gl")) {
+    // Todos los links de Google Maps se resuelven server-side:
+    // shortlinks, URLs largas sin coords embebidas y fallback a Geocoding API.
+    const isGoogleMapsUrl =
+      urlToParse.includes("maps.app.goo.gl") ||
+      urlToParse.includes("goo.gl") ||
+      urlToParse.includes("google.com/maps") ||
+      urlToParse.includes("maps.google.com");
+
+    if (isGoogleMapsUrl) {
       setGeoError(null);
       try {
         const response = await fetch("/api/resolve-maps-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: urlToParse }),
+          body: JSON.stringify({
+            url: urlToParse,
+            // Pasar dirección de la propiedad como contexto de geocodificación
+            ...(address?.trim() ? { address: address.trim() } : {}),
+          }),
         });
 
         const data = await response.json();
 
         if (response.ok && data.coordinates) {
           coords = data.coordinates;
-        } else if (response.ok && data.resolvedUrl) {
-          // Fallback: intentar parsear URL resuelta
-          urlToParse = data.resolvedUrl;
         } else {
-          setGeoError("No se pudo resolver el link. Intenta pegar el link largo o lat/lng.");
+          setGeoError(data.error ?? "No se pudo obtener coordenadas. Intenta pegar lat/lng manualmente.");
           return;
         }
       } catch {
