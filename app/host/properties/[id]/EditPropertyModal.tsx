@@ -253,37 +253,41 @@ export default function EditPropertyModal({ property, returnTo }: EditPropertyMo
     }
 
     let urlToParse = googleMapsUrl.trim();
+    let coords: { lat: number; lng: number } | null = null;
 
-    // Si es un link corto, intentar resolverlo primero
+    // Links cortos: resolver server-side (CORS + redirects + extracción de coords del HTML)
     if (urlToParse.includes("maps.app.goo.gl") || urlToParse.includes("goo.gl")) {
       setGeoError(null);
       try {
         const response = await fetch("/api/resolve-maps-url", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: urlToParse }),
         });
 
         const data = await response.json();
 
-        if (response.ok && data.resolvedUrl) {
+        if (response.ok && data.coordinates) {
+          coords = data.coordinates;
+        } else if (response.ok && data.resolvedUrl) {
+          // Fallback: intentar parsear URL resuelta
           urlToParse = data.resolvedUrl;
         } else {
-          // Si falla la resolución, intentar parsear el link original
-          console.warn("[EditPropertyModal] No se pudo resolver link corto, intentando parsear original");
+          setGeoError("No se pudo resolver el link. Intenta pegar el link largo o lat/lng.");
+          return;
         }
-      } catch (error: any) {
-        console.error("[EditPropertyModal] Error resolviendo link:", error);
-        // Continuar con parseo del link original
+      } catch {
+        setGeoError("Error de red al resolver el link. Intenta pegar lat/lng manualmente.");
+        return;
       }
     }
 
-    const coords = parseGoogleMapsUrl(urlToParse);
-    
     if (!coords) {
-      setGeoError("Link corto sin coordenadas; intenta pegar link largo o lat/lng.");
+      coords = parseGoogleMapsUrl(urlToParse);
+    }
+
+    if (!coords) {
+      setGeoError("No se encontraron coordenadas. Intenta pegar el link largo o lat/lng.");
       return;
     }
 
