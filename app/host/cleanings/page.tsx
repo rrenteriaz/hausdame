@@ -353,7 +353,7 @@ export default async function CleaningsPage({
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
                           <p className="text-xs text-neutral-500 truncate">
-                            {formatDateTime(c.scheduledDate)}
+                            {formatDateTime(c.scheduledAtPlanned ?? c.scheduledDate)}
                           </p>
                           {(c as any).reservationId && (
                             <StopPropagationLink
@@ -444,6 +444,7 @@ function formatDateTime(date: Date) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Mexico_City",
   });
 }
 

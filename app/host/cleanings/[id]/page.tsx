@@ -28,6 +28,7 @@ function formatDateTime(date: Date) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Mexico_City",
   });
 }
 
@@ -504,7 +505,7 @@ export default async function CleaningDetailPage({
           showBack
           backHref={returnTo}
           title="Detalle de limpieza"
-          subtitle={`${cleaningTyped.property.shortName || cleaningTyped.property.name} · ${formatDateTime(cleaning.scheduledDate)} · ${ui.statusText ?? formatStatus(cleaning.status)}`}
+          subtitle={`${cleaningTyped.property.shortName || cleaningTyped.property.name} · ${formatDateTime(scheduledAtPlanned)} · ${ui.statusText ?? formatStatus(cleaning.status)}`}
           variant="compact"
         />
 
@@ -554,7 +555,7 @@ export default async function CleaningDetailPage({
 
           <div>
             <p className="text-xs text-neutral-500">Fecha y hora</p>
-            <p className="text-base text-neutral-900">{formatDateTime(cleaning.scheduledDate)}</p>
+            <p className="text-base text-neutral-900">{formatDateTime(scheduledAtPlanned)}</p>
           </div>
 
           <div>
