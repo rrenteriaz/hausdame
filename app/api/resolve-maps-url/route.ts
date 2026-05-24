@@ -12,17 +12,19 @@ const ALLOWED_DOMAINS = [
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+// location_type de Google Geocoding que se consideran suficientemente precisos
 const ACCEPTABLE_LOCATION_TYPES = new Set([
   "ROOFTOP",
   "RANGE_INTERPOLATED",
   "GEOMETRIC_CENTER",
 ]);
 
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
 function isValidDomain(url: string): boolean {
   try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname.toLowerCase();
-    return ALLOWED_DOMAINS.some((domain) => hostname.includes(domain));
+    const { hostname } = new URL(url);
+    return ALLOWED_DOMAINS.some((d) => hostname.toLowerCase().includes(d));
   } catch {
     return false;
   }
@@ -36,93 +38,95 @@ function isValidCoords(lat: number, lng: number): boolean {
   return isFinite(lat) && isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }
 
-type CoordsWithSource = { lat: number; lng: number; source: string };
+type Coords = { lat: number; lng: number };
+type CoordsWithSource = Coords & { source: string };
+
+// ─── Extractores de coordenadas desde URL ─────────────────────────────────
 
 /**
- * Alta confianza — representa el PIN del lugar, no el viewport de cámara.
- * NO incluye @lat,lng (geo-targeteable por IP del servidor).
+ * !8m2!3d<lat>!4d<lng> — coordenada explícita del lugar en la data param.
+ * Más específico que !3d/!4d genérico; siempre tiene prioridad máxima.
  */
-function extractHighConfidenceCoords(text: string): CoordsWithSource | null {
-  // !3d<lat>!4d<lng> — pin real del lugar en URL larga
-  const pinMatch = text.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
-  if (pinMatch) {
-    const lat = parseFloat(pinMatch[1]);
-    const lng = parseFloat(pinMatch[2]);
+function extractExplicitPlaceCoords(url: string): CoordsWithSource | null {
+  const m = url.match(/!8m2!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  if (m) {
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
+    if (isValidCoords(lat, lng)) return { lat, lng, source: "!8m2!3d/!4d" };
+  }
+  return null;
+}
+
+/**
+ * !3d<lat>!4d<lng> — pin del lugar (forma general, sin contexto !8m2).
+ */
+function extractPinCoords(url: string): CoordsWithSource | null {
+  const m = url.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  if (m) {
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
     if (isValidCoords(lat, lng)) return { lat, lng, source: "!3d/!4d" };
   }
+  return null;
+}
 
-  // Parámetros estructurados: ?q= / ?ll= / ?query=
+/**
+ * ?q= / ?ll= / ?query= — coordenadas en parámetros de query.
+ */
+function extractQueryParamCoords(url: string): CoordsWithSource | null {
   for (const param of ["q", "ll", "query"]) {
     const re = new RegExp(`[?&]${param}=(-?\\d+\\.?\\d*),(-?\\d+\\.?\\d*)`);
-    const m = text.match(re);
+    const m = url.match(re);
     if (m) {
       const lat = parseFloat(m[1]);
       const lng = parseFloat(m[2]);
       if (isValidCoords(lat, lng)) return { lat, lng, source: `?${param}=` };
     }
   }
-
-  // %212d<lng>%213d<lat> — coordenadas del lugar en HTML body de shortlinks
-  // Solo acepta si todos los candidatos convergen al mismo punto
-  const pbRe = /%212d(-?\d+\.\d+)%213d(-?\d+\.\d+)/g;
-  const pbCandidates: Array<{ lat: number; lng: number }> = [];
-  let m: RegExpExecArray | null;
-  while ((m = pbRe.exec(text)) !== null) {
-    const lng = parseFloat(m[1]);
-    const lat = parseFloat(m[2]);
-    if (isValidCoords(lat, lng)) pbCandidates.push({ lat, lng });
-  }
-  if (pbCandidates.length > 0) {
-    const ref = pbCandidates[0];
-    const allSame = pbCandidates.every(
-      (c) => Math.abs(c.lat - ref.lat) < 0.001 && Math.abs(c.lng - ref.lng) < 0.001
-    );
-    if (allSame) return { lat: ref.lat, lng: ref.lng, source: "%212d/%213d" };
-    // múltiples candidatos ambiguos — no usar
-  }
-
   return null;
 }
 
 /**
- * Baja confianza — viewport de cámara, geo-targeteable por IP del servidor.
- * Solo se usa para URLs largas donde el usuario compartió un viewport explícito,
- * NUNCA para shortlinks maps.app.goo.gl.
+ * @<lat>,<lng> — viewport/cámara de Google Maps.
+ * Geo-targeteable por IP del servidor → solo confiable en URLs largas compartidas
+ * explícitamente por el usuario, NUNCA en shortlinks.
  */
-function extractViewportCoords(text: string): CoordsWithSource | null {
-  const atMatch = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (atMatch) {
-    const lat = parseFloat(atMatch[1]);
-    const lng = parseFloat(atMatch[2]);
+function extractViewportCoords(url: string): CoordsWithSource | null {
+  const m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (m) {
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
     if (isValidCoords(lat, lng)) return { lat, lng, source: "@lat,lng" };
   }
   return null;
 }
 
-// ─── Dirección desde URL de Google Maps ───────────────────────────────────
+/**
+ * %212d<lng>%213d<lat> — coordenadas en HTML body de shortlinks (pb param).
+ * BAJA CONFIANZA: captura el centroide del área, no la dirección exacta.
+ * Solo usar si no hay API key y no hay nada más.
+ */
+function extractHtmlPbCoords(html: string): CoordsWithSource | null {
+  const re = /%212d(-?\d+\.\d+)%213d(-?\d+\.\d+)/g;
+  const candidates: Coords[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const lng = parseFloat(m[1]);
+    const lat = parseFloat(m[2]);
+    if (isValidCoords(lat, lng)) candidates.push({ lat, lng });
+  }
+  if (candidates.length === 0) return null;
 
-function extractAddressFromGoogleMapsUrl(url: string): string | null {
-  try {
-    const urlObj = new URL(url);
-    const placeMatch = urlObj.pathname.match(/\/maps\/place\/([^/]+)/);
-    if (placeMatch) {
-      const decoded = decodeURIComponent(placeMatch[1]).replace(/\+/g, " ");
-      if (decoded.length > 3) return decoded;
-    }
-    const q = urlObj.searchParams.get("q");
-    if (q && q.length > 3) return q;
-  } catch {}
-  return null;
+  const ref = candidates[0];
+  const allSame = candidates.every(
+    (c) => Math.abs(c.lat - ref.lat) < 0.001 && Math.abs(c.lng - ref.lng) < 0.001
+  );
+  return allSame ? { lat: ref.lat, lng: ref.lng, source: "%212d/%213d" } : null;
 }
 
 // ─── Google Geocoding API ─────────────────────────────────────────────────
 
-type GeocodingResult = {
-  lat: number;
-  lng: number;
-  locationType: string;
-  formattedAddress: string;
-};
+type GeocodingResult = Coords & { locationType: string; formattedAddress: string };
 
 async function geocodeWithGoogle(
   query: string,
@@ -132,7 +136,7 @@ async function geocodeWithGoogle(
   const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
   const data = await res.json();
 
-  console.log("[GOOGLE_MAPS] google status:", data.status, "| results:", data.results?.length ?? 0);
+  console.log(`[GOOGLE_MAPS] google result: status=${data.status} results=${data.results?.length ?? 0}`);
 
   if (data.status !== "OK" || !data.results?.length) return null;
 
@@ -146,6 +150,20 @@ async function geocodeWithGoogle(
   return { lat, lng, locationType, formattedAddress };
 }
 
+function extractAddressFromGoogleMapsUrl(url: string): string | null {
+  try {
+    const { pathname, searchParams } = new URL(url);
+    const placeMatch = pathname.match(/\/maps\/place\/([^/]+)/);
+    if (placeMatch) {
+      const decoded = decodeURIComponent(placeMatch[1]).replace(/\+/g, " ");
+      if (decoded.length > 3) return decoded;
+    }
+    const q = searchParams.get("q");
+    if (q && q.length > 3) return q;
+  } catch {}
+  return null;
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
@@ -156,14 +174,9 @@ export async function POST(request: NextRequest) {
     if (!url || typeof url !== "string" || !url.trim()) {
       return NextResponse.json({ error: "URL requerida" }, { status: 400 });
     }
-
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      return NextResponse.json(
-        { error: "URL debe comenzar con http:// o https://" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "URL debe comenzar con http:// o https://" }, { status: 400 });
     }
-
     if (!isValidDomain(url)) {
       return NextResponse.json(
         { error: "Dominio no permitido. Solo se aceptan links de Google Maps." },
@@ -172,8 +185,11 @@ export async function POST(request: NextRequest) {
     }
 
     const short = isShortlink(url);
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY ?? "";
+
     console.log("[GOOGLE_MAPS] input:", url, short ? "(shortlink)" : "(long URL)");
 
+    // Seguir redirects y obtener body de una vez
     const response = await fetch(url.trim(), {
       method: "GET",
       redirect: "follow",
@@ -184,74 +200,87 @@ export async function POST(request: NextRequest) {
     const resolvedUrl = response.url || url;
     const htmlText = await response.text();
 
-    console.log("[GOOGLE_MAPS] resolvedUrl:", resolvedUrl.substring(0, 120));
+    console.log("[GOOGLE_MAPS] resolvedUrl:", resolvedUrl);
 
-    // ── A+B+C: alta confianza desde URL final ──────────────────────────────
-    const highFromUrl = extractHighConfidenceCoords(resolvedUrl);
-    if (highFromUrl) {
-      console.log(`[GOOGLE_MAPS] high confidence candidate source: ${highFromUrl.source} (URL)`);
-      console.log(`[GOOGLE_MAPS] final coords: ${highFromUrl.lat}, ${highFromUrl.lng}`);
-      const { source: _, ...coords } = highFromUrl;
+    // ── 1. !8m2!3d/!4d — coordenada explícita del lugar (máxima prioridad) ──
+    const explicit = extractExplicitPlaceCoords(resolvedUrl);
+    if (explicit) {
+      console.log(`[GOOGLE_MAPS] exact URL coords: ${explicit.source} → ${explicit.lat}, ${explicit.lng}`);
+      console.log(`[GOOGLE_MAPS] final coords: ${explicit.lat}, ${explicit.lng}`);
+      const { source: _, ...coords } = explicit;
       return NextResponse.json({ resolvedUrl, coordinates: coords });
     }
 
-    // ── D: alta confianza desde HTML body ─────────────────────────────────
-    const highFromHtml = extractHighConfidenceCoords(htmlText);
-    if (highFromHtml) {
-      console.log(`[GOOGLE_MAPS] HTML candidate source: ${highFromHtml.source}`);
-      console.log(`[GOOGLE_MAPS] final coords: ${highFromHtml.lat}, ${highFromHtml.lng}`);
-      const { source: _, ...coords } = highFromHtml;
+    // ── 2. !3d/!4d genérico ────────────────────────────────────────────────
+    const pin = extractPinCoords(resolvedUrl);
+    if (pin) {
+      console.log(`[GOOGLE_MAPS] exact URL coords: ${pin.source} → ${pin.lat}, ${pin.lng}`);
+      console.log(`[GOOGLE_MAPS] final coords: ${pin.lat}, ${pin.lng}`);
+      const { source: _, ...coords } = pin;
       return NextResponse.json({ resolvedUrl, coordinates: coords });
     }
 
-    // ── E: Google Geocoding API ────────────────────────────────────────────
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (apiKey) {
-      const geocodingQuery =
-        extractAddressFromGoogleMapsUrl(resolvedUrl) ?? address ?? null;
-
-      if (geocodingQuery) {
-        console.log("[GOOGLE_MAPS] strategy used: Google Geocoding API | query:", geocodingQuery);
-
-        const geo = await geocodeWithGoogle(geocodingQuery, apiKey);
-
-        if (geo) {
-          console.log(`[GOOGLE_MAPS] final coords: ${geo.lat}, ${geo.lng}`);
-          console.log(`[GOOGLE_MAPS] confidence/reason: ${geo.locationType} — ${geo.formattedAddress}`);
-
-          if (ACCEPTABLE_LOCATION_TYPES.has(geo.locationType)) {
-            return NextResponse.json({
-              resolvedUrl,
-              coordinates: { lat: geo.lat, lng: geo.lng },
-            });
-          }
-
-          console.warn(`[GOOGLE_MAPS] confidence/reason: ${geo.locationType} — rechazando (muy impreciso)`);
-          return NextResponse.json(
-            { error: "Ubicación ambigua. Intenta con un link más específico o coordenadas directas." },
-            { status: 422 }
-          );
-        }
-      }
+    // ── 3. Query params: q/ll/query ────────────────────────────────────────
+    const qParam = extractQueryParamCoords(resolvedUrl);
+    if (qParam) {
+      console.log(`[GOOGLE_MAPS] exact URL coords: ${qParam.source} → ${qParam.lat}, ${qParam.lng}`);
+      console.log(`[GOOGLE_MAPS] final coords: ${qParam.lat}, ${qParam.lng}`);
+      const { source: _, ...coords } = qParam;
+      return NextResponse.json({ resolvedUrl, coordinates: coords });
     }
 
-    // ── F: @lat,lng — solo para URLs largas, nunca shortlinks ─────────────
+    // ── 4. @lat,lng — viewport, solo para URLs largas (no shortlinks) ──────
     if (!short) {
       const viewport = extractViewportCoords(resolvedUrl);
       if (viewport) {
-        console.log(`[GOOGLE_MAPS] viewport candidate ignored for shortlink: false`);
-        console.log(`[GOOGLE_MAPS] final coords: ${viewport.lat}, ${viewport.lng} (viewport fallback)`);
+        console.log(`[GOOGLE_MAPS] exact URL coords: ${viewport.source} → ${viewport.lat}, ${viewport.lng}`);
+        console.log(`[GOOGLE_MAPS] final coords: ${viewport.lat}, ${viewport.lng}`);
         const { source: _, ...coords } = viewport;
         return NextResponse.json({ resolvedUrl, coordinates: coords });
       }
     } else {
       const viewport = extractViewportCoords(resolvedUrl);
       if (viewport) {
-        console.log(`[GOOGLE_MAPS] viewport candidate ignored: @lat,lng en shortlink ignorado (geo-targeteable)`);
+        console.log(`[GOOGLE_MAPS] viewport candidate ignored: @lat,lng en shortlink ignorado (geo-targeteable por IP)`);
       }
     }
 
-    console.error("[GOOGLE_MAPS] final coords: ninguna con suficiente confianza");
+    // ── 5. Google Geocoding API ────────────────────────────────────────────
+    if (apiKey) {
+      const geocodingQuery =
+        extractAddressFromGoogleMapsUrl(resolvedUrl) ?? address ?? null;
+
+      console.log("[GOOGLE_MAPS] geocoding query:", geocodingQuery ?? "(ninguna)");
+
+      if (geocodingQuery) {
+        const geo = await geocodeWithGoogle(geocodingQuery, apiKey);
+
+        if (geo) {
+          if (ACCEPTABLE_LOCATION_TYPES.has(geo.locationType)) {
+            console.log(`[GOOGLE_MAPS] final coords: ${geo.lat}, ${geo.lng} [${geo.locationType}] ${geo.formattedAddress}`);
+            return NextResponse.json({ resolvedUrl, coordinates: { lat: geo.lat, lng: geo.lng } });
+          }
+          console.warn(`[GOOGLE_MAPS] google result: ${geo.locationType} — rechazado (demasiado impreciso)`);
+          return NextResponse.json(
+            { error: "Ubicación ambigua. Intenta con un link más específico o coordenadas directas." },
+            { status: 422 }
+          );
+        }
+      }
+    } else {
+      console.log("[GOOGLE_MAPS] geocoding query: omitida (GOOGLE_MAPS_API_KEY no configurada)");
+    }
+
+    // ── 6. HTML body %212d/%213d — último recurso, baja confianza ──────────
+    const htmlPb = extractHtmlPbCoords(htmlText);
+    if (htmlPb) {
+      console.log(`[GOOGLE_MAPS] html fallback candidate: ${htmlPb.source} → ${htmlPb.lat}, ${htmlPb.lng}`);
+      console.log(`[GOOGLE_MAPS] final coords: ${htmlPb.lat}, ${htmlPb.lng} (baja confianza — sin API key)`);
+      const { source: _, ...coords } = htmlPb;
+      return NextResponse.json({ resolvedUrl, coordinates: coords });
+    }
+
+    console.error("[GOOGLE_MAPS] final coords: ninguna — 422");
     return NextResponse.json(
       { error: "No se encontraron coordenadas en este link." },
       { status: 422 }
