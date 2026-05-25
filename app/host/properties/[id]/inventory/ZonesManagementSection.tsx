@@ -316,7 +316,7 @@ export default function ZonesManagementSection({
       {/* Botón trigger */}
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
         className={triggerClassName ?? "rounded-lg border border-neutral-300 bg-white px-4 py-2 text-base font-medium text-neutral-700 hover:bg-neutral-50 transition active:scale-[0.99]"}
       >
         Gestión de áreas
