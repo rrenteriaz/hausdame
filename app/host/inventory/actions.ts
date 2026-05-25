@@ -332,13 +332,13 @@ export async function deleteInventoryAreaAction(formData: FormData) {
 /**
  * Obtiene el catálogo de items por categoría para el modal.
  */
-export async function getCatalogByCategory(category: InventoryCategory) {
+export async function getCatalogByCategory(category: InventoryCategory | string) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;
   if (!tenantId) return [];
 
   try {
-    return await listInventoryCatalogByCategory(tenantId, category, 200);
+    return await listInventoryCatalogByCategory(tenantId, category as InventoryCategory, 200);
   } catch (error) {
     console.error("[getCatalogByCategory] Error:", error);
     return [];

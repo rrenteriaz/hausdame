@@ -81,6 +81,8 @@ export function itemCategoryLabel(category: string | InventoryCategory): string 
     KITCHEN_ACCESSORIES: "Accesorios de cocina",
     KEYS_ACCESS: "Llaves y acceso",
     CONSUMABLES: "Consumibles",
+    SECURITY: "Seguridad",
+    ELECTRICAL_APPLIANCE: "Aparatos eléctricos",
     OTHER: "Otro",
   };
   

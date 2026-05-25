@@ -410,7 +410,7 @@ export async function applyInventoryTemplateToProperty(
 
         // 4.2.5. Phase 6: Upsert OPERATIONAL zones from template areas (template = canonical zone source)
         const ZONE_SORT_ORDER_MAP: Record<string, number> = {
-          cochera: 10, sala: 20, comedor: 30, cocina: 40,
+          entrada: 5, cochera: 10, sala: 20, comedor: 30, cocina: 40,
           "bano 1": 50, "bano": 50, "recamara 1": 60, "recamara 2": 70,
           "bano 2": 80, lavanderia: 90,
         };

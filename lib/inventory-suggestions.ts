@@ -1,7 +1,7 @@
 // lib/inventory-suggestions.ts
 // Plantillas sugeridas por categoría (hardcode en frontend)
 
-import { InventoryCategory } from "@/lib/generated/prisma";
+import { InventoryCategory } from "@/lib/inventory-constants";
 
 /**
  * Obtiene las categorías permitidas para un área específica.
@@ -46,8 +46,8 @@ export function getAllowedCategoriesForArea(area: string): InventoryCategory[] |
     ];
   }
 
-  // Sala o Comedor
-  if (areaNormalized === "sala" || areaNormalized === "comedor") {
+  // Comedor
+  if (areaNormalized === "comedor") {
     return [
       InventoryCategory.FURNITURE_EQUIPMENT,
       InventoryCategory.DECOR,
@@ -61,6 +61,25 @@ export function getAllowedCategoriesForArea(area: string): InventoryCategory[] |
       InventoryCategory.CONSUMABLES,
       InventoryCategory.LINENS,
       InventoryCategory.FURNITURE_EQUIPMENT,
+    ];
+  }
+
+  // Entrada
+  if (areaNormalized === "entrada") {
+    return [
+      InventoryCategory.KEYS_ACCESS,
+      InventoryCategory.SECURITY,
+      InventoryCategory.FURNITURE_EQUIPMENT,
+    ];
+  }
+
+  // Sala
+  if (areaNormalized === "sala") {
+    return [
+      InventoryCategory.FURNITURE_EQUIPMENT,
+      InventoryCategory.DECOR,
+      InventoryCategory.ELECTRICAL_APPLIANCE,
+      InventoryCategory.TABLEWARE_UTENSILS,
     ];
   }
 
@@ -257,18 +276,33 @@ export const INVENTORY_SUGGESTIONS: Record<InventoryCategory, InventorySuggestio
     { name: "Azúcar" },
     { name: "Sal" },
   ],
+  SECURITY: [
+    { name: "Cámara de seguridad" },
+    { name: "Caja de seguridad" },
+    { name: "Sensor de movimiento" },
+    { name: "Detector de humo" },
+    { name: "Timbre inteligente" },
+  ],
+  ELECTRICAL_APPLIANCE: [
+    { name: "Multicontacto eléctrico" },
+    { name: "Extensión eléctrica" },
+    { name: "Llave electrónica" },
+    { name: "Chapa electrónica" },
+    { name: "Control de luz" },
+  ],
   OTHER: [],
 };
 
 export const AREA_SUGGESTIONS = [
+  "Entrada",
+  "Sala",
+  "Comedor",
   "Cocina",
   "Baño 1",
   "Baño 2",
   "Recámara 1",
   "Recámara 2",
   "Recámara 3",
-  "Sala",
-  "Comedor",
   "Lavandería",
   "Bodega",
   "Patio",
@@ -286,6 +320,8 @@ export function getCategoryLabel(category: InventoryCategory): string {
     KITCHEN_ACCESSORIES: "Accesorios de cocina",
     KEYS_ACCESS: "Llaves y accesos",
     CONSUMABLES: "Suministros y consumibles",
+    SECURITY: "Seguridad",
+    ELECTRICAL_APPLIANCE: "Aparatos eléctricos",
     OTHER: "Otros",
   };
   return labels[category];
@@ -323,8 +359,6 @@ export function isBedSizeVariantable(itemName: string, defaultVariantKey?: strin
     "colchon",
     "sábanas",
     "sabanas",
-    "almohadas",
-    "almohada",
     "cobertor",
     "colcha",
     "cubre colchón",

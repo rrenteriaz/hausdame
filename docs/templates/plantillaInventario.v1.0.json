@@ -5,7 +5,7 @@
     "createdAt": "2025-01-15",
     "schema": {
       "inventoryItem": {
-        "category": "InventoryCategory (FURNITURE_EQUIPMENT | LINENS | TABLEWARE_UTENSILS | DECOR | KITCHEN_ACCESSORIES | KEYS_ACCESS | CONSUMABLES | OTHER)",
+        "category": "InventoryCategory (FURNITURE_EQUIPMENT | LINENS | TABLEWARE_UTENSILS | DECOR | KITCHEN_ACCESSORIES | KEYS_ACCESS | CONSUMABLES | SECURITY | ELECTRICAL_APPLIANCE | OTHER)",
         "name": "string (nombre del item)",
         "defaultBrand": "string | null (marca por defecto)",
         "defaultModel": "string | null (modelo por defecto)",
@@ -167,7 +167,7 @@
           "notes": null,
           "variantKey": null,
           "variantValue": null,
-          "isActive": true,
+          "isActive": false,
           "areaNormalized": "recámara 1"
         }
       ]
@@ -475,71 +475,15 @@
     {
       "item": {
         "category": "LINENS",
-        "name": "Almohadas",
+        "name": "Almohada",
         "defaultBrand": null,
         "defaultModel": null,
         "defaultColor": null,
         "defaultSize": null,
-        "isReplacable": true,
-        "defaultVariantKey": "bed_size",
-        "defaultVariantLabel": "Tamaño de cama",
-        "defaultVariantOptions": [
-          "Individual",
-          "Matrimonial",
-          "Queen",
-          "King"
-        ]
+        "isReplacable": true
       },
       "lines": [
         {
-          "area": "Recámara 2",
-          "expectedQty": 1,
-          "condition": "USED_LT_1Y",
-          "priority": "MEDIUM",
-          "brand": null,
-          "model": null,
-          "serialNumber": null,
-          "color": null,
-          "size": null,
-          "notes": null,
-          "variantKey": "bed_size",
-          "variantValue": "Individual",
-          "isActive": true,
-          "areaNormalized": "recámara 2"
-        },
-        {
-          "area": "Recámara 2",
-          "expectedQty": 2,
-          "condition": "USED_LT_1Y",
-          "priority": "MEDIUM",
-          "brand": null,
-          "model": null,
-          "serialNumber": null,
-          "color": null,
-          "size": null,
-          "notes": null,
-          "variantKey": "bed_size",
-          "variantValue": "Matrimonial",
-          "isActive": true,
-          "areaNormalized": "recámara 2"
-        },
-        {
-          "area": "Recámara 1",
-          "expectedQty": 1,
-          "condition": "USED_LT_1Y",
-          "priority": "MEDIUM",
-          "brand": null,
-          "model": null,
-          "serialNumber": null,
-          "color": null,
-          "size": null,
-          "notes": null,
-          "variantKey": "bed_size",
-          "variantValue": "Individual",
-          "isActive": true,
-          "areaNormalized": "recámara 1"
-        },
-        {
           "area": "Recámara 1",
           "expectedQty": 2,
           "condition": "USED_LT_1Y",
@@ -550,10 +494,26 @@
           "color": null,
           "size": null,
           "notes": null,
-          "variantKey": "bed_size",
-          "variantValue": "Matrimonial",
+          "variantKey": null,
+          "variantValue": null,
           "isActive": true,
           "areaNormalized": "recámara 1"
+        },
+        {
+          "area": "Recámara 2",
+          "expectedQty": 4,
+          "condition": "USED_LT_1Y",
+          "priority": "MEDIUM",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": true,
+          "areaNormalized": "recámara 2"
         }
       ]
     },
@@ -577,24 +537,8 @@
       },
       "lines": [
         {
-          "area": "Recámara 2",
-          "expectedQty": 1,
-          "condition": "USED_GT_1Y",
-          "priority": "HIGH",
-          "brand": null,
-          "model": null,
-          "serialNumber": null,
-          "color": null,
-          "size": "Queen",
-          "notes": null,
-          "variantKey": "bed_size",
-          "variantValue": "Queen",
-          "isActive": true,
-          "areaNormalized": "recámara 2"
-        },
-        {
           "area": "Recámara 1",
-          "expectedQty": 2,
+          "expectedQty": 1,
           "condition": "USED_GT_1Y",
           "priority": "HIGH",
           "brand": null,
@@ -607,6 +551,22 @@
           "variantValue": "Matrimonial",
           "isActive": true,
           "areaNormalized": "recámara 1"
+        },
+        {
+          "area": "Recámara 2",
+          "expectedQty": 2,
+          "condition": "USED_GT_1Y",
+          "priority": "HIGH",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": "Individual",
+          "notes": null,
+          "variantKey": "bed_size",
+          "variantValue": "Individual",
+          "isActive": true,
+          "areaNormalized": "recámara 2"
         }
       ]
     },
@@ -1438,7 +1398,7 @@
           "notes": null,
           "variantKey": null,
           "variantValue": null,
-          "isActive": true,
+          "isActive": false,
           "areaNormalized": "comedor"
         }
       ]
@@ -1764,7 +1724,7 @@
           "notes": null,
           "variantKey": "material",
           "variantValue": "Madera",
-          "isActive": true,
+          "isActive": false,
           "areaNormalized": "recámara 2"
         }
       ]
@@ -2034,7 +1994,7 @@
       },
       "lines": [
         {
-          "area": "Sala",
+          "area": "Entrada",
           "expectedQty": 1,
           "condition": "USED_LT_1Y",
           "priority": "HIGH",
@@ -2047,7 +2007,7 @@
           "variantKey": null,
           "variantValue": null,
           "isActive": true,
-          "areaNormalized": "sala"
+          "areaNormalized": "entrada"
         }
       ]
     },
@@ -2193,22 +2153,6 @@
       },
       "lines": [
         {
-          "area": "Recámara 2",
-          "expectedQty": 1,
-          "condition": "USED_LT_1Y",
-          "priority": "MEDIUM",
-          "brand": null,
-          "model": null,
-          "serialNumber": null,
-          "color": null,
-          "size": null,
-          "notes": null,
-          "variantKey": "bed_size",
-          "variantValue": "Matrimonial",
-          "isActive": true,
-          "areaNormalized": "recámara 2"
-        },
-        {
           "area": "Recámara 1",
           "expectedQty": 1,
           "condition": "USED_LT_1Y",
@@ -2223,6 +2167,22 @@
           "variantValue": "Matrimonial",
           "isActive": true,
           "areaNormalized": "recámara 1"
+        },
+        {
+          "area": "Recámara 2",
+          "expectedQty": 2,
+          "condition": "USED_LT_1Y",
+          "priority": "MEDIUM",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": "bed_size",
+          "variantValue": "Individual",
+          "isActive": true,
+          "areaNormalized": "recámara 2"
         }
       ]
     },
@@ -2258,7 +2218,7 @@
           "notes": null,
           "variantKey": "bed_size",
           "variantValue": "Matrimonial",
-          "isActive": true,
+          "isActive": false,
           "areaNormalized": "recámara 1"
         }
       ]
@@ -2283,7 +2243,7 @@
       },
       "lines": [
         {
-          "area": "Recámara 2",
+          "area": "Recámara 1",
           "expectedQty": 2,
           "condition": "USED_LT_1Y",
           "priority": "MEDIUM",
@@ -2295,6 +2255,22 @@
           "notes": null,
           "variantKey": "bed_size",
           "variantValue": "Matrimonial",
+          "isActive": true,
+          "areaNormalized": "recámara 1"
+        },
+        {
+          "area": "Recámara 2",
+          "expectedQty": 4,
+          "condition": "USED_LT_1Y",
+          "priority": "MEDIUM",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": "bed_size",
+          "variantValue": "Individual",
           "isActive": true,
           "areaNormalized": "recámara 2"
         }
@@ -2402,7 +2378,7 @@
     },
     {
       "item": {
-        "category": "DECOR",
+        "category": "FURNITURE_EQUIPMENT",
         "name": "Comedor",
         "defaultBrand": null,
         "defaultModel": null,
@@ -2412,7 +2388,7 @@
       },
       "lines": [
         {
-          "area": "Sala",
+          "area": "Comedor",
           "expectedQty": 1,
           "condition": "USED_GT_1Y",
           "priority": "MEDIUM",
@@ -2425,7 +2401,7 @@
           "variantKey": null,
           "variantValue": null,
           "isActive": true,
-          "areaNormalized": "sala"
+          "areaNormalized": "comedor"
         }
       ]
     },
@@ -2462,6 +2438,151 @@
           "variantValue": "Tela",
           "isActive": true,
           "areaNormalized": "comedor"
+        }
+      ]
+    },
+    {
+      "item": {
+        "category": "KEYS_ACCESS",
+        "name": "Caja de seguridad para llaves",
+        "defaultBrand": null,
+        "defaultModel": null,
+        "defaultColor": null,
+        "defaultSize": null,
+        "isReplacable": false
+      },
+      "lines": [
+        {
+          "area": "Entrada",
+          "expectedQty": 1,
+          "condition": "USED_LT_1Y",
+          "priority": "HIGH",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": true,
+          "areaNormalized": "entrada"
+        }
+      ]
+    },
+    {
+      "item": {
+        "category": "SECURITY",
+        "name": "Cámara de seguridad",
+        "defaultBrand": null,
+        "defaultModel": null,
+        "defaultColor": null,
+        "defaultSize": null,
+        "isReplacable": false
+      },
+      "lines": [
+        {
+          "area": "Entrada",
+          "expectedQty": 1,
+          "condition": "USED_LT_1Y",
+          "priority": "HIGH",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": false,
+          "areaNormalized": "entrada"
+        }
+      ]
+    },
+    {
+      "item": {
+        "category": "KEYS_ACCESS",
+        "name": "Llave electrónica",
+        "defaultBrand": null,
+        "defaultModel": null,
+        "defaultColor": null,
+        "defaultSize": null,
+        "isReplacable": false
+      },
+      "lines": [
+        {
+          "area": "Sala",
+          "expectedQty": 1,
+          "condition": "USED_LT_1Y",
+          "priority": "HIGH",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": true,
+          "areaNormalized": "sala"
+        }
+      ]
+    },
+    {
+      "item": {
+        "category": "DECOR",
+        "name": "Persiana",
+        "defaultBrand": null,
+        "defaultModel": null,
+        "defaultColor": null,
+        "defaultSize": null,
+        "isReplacable": true
+      },
+      "lines": [
+        {
+          "area": "Sala",
+          "expectedQty": 1,
+          "condition": "USED_LT_1Y",
+          "priority": "MEDIUM",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": true,
+          "areaNormalized": "sala"
+        }
+      ]
+    },
+    {
+      "item": {
+        "category": "ELECTRICAL_APPLIANCE",
+        "name": "Multicontacto eléctrico",
+        "defaultBrand": null,
+        "defaultModel": null,
+        "defaultColor": null,
+        "defaultSize": null,
+        "isReplacable": true
+      },
+      "lines": [
+        {
+          "area": "Sala",
+          "expectedQty": 1,
+          "condition": "USED_LT_1Y",
+          "priority": "MEDIUM",
+          "brand": null,
+          "model": null,
+          "serialNumber": null,
+          "color": null,
+          "size": null,
+          "notes": null,
+          "variantKey": null,
+          "variantValue": null,
+          "isActive": false,
+          "areaNormalized": "sala"
         }
       ]
     }
