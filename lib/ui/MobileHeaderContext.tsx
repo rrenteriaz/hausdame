@@ -11,6 +11,8 @@ type Breakpoint = "sm" | "lg";
 type MobileHeaderContextType = {
   title: string | null;
   setTitle: (title: string | null) => void;
+  backHref: string | null;
+  setBackHref: (href: string | null) => void;
   /** Breakpoint a partir del cual el header desktop toma el relevo.
    *  "sm" = Cleaner (640px+), "lg" = Host (1024px+). */
   breakpoint: Breakpoint;
@@ -20,6 +22,8 @@ type MobileHeaderContextType = {
 const MobileHeaderContext = createContext<MobileHeaderContextType>({
   title: null,
   setTitle: () => {},
+  backHref: null,
+  setBackHref: () => {},
   breakpoint: "sm",
   hasProvider: false,
 });
@@ -32,10 +36,12 @@ export function MobileHeaderProvider({
   breakpoint?: Breakpoint;
 }) {
   const [title, setTitleState] = useState<string | null>(null);
+  const [backHref, setBackHrefState] = useState<string | null>(null);
   const setTitle = useCallback((t: string | null) => setTitleState(t), []);
+  const setBackHref = useCallback((href: string | null) => setBackHrefState(href), []);
 
   return (
-    <MobileHeaderContext.Provider value={{ title, setTitle, breakpoint, hasProvider: true }}>
+    <MobileHeaderContext.Provider value={{ title, setTitle, backHref, setBackHref, breakpoint, hasProvider: true }}>
       {children}
     </MobileHeaderContext.Provider>
   );

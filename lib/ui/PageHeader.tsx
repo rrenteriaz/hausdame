@@ -26,7 +26,7 @@ export default function PageHeader({
   className = "",
   variant = "default",
 }: PageHeaderProps) {
-  const { setTitle, hasProvider, breakpoint } = useMobileHeader();
+  const { setTitle, setBackHref, hasProvider, breakpoint } = useMobileHeader();
 
   // Inyectar el título en la barra superior móvil del layout.
   // Prioridad: mobileTitle (string explícito) > title si es string > null.
@@ -36,6 +36,13 @@ export default function PageHeader({
     setTitle(resolved);
     return () => setTitle(null);
   }, [title, mobileTitle, setTitle, hasProvider]);
+
+  // Inyectar backHref para que la barra móvil muestre el botón volver.
+  useEffect(() => {
+    if (!hasProvider) return;
+    setBackHref(showBack ? (backHref ?? null) : null);
+    return () => setBackHref(null);
+  }, [showBack, backHref, setBackHref, hasProvider]);
 
   const titleSize = variant === "compact" ? "text-xl" : "text-2xl";
   const subtitleMargin = variant === "compact" ? "mt-1" : "mt-2";

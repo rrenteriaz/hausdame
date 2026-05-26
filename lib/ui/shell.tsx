@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DesktopNav } from "./HostNavigation";
 import { MobileHeaderProvider, useMobileHeader } from "./MobileHeaderContext";
+import BackChevron from "./BackChevron";
 
 const NotificationBell = dynamic(
   () => import("@/components/notifications/NotificationBell"),
@@ -15,7 +16,7 @@ const NotificationBell = dynamic(
 
 // Barra superior móvil — lee el título inyectado por PageHeader vía contexto.
 function HostMobileTopBar({ isMessagesPage }: { isMessagesPage: boolean }) {
-  const { title } = useMobileHeader();
+  const { title, backHref } = useMobileHeader();
   const hiddenClass = isMessagesPage ? "sm:hidden" : "lg:hidden";
 
   return (
@@ -24,9 +25,16 @@ function HostMobileTopBar({ isMessagesPage }: { isMessagesPage: boolean }) {
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="flex items-center justify-between h-12 px-4">
-        <span className="text-2xl font-semibold tracking-tight text-neutral-900 truncate pr-2">
-          {title ?? ""}
-        </span>
+        <div className="flex items-center gap-1 min-w-0 flex-1">
+          {backHref !== null && (
+            <div className="-ml-2 shrink-0">
+              <BackChevron href={backHref} />
+            </div>
+          )}
+          <span className="text-2xl font-semibold tracking-tight text-neutral-900 truncate pr-2">
+            {title ?? ""}
+          </span>
+        </div>
         <NotificationBell />
       </div>
     </div>
