@@ -1,7 +1,7 @@
 // components/notifications/SwipeableRow.tsx
 // Swipe right → onSwipeRight (mark read), swipe left → onSwipeLeft (delete).
 // Uses pointer events with direction detection to avoid conflicting with vertical scroll.
-// Desktop fallback: action buttons appear on hover.
+// Swipe only activates on touch — mouse/pen pointer types are ignored.
 "use client";
 
 import { useRef, useState } from "react";
@@ -28,6 +28,7 @@ export default function SwipeableRow({
   const startY = useRef(0);
   const isSwipe = useRef(false);
   const decided = useRef(false);
+  const activePointerType = useRef<string>("");
 
   // Clamp translate to a comfortable max so we don't reveal huge gaps
   const MAX_TRAVEL = 120;
@@ -37,9 +38,11 @@ export default function SwipeableRow({
     setDragging(false);
     isSwipe.current = false;
     decided.current = false;
+    activePointerType.current = "";
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    activePointerType.current = e.pointerType;
     startX.current = e.clientX;
     startY.current = e.clientY;
     decided.current = false;
@@ -47,6 +50,9 @@ export default function SwipeableRow({
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    // Swipe solo en touch — mouse y pen no desplazan la fila
+    if (activePointerType.current !== "touch") return;
+
     const dx = e.clientX - startX.current;
     const dy = e.clientY - startY.current;
     const adx = Math.abs(dx);
