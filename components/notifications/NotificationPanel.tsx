@@ -135,8 +135,8 @@ export default function NotificationPanel({
                         </div>
                       </div>
                     </button>
-                    {/* Desktop hover action buttons */}
-                    <div className="absolute right-2 inset-y-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                    {/* Action buttons — always visible */}
+                    <div className="absolute right-2 inset-y-0 flex items-center gap-1">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onToggleRead(n.id); }}

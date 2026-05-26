@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { NotificationItem } from "@/lib/notifications/getNotifications";
 import SwipeableRow from "./SwipeableRow";
 
@@ -21,6 +22,7 @@ function formatRelativeTime(date: Date): string {
 }
 
 export default function NotificationsPageContent() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -145,7 +147,14 @@ export default function NotificationsPageContent() {
               onSwipeLeft={() => handleDelete(n.id)}
             >
               <div className={`relative flex items-stretch ${!n.readAt ? "bg-blue-50/40" : "bg-white"}`}>
-                <div className="flex-1 px-4 py-4 pr-16">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!n.readAt) handleToggleRead(n.id);
+                    if (n.href) router.push(n.href);
+                  }}
+                  className="flex-1 text-left px-4 py-4 pr-16 hover:bg-neutral-50 transition-colors"
+                >
                   <div className="flex items-start gap-3">
                     <div className="mt-1.5 shrink-0">
                       {!n.readAt ? (
@@ -164,12 +173,12 @@ export default function NotificationsPageContent() {
                       </p>
                     </div>
                   </div>
-                </div>
-                {/* Desktop hover action buttons */}
-                <div className="absolute right-2 inset-y-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                </button>
+                {/* Action buttons — always visible */}
+                <div className="absolute right-2 inset-y-0 flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => handleToggleRead(n.id)}
+                    onClick={(e) => { e.stopPropagation(); handleToggleRead(n.id); }}
                     title={n.readAt ? "Marcar como no leída" : "Marcar como leída"}
                     className="p-1.5 rounded-full text-neutral-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                   >
@@ -185,7 +194,7 @@ export default function NotificationsPageContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(n.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(n.id); }}
                     title="Eliminar"
                     className="p-1.5 rounded-full text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                   >
