@@ -42,6 +42,11 @@ export default function SwipeableRow({
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "touch") {
+      reset();
+      return;
+    }
+
     activePointerType.current = e.pointerType;
     startX.current = e.clientX;
     startY.current = e.clientY;
@@ -78,7 +83,11 @@ export default function SwipeableRow({
     setTx(clamped);
   }
 
-  function handlePointerUp() {
+  function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "touch") {
+      reset();
+      return;
+    }
     if (!isSwipe.current) { reset(); return; }
 
     if (tx > THRESHOLD) {
