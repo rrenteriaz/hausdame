@@ -5,8 +5,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { ensureCleanerPersonalTeam } from "@/lib/teams/provisioning";
 import { resolveCleanerContext } from "@/lib/cleaner/resolveCleanerContext";
 import { assertNoConflictingExecutor } from "@/lib/workgroups/assertNoConflictingExecutor";
-import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvailableTeamsForProperty";
-import { resolveAutoAssignment } from "@/lib/cleanings/resolveAutoAssignment";
+import { reconcileOpenCleanings } from "@/lib/cleanings/reconcileOpenCleanings";
 
 function isUniqueSlugError(error: unknown): boolean {
   if (typeof error !== "object" || error === null || !("code" in error)) {
@@ -23,69 +22,6 @@ function isUniqueSlugError(error: unknown): boolean {
     Array.isArray(prismaError.meta?.target) &&
     prismaError.meta.target.includes("slug")
   );
-}
-
-async function backfillOpenCleaningsForWorkGroupInvite(
-  hostTenantId: string,
-  workGroupId: string
-) {
-  const propertyLinks = await prisma.hostWorkGroupProperty.findMany({
-    where: {
-      tenantId: hostTenantId,
-      workGroupId,
-      property: { isActive: true },
-    },
-    select: {
-      propertyId: true,
-    },
-  });
-
-  for (const propertyLink of propertyLinks) {
-    const { propertyId } = propertyLink;
-    const { teamIds } = await resolveAvailableTeamsForProperty(hostTenantId, propertyId);
-    const resolvedTeamId = teamIds.length === 1 ? teamIds[0] : null;
-    const assignment = await resolveAutoAssignment(propertyId, resolvedTeamId);
-
-    if (
-      assignment.assignmentStatus !== "ASSIGNED" ||
-      !assignment.teamId ||
-      !assignment.assignedMembershipId
-    ) {
-      console.log("[WG_INVITE_BACKFILL] skipped", {
-        workGroupId,
-        propertyId,
-        teamCount: teamIds.length,
-        assignmentStatus: assignment.assignmentStatus,
-        attentionReason: assignment.attentionReason,
-      });
-      continue;
-    }
-
-    const result = await prisma.cleaning.updateMany({
-      where: {
-        tenantId: hostTenantId,
-        propertyId,
-        status: "PENDING",
-        assignmentStatus: "OPEN",
-        teamId: null,
-        assignedMembershipId: null,
-        assignedMemberId: null,
-      },
-      data: {
-        teamId: assignment.teamId,
-        assignedMembershipId: assignment.assignedMembershipId,
-        assignmentStatus: "ASSIGNED",
-        needsAttention: false,
-        attentionReason: null,
-      },
-    });
-
-    console.log("[WG_INVITE_BACKFILL] assigned open cleanings", {
-      workGroupId,
-      propertyId,
-      updated: result.count,
-    });
-  }
 }
 
 export async function POST(
@@ -303,9 +239,9 @@ export async function POST(
   }
 
   try {
-    await backfillOpenCleaningsForWorkGroupInvite(hostTenantId, workGroupId);
+    await reconcileOpenCleanings({ type: "workgroup", hostTenantId, workGroupId });
   } catch (error: unknown) {
-    console.error("[WG_INVITE_BACKFILL] non-blocking error:", error);
+    console.error("[claim] reconcile non-blocking error:", error);
   }
 
   return NextResponse.json({

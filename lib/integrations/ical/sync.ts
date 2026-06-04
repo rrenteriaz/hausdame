@@ -12,6 +12,7 @@ import { resolveAvailableTeamsForProperty } from "@/lib/workgroups/resolveAvaila
 import { buildCleaningScheduledDate } from "@/lib/datetime/buildCleaningScheduledDate";
 import { assertValidScheduledDate, assertAssignmentCoherence } from "@/lib/cleanings/assertCleaningInvariants";
 import { createNotification } from "@/lib/notifications/createNotification";
+import { reconcileOpenCleanings } from "@/lib/cleanings/reconcileOpenCleanings";
 
 export type SyncReason = "cron" | "bulk" | "manual";
 
@@ -473,6 +474,16 @@ export async function syncIcalForProperty(params: {
       icalUrl: property.icalUrl,
       checkOutTime: property.checkOutTime,
     });
+
+    // Reconciliar limpiezas OPEN de syncs anteriores que ahora tienen WG válido.
+    // Non-blocking: no falla el sync si reconcile lanza.
+    await reconcileOpenCleanings({
+      type: "property",
+      hostTenantId: tenantId,
+      propertyId,
+    }).catch((err) =>
+      console.error("[ical-sync] reconcile non-blocking error:", err)
+    );
 
     await releaseLock(propertyId, true);
     return { ok: true };

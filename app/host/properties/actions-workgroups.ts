@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { reconcileOpenCleanings } from "@/lib/cleanings/reconcileOpenCleanings";
 
 function redirectBack(formData: FormData) {
   const returnTo = formData.get("returnTo")?.toString();
@@ -106,6 +107,17 @@ export async function assignWorkGroupToProperty(formData: FormData) {
       return;
     }
     throw new Error(`Error al asignar grupo de trabajo: ${error?.message || "Error desconocido"}`);
+  }
+
+  // Reconciliar limpiezas OPEN de la propiedad recién asignada (non-blocking)
+  try {
+    await reconcileOpenCleanings({
+      type: "property",
+      hostTenantId: tenantId,
+      propertyId: property.id,
+    });
+  } catch (err) {
+    console.error("[assignWorkGroupToProperty] reconcile non-blocking error:", err);
   }
 
   revalidatePath("/host/properties");

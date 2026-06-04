@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { toggleExecutorStatus } from "@/lib/workgroups/toggleExecutorStatus";
 import { assertNoConflictingExecutor } from "@/lib/workgroups/assertNoConflictingExecutor";
+import { reconcileOpenCleanings } from "@/lib/cleanings/reconcileOpenCleanings";
 
 function redirectBack(formData: FormData) {
   const returnTo = formData.get("returnTo")?.toString();
@@ -95,6 +96,17 @@ export async function addExecutorToWorkGroup(formData: FormData) {
     },
   });
 
+  // Reconciliar limpiezas OPEN del WG ahora que tiene un ejecutor activo (non-blocking)
+  try {
+    await reconcileOpenCleanings({
+      type: "workgroup",
+      hostTenantId: tenantId,
+      workGroupId,
+    });
+  } catch (err) {
+    console.error("[addExecutorToWorkGroup] reconcile non-blocking error:", err);
+  }
+
   revalidatePath("/host/workgroups");
   revalidatePath(`/host/workgroups/${workGroupId}`);
 
@@ -140,6 +152,20 @@ export async function toggleExecutorStatusAction(formData: FormData) {
     teamId,
     newStatus: newStatus as "ACTIVE" | "INACTIVE",
   });
+
+  // Al reactivar un ejecutor, reconciliar limpiezas OPEN del WG (non-blocking)
+  // Al desactivar, toggleExecutorStatus ya abre las limpiezas afectadas.
+  if (newStatus === "ACTIVE") {
+    try {
+      await reconcileOpenCleanings({
+        type: "workgroup",
+        hostTenantId: tenantId,
+        workGroupId,
+      });
+    } catch (err) {
+      console.error("[toggleExecutorStatusAction] reconcile non-blocking error:", err);
+    }
+  }
 
   // Revalidar rutas relevantes
   revalidatePath("/host/workgroups");
