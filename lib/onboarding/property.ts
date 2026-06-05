@@ -9,7 +9,7 @@ export type PropertySetupItemKey =
   | "notifications"
   | "access"
   | "wifi"
-  | "checklist"
+  | "tasks"
   | "ical-health";
 
 export type PropertySetupItemCategory = "required" | "recommended";
@@ -57,7 +57,10 @@ export type PropertySetupInput = {
   };
   assignedWorkGroupsCount: number;
   activeExecutorsCount: number;
+  /** @deprecated Usar activeTaskTemplatesCount. Mantenido como fallback legacy. */
   activeChecklistItemsCount: number;
+  /** Cantidad de TaskTemplates en Tareas Pro (DRAFT o ACTIVE) para esta propiedad. */
+  activeTaskTemplatesCount: number;
 };
 
 function hasValue(value: string | null | undefined) {
@@ -81,6 +84,7 @@ export function getPropertySetupProgress({
   assignedWorkGroupsCount,
   activeExecutorsCount,
   activeChecklistItemsCount,
+  activeTaskTemplatesCount,
 }: PropertySetupInput): PropertySetupProgress {
   const hasIdentity = hasValue(property.name) && hasValue(property.shortName);
   const hasLocation =
@@ -100,7 +104,8 @@ export function getPropertySetupProgress({
   const hasNotifications = hasValue(property.notificationEmail);
   const hasAccess = hasValue(property.accessCode);
   const hasWifi = hasValue(property.wifiSsid) && hasValue(property.wifiPassword);
-  const hasChecklist = activeChecklistItemsCount > 0;
+  // Tareas Pro es la fuente principal; legacy checklist como fallback de compatibilidad.
+  const hasTasksConfigured = activeTaskTemplatesCount > 0 || activeChecklistItemsCount > 0;
   const hasIcalError = hasValue(property.icalLastSyncError);
 
   const items: PropertySetupItem[] = [
@@ -206,13 +211,13 @@ export function getPropertySetupProgress({
     ),
     makeItem(
       {
-        key: "checklist",
+        key: "tasks",
         category: "recommended",
-        title: "Crear checklist",
-        description: "Agrega tareas base para estandarizar cada limpieza de esta propiedad.",
-        ctaLabel: "Crear checklist",
+        title: "Configurar tareas",
+        description: "Define áreas y tareas operativas en Tareas Pro para estandarizar cada limpieza.",
+        ctaLabel: "Configurar tareas",
       },
-      hasChecklist
+      hasTasksConfigured
     ),
     makeItem(
       {

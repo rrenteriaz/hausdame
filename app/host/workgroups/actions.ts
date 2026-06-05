@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { requireHostUser } from "@/lib/auth/requireUser";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { reconcileOpenCleanings } from "@/lib/cleanings/reconcileOpenCleanings";
 
 function redirectBack(formData: FormData) {
   const returnTo = formData.get("returnTo")?.toString();
@@ -243,6 +244,13 @@ export async function updateWorkGroupProperties(formData: FormData) {
       propertyIdsCount: finalPropertyIds.length,
       propertyIdsPreview: finalPropertyIds.slice(0, 5),
     });
+  }
+
+  // Reconciliar limpiezas OPEN del WG (non-blocking)
+  try {
+    await reconcileOpenCleanings({ type: "workgroup", hostTenantId, workGroupId });
+  } catch (err) {
+    console.error("[updateWorkGroupProperties] reconcileOpenCleanings error:", err);
   }
 
   if (!skipRevalidate) {

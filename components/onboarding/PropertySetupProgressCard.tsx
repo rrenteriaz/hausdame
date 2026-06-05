@@ -32,8 +32,8 @@ function getItemHref(item: PropertySetupItem, propertyId: string, returnTo: stri
     return "#property-workgroups";
   }
 
-  if (item.key === "checklist") {
-    return `/host/properties/${propertyId}/checklist?returnTo=${encodeURIComponent(returnTo)}`;
+  if (item.key === "tasks") {
+    return `/host/tareas-pro?property=${propertyId}`;
   }
 
   if (editKeys.has(item.key)) {

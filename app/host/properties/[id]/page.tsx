@@ -7,7 +7,6 @@ import { Cleaning, Property } from "@/lib/generated/prisma";
 import { getExecutorsForWorkGroups } from "@/lib/workgroups/resolveWorkGroupsForProperty";
 import CleaningHistory from "./CleaningHistory";
 import SyncIcalButton from "./SyncIcalButton";
-import ChecklistSummary from "./ChecklistSummary";
 import EditPropertyModal from "./EditPropertyModal";
 import AdditionalInfo from "./AdditionalInfo";
 import CoverImageSection from "./CoverImageSection";
@@ -103,7 +102,7 @@ export default async function PropertyDetailPage({
   if (!property) notFound();
 
   // Ahora obtener los datos que dependen de property
-  const [workGroups, assignedWorkGroups, checklistItems, allProperties, openings] = await Promise.all([
+  const [workGroups, assignedWorkGroups, checklistItems, allProperties, openings, taskTemplateCount] = await Promise.all([
     prisma.hostWorkGroup.findMany({
       where: { 
         tenantId: tenantId,
@@ -167,6 +166,13 @@ export default async function PropertyDetailPage({
       },
       orderBy: {
         createdAt: "desc",
+      },
+    }),
+    // Contar TaskTemplates de Tareas Pro (para setup progress)
+    prisma.taskTemplate.count({
+      where: {
+        tenantId: tenantId,
+        propertyId: property.id,
       },
     }),
   ]);
@@ -285,6 +291,7 @@ export default async function PropertyDetailPage({
     assignedWorkGroupsCount: assignedWorkGroups.length,
     activeExecutorsCount: executors.filter((executor) => executor.status === "ACTIVE").length,
     activeChecklistItemsCount: activeChecklistItems.length,
+    activeTaskTemplatesCount: taskTemplateCount,
   });
 
   // Obtener las limpiezas de esta propiedad, ordenadas por fecha más reciente (FASE 4: usar propertyId)
@@ -569,18 +576,31 @@ export default async function PropertyDetailPage({
         />
       </div>
 
-      {/* Checklist Summary */}
-      <div id="property-checklist" className="mt-6 scroll-mt-4">
-        <ChecklistSummary
-          propertyId={typedProperty.id}
-          itemsByArea={activeChecklistItems
-            .reduce((acc, item) => {
-              if (!acc[item.area]) acc[item.area] = 0;
-              acc[item.area]++;
-              return acc;
-            }, {} as Record<string, number>)}
-        />
-      </div>
+      {/* Tareas operativas */}
+      <Link
+        href={`/host/tareas-pro?property=${typedProperty.id}`}
+        className="block rounded-xl border border-neutral-200 bg-white p-4 mt-6 cursor-pointer hover:border-neutral-300 transition active:scale-[0.99]"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-semibold text-neutral-800">Tareas</h2>
+          <svg
+            className="w-4 h-4 text-neutral-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </div>
+        <p className="text-xs text-neutral-500">
+          Gestiona estándares operativos, áreas y tareas de esta propiedad.
+        </p>
+      </Link>
 
       {/* Inventario */}
       <Link

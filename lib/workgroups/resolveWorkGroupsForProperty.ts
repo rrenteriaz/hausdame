@@ -65,8 +65,14 @@ export async function getExecutorsForWorkGroupsForUi(
 }
 
 /**
- * Obtiene solo ejecutores ACTIVE (filtra por status=ACTIVE)
- * Útil para lógica de acceso y queries de propiedades
+ * Obtiene ejecutores ACTIVE para los workGroupIds dados.
+ *
+ * PATH 1 — WorkGroupExecutor ACTIVE (fuente principal).
+ * PATH 2 — CLAIMED invites como fallback para WGs sin executor explícito.
+ *   Regla: "El TL activo del WG ya es ejecutor".
+ *   Si un TL reclamó la invitación al WG, su equipo es elegible aunque no
+ *   exista (o se haya inactivado) el registro WorkGroupExecutor.
+ *   La elegibilidad se verifica en tiempo real contra TeamMembership ACTIVE.
  */
 export async function getActiveExecutorsForWorkGroups(
   hostTenantId: string,
@@ -76,6 +82,7 @@ export async function getActiveExecutorsForWorkGroups(
     return [];
   }
 
+  // PATH 1: WorkGroupExecutor ACTIVE
   const executors = await prisma.workGroupExecutor.findMany({
     where: {
       hostTenantId,
@@ -90,6 +97,87 @@ export async function getActiveExecutorsForWorkGroups(
     },
     orderBy: [{ workGroupId: "asc" }, { teamId: "asc" }],
   });
+
+  // PATH 2: WGs sin ningún executor ACTIVE → resolver desde CLAIMED invites.
+  const coveredWGIds = new Set(executors.map((e) => e.workGroupId));
+  const uncoveredWGIds = workGroupIds.filter((id) => !coveredWGIds.has(id));
+
+  if (uncoveredWGIds.length > 0) {
+    const claimedInvites = await prisma.hostWorkGroupInvite.findMany({
+      where: {
+        tenantId: hostTenantId,
+        workGroupId: { in: uncoveredWGIds },
+        status: "CLAIMED",
+        claimedByUserId: { not: null },
+      },
+      select: {
+        workGroupId: true,
+        claimedByUserId: true,
+      },
+    });
+
+    if (claimedInvites.length > 0) {
+      // Guard: no re-activar teams que el host intencionalmente desactivó (INACTIVE executor).
+      const inactiveExecutors = await prisma.workGroupExecutor.findMany({
+        where: {
+          hostTenantId,
+          workGroupId: { in: uncoveredWGIds },
+          status: "INACTIVE",
+        },
+        select: { workGroupId: true, teamId: true },
+      });
+      const inactiveKeys = new Set(
+        inactiveExecutors.map((e) => `${e.workGroupId}:${e.teamId}`)
+      );
+
+      const claimerIds = [
+        ...new Set(
+          claimedInvites
+            .map((i) => i.claimedByUserId)
+            .filter((id): id is string => id !== null)
+        ),
+      ];
+
+      // Verificar en tiempo real que el TL sigue activo
+      const leaderMemberships = await prisma.teamMembership.findMany({
+        where: {
+          userId: { in: claimerIds },
+          role: "TEAM_LEADER",
+          status: "ACTIVE",
+        },
+        select: {
+          userId: true,
+          teamId: true,
+          Team: { select: { tenantId: true } },
+        },
+      });
+
+      const userToTeam = new Map(
+        leaderMemberships.map((m) => [
+          m.userId,
+          { teamId: m.teamId, servicesTenantId: m.Team.tenantId },
+        ])
+      );
+
+      // Deduplicar por (workGroupId, teamId) y excluir intencionalmente inactivos
+      const seen = new Set(executors.map((e) => `${e.workGroupId}:${e.teamId}`));
+
+      for (const invite of claimedInvites) {
+        if (!invite.claimedByUserId) continue;
+        const team = userToTeam.get(invite.claimedByUserId);
+        if (!team) continue;
+        const key = `${invite.workGroupId}:${team.teamId}`;
+        if (seen.has(key) || inactiveKeys.has(key)) continue;
+        seen.add(key);
+        executors.push({
+          workGroupId: invite.workGroupId,
+          servicesTenantId: team.servicesTenantId,
+          teamId: team.teamId,
+          status: "ACTIVE",
+        });
+      }
+    }
+  }
 
   return executors;
 }
