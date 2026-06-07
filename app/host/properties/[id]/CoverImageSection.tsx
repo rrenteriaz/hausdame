@@ -24,6 +24,7 @@ export default function CoverImageSection({
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isRemoved, setIsRemoved] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +52,7 @@ export default function CoverImageSection({
     reader.readAsDataURL(file);
 
     // Upload
+    setIsRemoved(false);
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -90,6 +92,10 @@ export default function CoverImageSection({
       return;
     }
 
+    // Optimistic: ocultar inmediatamente sin esperar al servidor
+    setIsRemoved(true);
+    setPreviewUrl(null);
+
     try {
       const formData = new FormData();
       formData.append("propertyId", propertyId);
@@ -100,14 +106,25 @@ export default function CoverImageSection({
       const result = await removeCoverImage(formData);
       if (result?.ok) {
         router.refresh();
+      } else {
+        // Revertir el optimistic update si falló
+        setIsRemoved(false);
+        const msg = (result as any)?.error || "Error desconocido";
+        console.error("Error removing cover:", msg);
+        alert(`Error al eliminar la imagen: ${msg}`);
       }
     } catch (error) {
-      console.error("Error removing cover:", error);
-      alert("Error al eliminar la imagen. Por favor, intente nuevamente.");
+      // Revertir el optimistic update
+      setIsRemoved(false);
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error removing cover (unexpected throw):", message, error);
+      if (!message.includes("NEXT_REDIRECT")) {
+        alert(`Error al eliminar la imagen: ${message}`);
+      }
     }
   };
 
-  const displayUrl = previewUrl || coverOriginalUrl || coverThumbUrl;
+  const displayUrl = isRemoved ? null : (previewUrl || coverOriginalUrl || coverThumbUrl);
 
   return (
     <div className="space-y-3">
