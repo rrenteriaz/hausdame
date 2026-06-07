@@ -119,11 +119,6 @@ export default function EditPropertyModal({ property, returnTo }: EditPropertyMo
       return;
     }
 
-    if (latitude !== null && longitude !== null) {
-      // Ya hay ubicación, no hacer geocoding
-      return;
-    }
-
     setGeocodingBusy(true);
     setGeocodingError(null);
     setGeoError(null); // Limpiar error de geolocalización
@@ -533,49 +528,47 @@ export default function EditPropertyModal({ property, returnTo }: EditPropertyMo
                     Ubicación
                   </label>
                   <div className="space-y-2">
-                    {/* Botones de ubicación: solo si NO hay lat/lng guardada */}
-                    {(latitude === null || longitude === null) && (
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        {address && (
-                          <button
-                            type="button"
-                            onClick={handleGeocodeAddress}
-                            disabled={geocodingBusy}
-                            className="flex-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-800 hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            {geocodingBusy ? (
-                              <>
-                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>Ubicando…</span>
-                              </>
-                            ) : (
-                              <span>Ubicar con dirección</span>
-                            )}
-                          </button>
-                        )}
+                    {/* Botones de ubicación: siempre visibles para poder re-geocodificar */}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {address && (
                         <button
                           type="button"
-                          onClick={handleUseMyLocation}
-                          disabled={geoBusy}
+                          onClick={handleGeocodeAddress}
+                          disabled={geocodingBusy}
                           className="flex-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-800 hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                          {geoBusy ? (
+                          {geocodingBusy ? (
                             <>
                               <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              <span>Obteniendo…</span>
+                              <span>Ubicando…</span>
                             </>
                           ) : (
-                            <span>Usar ubicación actual</span>
+                            <span>Ubicar con dirección</span>
                           )}
                         </button>
-                      </div>
-                    )}
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleUseMyLocation}
+                        disabled={geoBusy}
+                        className="flex-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-800 hover:bg-neutral-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {geoBusy ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Obteniendo…</span>
+                          </>
+                        ) : (
+                          <span>Usar ubicación actual</span>
+                        )}
+                      </button>
+                    </div>
                     
                     {/* Mensajes de error */}
                     {(geocodingError || geoError) && (

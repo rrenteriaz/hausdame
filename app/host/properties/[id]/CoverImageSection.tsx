@@ -65,8 +65,9 @@ export default function CoverImageSection({
         router.refresh();
       }
     } catch (error) {
-      console.error("Error uploading cover:", error);
-      alert("Error al subir la imagen. Por favor, intente nuevamente.");
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error uploading cover:", message, error);
+      alert(`Error al subir la imagen: ${message}`);
       setPreviewUrl(null);
     } finally {
       setIsUploading(false);
