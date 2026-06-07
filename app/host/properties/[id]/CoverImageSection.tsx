@@ -63,12 +63,20 @@ export default function CoverImageSection({
       const result = await uploadCoverImage(formData);
       if (result?.ok) {
         router.refresh();
+      } else if (result && !result.ok) {
+        console.error("Error uploading cover:", result.error);
+        alert(`Error al subir la imagen: ${result.error}`);
+        setPreviewUrl(null);
       }
     } catch (error) {
+      // Solo si el server action lanza inesperadamente (redirect, auth, etc.)
       const message = error instanceof Error ? error.message : "Error desconocido";
-      console.error("Error uploading cover:", message, error);
-      alert(`Error al subir la imagen: ${message}`);
-      setPreviewUrl(null);
+      console.error("Error uploading cover (unexpected throw):", message, error);
+      // No mostrar si es un redirect interno de Next.js
+      if (!message.includes("NEXT_REDIRECT")) {
+        alert(`Error al subir la imagen: ${message}`);
+        setPreviewUrl(null);
+      }
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
