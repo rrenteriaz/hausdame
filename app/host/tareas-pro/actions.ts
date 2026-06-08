@@ -455,6 +455,29 @@ export async function updateTaskStep(formData: FormData) {
   revalidatePath(`/host/tareas-pro/${step.section.templateId}`);
 }
 
+export async function updateTaskStepName(formData: FormData): Promise<void> {
+  const user = await requireHostUser();
+  const tenantId = user.tenantId;
+  if (!tenantId) throw new Error("Usuario sin tenant");
+
+  const stepId = String(formData.get("stepId") || "");
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("El nombre no puede estar vacío");
+
+  const step = await prisma.taskStepTemplate.findFirst({
+    where: { id: stepId, tenantId },
+    include: { section: true },
+  });
+  if (!step) throw new Error("Paso no encontrado");
+
+  await prisma.taskStepTemplate.update({
+    where: { id: stepId },
+    data: { name },
+  });
+
+  revalidatePath(`/host/tareas-pro/${step.section.templateId}`);
+}
+
 export async function deleteTaskStep(formData: FormData) {
   const user = await requireHostUser();
   const tenantId = user.tenantId;

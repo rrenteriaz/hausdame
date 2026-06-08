@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createTaskStep,
   deleteTaskStep,
+  updateTaskStepName,
   createTaskSection,
   deleteTaskSection,
   updateTaskSection,
@@ -130,6 +132,8 @@ export default function ChecklistEditor({
   const [captureModal, setCaptureModal] = useState<{ stepId: string; name: string; sectionId: string; captures: { capturesYesNo: boolean; yesNoRequired: boolean; capturesNumber: boolean; numberRequired: boolean; capturesPhoto: boolean; photoRequired: boolean; capturesText: boolean; textRequired: boolean } } | null>(null);
   const [freqModal, setFreqModal] = useState<{ stepId: string; name: string; stepFrequency: string | null; stepAnchorDayOfWeek: number | null; stepAnchorDayOfMonth: number | null; intervalDays: number | null; startDate: string | null; sectionId: string } | null>(null);
   const [photosModal, setPhotosModal] = useState<{ stepId: string; name: string } | null>(null);
+  const [editStepModal, setEditStepModal] = useState<{ stepId: string; sectionId: string; name: string } | null>(null);
+  const [editStepNameValue, setEditStepNameValue] = useState("");
   const [deleteSectionConfirm, setDeleteSectionConfirm] = useState<Section | null>(null);
   const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -267,6 +271,32 @@ export default function ChecklistEditor({
     );
   };
 
+  // ---- Edit step name (optimistic) ----
+  const handleEditStepName = async (stepId: string, sectionId: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const original = sections.flatMap((s) => s.steps).find((st) => st.id === stepId)?.name ?? "";
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId ? { ...s, steps: s.steps.map((st) => st.id === stepId ? { ...st, name: trimmed } : st) } : s
+      )
+    );
+    setEditStepModal(null);
+    try {
+      const fd = new FormData();
+      fd.append("stepId", stepId);
+      fd.append("name", trimmed);
+      await updateTaskStepName(fd);
+    } catch (err: any) {
+      setSections((prev) =>
+        prev.map((s) =>
+          s.id === sectionId ? { ...s, steps: s.steps.map((st) => st.id === stepId ? { ...st, name: original } : st) } : s
+        )
+      );
+      showError(err?.message || "Error al renombrar la tarea");
+    }
+  };
+
   // ---- Add section (optimistic) ----
   const handleAddSection = async () => {
     const name = addSectionName.trim();
@@ -356,6 +386,7 @@ export default function ChecklistEditor({
   const currentFrequency = template.schedule?.frequency ?? "MANUAL";
 
   return (
+    <>
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
       {/* Error banner */}
@@ -499,7 +530,18 @@ export default function ChecklistEditor({
                       key={step.id}
                       className={`flex items-center gap-2 px-4 py-2.5 ${step._temp ? "opacity-50" : ""}`}
                     >
-                      <span className="flex-1 text-sm text-neutral-800 min-w-0 truncate">{step.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (step._temp) return;
+                          setEditStepModal({ stepId: step.id, sectionId: section.id, name: step.name });
+                          setEditStepNameValue(step.name);
+                        }}
+                        className="flex-1 text-sm text-neutral-800 min-w-0 truncate text-left hover:text-neutral-500 transition-colors cursor-pointer"
+                        title="Editar nombre de tarea"
+                      >
+                        {step.name}
+                      </button>
 
                       {/* Capturas */}
                       <button
@@ -1003,5 +1045,56 @@ export default function ChecklistEditor({
         </div>
       )}
     </div>
+
+      {/* Modal edición de nombre de tarea — portal para escapar cualquier transform de ancestros */}
+      {editStepModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setEditStepModal(null)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)]">
+            <div className="px-6 py-4 border-b shrink-0 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-neutral-900">Editar tarea</h2>
+              <button
+                type="button"
+                onClick={() => setEditStepModal(null)}
+                className="text-neutral-400 hover:text-neutral-600 transition p-1 -mr-1"
+                aria-label="Cerrar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4 overflow-y-auto">
+              <textarea
+                value={editStepNameValue}
+                onChange={(e) => setEditStepNameValue(e.target.value)}
+                rows={4}
+                autoFocus
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400"
+                placeholder="Nombre de la tarea"
+              />
+              <div className="flex gap-3 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setEditStepModal(null)}
+                  className="flex-1 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEditStepName(editStepModal.stepId, editStepModal.sectionId, editStepNameValue)}
+                  disabled={!editStepNameValue.trim() || editStepNameValue.trim() === editStepModal.name}
+                  className="flex-1 bg-neutral-900 text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
