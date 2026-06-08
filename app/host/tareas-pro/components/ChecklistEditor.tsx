@@ -537,7 +537,7 @@ export default function ChecklistEditor({
                           setEditStepModal({ stepId: step.id, sectionId: section.id, name: step.name });
                           setEditStepNameValue(step.name);
                         }}
-                        className="flex-1 text-sm text-neutral-800 min-w-0 truncate text-left hover:text-neutral-500 transition-colors cursor-pointer"
+                        className="flex-1 min-w-0 text-sm text-neutral-800 text-left truncate select-none touch-manipulation hover:text-neutral-500 transition-colors"
                         title="Editar nombre de tarea"
                       >
                         {step.name}
@@ -561,7 +561,7 @@ export default function ChecklistEditor({
                             textRequired: step.textRequired,
                           },
                         })}
-                        className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 transition"
+                        className="shrink-0 flex items-center gap-0.5 px-1.5 py-1 rounded-md bg-neutral-100 hover:bg-neutral-200 transition"
                         title={step.captureVersion === "LEGACY_V1" && !step.capturesYesNo && !step.capturesNumber && !step.capturesPhoto && !step.capturesText ? "Tarea legacy — configura las capturas para actualizarla" : "Configurar capturas"}
                       >
                         {step.captureVersion === "LEGACY_V1" && !step.capturesYesNo && !step.capturesNumber && !step.capturesPhoto && !step.capturesText ? (
@@ -628,6 +628,7 @@ export default function ChecklistEditor({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
+
                     </div>
                   );
                 })}
@@ -1068,9 +1069,8 @@ export default function ChecklistEditor({
               <textarea
                 value={editStepNameValue}
                 onChange={(e) => setEditStepNameValue(e.target.value)}
-                rows={4}
                 autoFocus
-                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400"
+                className="w-full min-h-[160px] border border-neutral-300 rounded-lg px-3 py-2 text-sm resize-none whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400"
                 placeholder="Nombre de la tarea"
               />
               <div className="flex gap-3 pb-1">
